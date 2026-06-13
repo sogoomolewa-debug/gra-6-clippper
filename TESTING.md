@@ -21,11 +21,12 @@ This guide outlines how to manually verify every stage of the pipeline to ensure
 *   **Goal**: Verify the YouTube API correctly filters for viral videos within the defined tiers.
 *   **Command**:
     ```bash
-    export YOUTUBE_API_KEY="your_api_key_here"
+    # Load .env variables first
+    set -a; source .env; set +a
     python3 -m pipeline.search
     ```
 *   **Expected Result**: A list of scored videos (Title, View Count, Score) printed to the console.
-*   **Current Status**: **Ready for Test** (Requires API Key).
+*   **Current Status**: **READY** (Keys populated in .env).
 
 ---
 
@@ -84,4 +85,6 @@ Once all individual modules pass, run the full orchestrator:
 ## 🛑 Troubleshooting Tips
 - **FFmpeg Error**: Ensure `ffmpeg` is installed (`sudo apt install ffmpeg`).
 - **Modal Timeout**: If the first voice call fails, it's likely a "Cold Start." Wait 30 seconds and retry.
+- **Quota Error**: YouTube Search API has a low daily limit. If search fails, wait 24 hours or use a different API key.
+d Start." Wait 30 seconds and retry.
 - **Quota Error**: YouTube Search API has a low daily limit. If search fails, wait 24 hours or use a different API key.
