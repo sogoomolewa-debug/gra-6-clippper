@@ -32,21 +32,15 @@ This guide outlines how to manually verify every stage of the pipeline to ensure
 
 ## 🛠️ PHASE 2: Pending Modules (Need Manual Verification)
 
-### 3. Heatmap Extraction
-*   **Goal**: Ensure `yt-dlp` can extract the "Most Rewatched" segment from a live URL.
-*   **Command**:
-    ```bash
-    python3 -m pipeline.heatmap "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-    ```
-*   **Expected Result**: Timestamps like `Clip: 45.0s → 97.0s` printed.
-
-### 4. Transcript & Context
+### 3. Transcript & Context
 *   **Goal**: Verify auto-caption download and context window extraction.
 *   **Command**:
     ```bash
+    # Note: Requires a video URL and a start timestamp
     python3 -m pipeline.transcript "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 45.0
     ```
 *   **Expected Result**: A block of text representing the dialogue around the 45-second mark.
+*   **Note**: Cloud IP blocking may cause this to return an empty string; the pipeline will continue using the video title for the AI hook if this happens.
 
 ### 5. Hook Generation (Claude)
 *   **Goal**: Verify Claude-3.5-Sonnet writes a valid hook (< 10 words, no emojis).
