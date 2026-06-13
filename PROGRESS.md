@@ -29,12 +29,13 @@ This document tracks the iterative development and verification of the GTA6 Shor
     *   Verified the **Tiered Search logic**: Correctly filtered 36 results down to 10 high-quality viral candidates.
     *   Top candidates identified (e.g., videos with 200k+ views in < 48h).
 
-### 🛠️ 4. Intelligence & Extraction (Heatmap/Transcript)
-*   **Status**: **IN PROGRESS**
+### ❌ 4. Intelligence & Extraction (Heatmap/Transcript)
+*   **Status**: **NEEDS IMPROVEMENT (Unverified)**
 *   **Details**:
-    *   Heatmap extraction algorithm implemented (Sliding Window).
-    *   Verified the **Smart Fallback** (30% mark) to handle cloud-based IP blocking from YouTube.
-    *   Deno runtime integrated to support latest `yt-dlp` requirements.
+    *   Heatmap extraction algorithm is implemented but currently **fails in cloud environments** due to YouTube IP blocking.
+    *   Current "Smart Fallback" (30% mark) is a statistical guess and does not guarantee viral moment selection.
+    *   **Action Item**: Explore using YouTube cookies or residential proxies to bypass blocking and access real engagement data.
+    *   **Action Item**: Verify extraction on a local/non-data-center IP before final launch.
 
 ### ⏳ 5. AI Reasoning (Claude Hook)
 *   **Status**: **PENDING TEST**
