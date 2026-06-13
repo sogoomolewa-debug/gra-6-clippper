@@ -1,0 +1,222 @@
+# pipeline/search.py — Search YouTube for eligible videos across content tiers
+
+import os
+from datetime import datetime, timedelta
+
+import isodate
+
+import config
+
+
+def build_youtube(api_key: str):
+    """Build YouTube Data API v3 client."""
+    try:
+        from googleapiclient.discovery import build
+        return build("youtube", "v3", developerKey=api_key)
+    except Exception as e:
+        print(f"[search] error building YouTube client: {e}")
+        return None
+
+
+def search_recent_videos(youtube, queries: list, published_after: datetime, max_results: int = 10) -> list[str]:
+    """Search YouTube for recent videos matching queries. Returns deduplicated video IDs."""
+    try:
+        all_ids = []
+        seen = set()
+        for query in queries:
+            try:
+                print(f"[search] querying: {query}")
+                response = youtube.search().list(
+                    part="id",
+                    type="video",
+                    q=query,
+                    publishedAfter=published_after.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    videoDuration="medium",
+                    order="viewCount",
+                    maxResults=max_results
+                ).execute()
+                for item in response.get("items", []):
+                    vid = item["id"].get("videoId")
+                    if vid and vid not in seen:
+                        seen.add(vid)
+                        all_ids.append(vid)
+            except Exception as e:
+                print(f"[search] error on query '{query}': {e}")
+                continue
+        print(f"[search] found {len(all_ids)} unique video IDs across {len(queries)} queries")
+        return all_ids
+    except Exception as e:
+        print(f"[search] error in search_recent_videos: {e}")
+        return []
+
+
+def get_video_details(youtube, video_ids: list[str]) -> list[dict]:
+    """Fetch detailed info for video IDs in batches of 50."""
+    try:
+        results = []
+        channel_ids_map = {}  # channel_id -> list of result indices
+
+        # Process in chunks of 50
+        for i in range(0, len(video_ids), 50):
+            chunk = video_ids[i:i + 50]
+            try:
+                response = youtube.videos().list(
+                    part="statistics,contentDetails,snippet",
+                    id=",".join(chunk)
+                ).execute()
+                for item in response.get("items", []):
+                    try:
+                        snippet = item["snippet"]
+                        stats = item["statistics"]
+                        content = item["contentDetails"]
+                        duration_seconds = int(isodate.parse_duration(content["duration"]).total_seconds())
+                        channel_title = snippet.get("channelTitle", "Unknown")
+                        video = {
+                            "video_id": item["id"],
+                            "url": f"https://youtube.com/watch?v={item['id']}",
+                            "title": snippet.get("title", ""),
+                            "description": snippet.get("description", ""),
+                            "channel_id": snippet.get("channelId", ""),
+                            "channel_title": channel_title,
+                            "channel_url": f"https://youtube.com/@{channel_title.replace(' ', '')}",
+                            "view_count": int(stats.get("viewCount", 0)),
+                            "like_count": int(stats.get("likeCount", 0)),
+                            "duration_seconds": duration_seconds,
+                            "published_at": snippet.get("publishedAt", ""),
+                            "thumbnail_url": snippet.get("thumbnails", {}).get("high", {}).get("url", ""),
+                            "subscriber_count": 0  # Will be filled in below
+                        }
+                        idx = len(results)
+                        results.append(video)
+                        cid = video["channel_id"]
+                        if cid not in channel_ids_map:
+                            channel_ids_map[cid] = []
+                        channel_ids_map[cid].append(idx)
+                    except Exception as e:
+                        print(f"[search] error parsing video item: {e}")
+                        continue
+            except Exception as e:
+                print(f"[search] error fetching video details chunk: {e}")
+                continue
+
+        # Fetch subscriber counts for all channels
+        all_channel_ids = list(channel_ids_map.keys())
+        for i in range(0, len(all_channel_ids), 50):
+            chunk = all_channel_ids[i:i + 50]
+            try:
+                ch_response = youtube.channels().list(
+                    part="statistics",
+                    id=",".join(chunk)
+                ).execute()
+                for ch_item in ch_response.get("items", []):
+                    cid = ch_item["id"]
+                    sub_count = int(ch_item.get("statistics", {}).get("subscriberCount", 0))
+                    for idx in channel_ids_map.get(cid, []):
+                        results[idx]["subscriber_count"] = sub_count
+            except Exception as e:
+                print(f"[search] error fetching channel stats: {e}")
+                continue
+
+        print(f"[search] fetched details for {len(results)} videos")
+        return results
+    except Exception as e:
+        print(f"[search] error in get_video_details: {e}")
+        return []
+
+
+def is_eligible(video: dict, tier: dict) -> bool:
+    """Check if video meets all eligibility criteria for the given tier."""
+    try:
+        published_at = video.get("published_at", "")
+        # Remove 'Z' for fromisoformat and ensure it's UTC
+        published_dt = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+        age_hours = (datetime.utcnow().replace(tzinfo=published_dt.tzinfo) - published_dt).total_seconds() / 3600
+
+        if age_hours > tier["max_age_hours"]:
+            return False
+        if video["view_count"] < tier["min_views"]:
+            return False
+        if video["duration_seconds"] < config.ELIGIBILITY["min_duration_seconds"]:
+            return False
+        if video["duration_seconds"] > config.ELIGIBILITY["max_duration_seconds"]:
+            return False
+        if video.get("subscriber_count", 0) < tier["min_channel_subscribers"]:
+            return False
+        if video["view_count"] > 0:
+            like_ratio = video["like_count"] / video["view_count"]
+            if like_ratio < config.ELIGIBILITY["min_like_ratio"]:
+                return False
+        return True
+    except Exception as e:
+        print(f"[search] eligibility check error: {e}")
+        return False
+
+
+def score_video(video: dict) -> float:
+    """Score a video based on views, recency, and engagement."""
+    try:
+        published_at = video.get("published_at", "")
+        published_dt = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+        age_hours = (datetime.utcnow().replace(tzinfo=published_dt.tzinfo) - published_dt).total_seconds() / 3600
+
+        if age_hours < 12:
+            recency_weight = 1.0
+        elif age_hours < 24:
+            recency_weight = 0.7
+        else:
+            recency_weight = 0.4
+
+        like_ratio = video["like_count"] / video["view_count"] if video["view_count"] > 0 else 0
+        return (video["view_count"] * recency_weight) + (like_ratio * 50000)
+    except Exception as e:
+        print(f"[search] scoring error: {e}")
+        return 0.0
+
+
+def get_top_videos(api_key: str, tier_name: str, limit: int = 5) -> list[dict]:
+    """Get top eligible videos for a content tier."""
+    try:
+        # Find tier config
+        tier = None
+        for t in config.CONTENT_TIERS:
+            if t["name"] == tier_name:
+                tier = t
+                break
+        if tier is None:
+            print(f"[search] error: tier '{tier_name}' not found")
+            return []
+
+        published_after = datetime.utcnow() - timedelta(hours=tier["max_age_hours"])
+        youtube = build_youtube(api_key)
+        if youtube is None:
+            return []
+
+        video_ids = search_recent_videos(youtube, tier["queries"], published_after)
+        if not video_ids:
+            print(f"[search] no videos found for tier {tier_name}")
+            return []
+
+        details = get_video_details(youtube, video_ids)
+        eligible = [v for v in details if is_eligible(v, tier)]
+
+        for v in eligible:
+            v["score"] = score_video(v)
+
+        eligible.sort(key=lambda x: x["score"], reverse=True)
+        top = eligible[:limit]
+
+        print(f"[search] tier={tier_name} found={len(eligible)} eligible, returning top {len(top)}")
+        return top
+    except Exception as e:
+        print(f"[search] error in get_top_videos: {e}")
+        return []
+
+
+if __name__ == "__main__":
+    api_key = os.environ.get("YOUTUBE_API_KEY", "")
+    if not api_key:
+        print("[search] YOUTUBE_API_KEY not set")
+    else:
+        results = get_top_videos(api_key, tier_name="gta6")
+        for v in results:
+            print(f"  {v['title']} | views={v['view_count']} | score={v['score']:.0f}")
