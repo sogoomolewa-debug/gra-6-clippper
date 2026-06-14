@@ -37,7 +37,8 @@ jobs:
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           YOUTUBE_OAUTH_JSON: ${{ secrets.YOUTUBE_OAUTH_JSON }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           MODAL_TTS_ENDPOINT: ${{ secrets.MODAL_TTS_ENDPOINT }}
+          MODAL_VIDEO_ENDPOINT: ${{ secrets.MODAL_VIDEO_ENDPOINT }}
           REF_TEXT: ${{ secrets.REF_TEXT }}
         run: python pipeline.py

@@ -6,7 +6,7 @@ from datetime import datetime
 import pathlib
 import subprocess
 
-from pipeline import search, heatmap, transcript, hook, voice, editor, uploader, queue_manager
+from pipeline import search, heatmap, transcript, hook, voice, editor, uploader, queue_manager, clip_analyzer
 import config
 
 
@@ -126,16 +126,74 @@ def run_pipeline() -> None:
         print(f"\n[pipeline] processing: {video['title']}")
         print(f"[pipeline] source: {video['source_type']} | score: {video['score']:.0f}")
 
-        # STEP 5 — HEATMAP
-        start_time, end_time = heatmap.get_clip_timestamps(video["url"])
-        peak_pct = round((start_time / max(video["duration_seconds"], 1)) * 100, 1)
-        print(f"[pipeline] peak: {start_time:.1f}s → {end_time:.1f}s ({peak_pct}% into video)")
+        # STEP 3 — FETCH COMMENTS
+        print("[pipeline] fetching comments")
+        comments = search.fetch_comments(video["video_id"], api_key)
 
-        # STEP 6 — TRANSCRIPT
-        context = transcript.get_video_context(video["url"], start_time)
+        # STEP 4 — FIND PEAK TIMESTAMP FROM COMMENTS
+        from pipeline.heatmap import (extract_and_score_timestamps,
+                                      get_best_comment_timestamp, get_timestamp_comments,
+                                      get_video_duration, get_heatmap_data, find_peak_window,
+                                      get_fallback_timestamps, download_audio_only, audio_energy_peak)
+        import pathlib, config as cfg
 
-        # STEP 7 — HOOK
-        hook_text = hook.get_hook_with_fallback(video["title"], context)
+        duration = get_video_duration(video["url"])
+        window = float(cfg.CLIP["max_duration_seconds"]) - 3.0
+        timestamp_comments = []
+        peak_sec = None
+
+        # Comment signal
+        if comments:
+            clusters = extract_and_score_timestamps(comments, int(duration))
+            peak_sec = get_best_comment_timestamp(clusters)
+            if peak_sec:
+                timestamp_comments = get_timestamp_comments(comments, peak_sec)
+                print(f"[pipeline] peak from comments: {peak_sec}s")
+
+        # Audio energy fallback
+        if not peak_sec:
+            print("[pipeline] no comment timestamps, trying audio energy")
+            tmp_audio = f"/tmp/audio_{video['video_id']}.mp3"
+            if download_audio_only(video["url"], tmp_audio):
+                start, _ = audio_energy_peak(tmp_audio, window)
+                peak_sec = int(start + window / 2)
+                pathlib.Path(tmp_audio).unlink(missing_ok=True)
+
+        # yt-dlp heatmap fallback
+        if not peak_sec:
+            heatmap_list = get_heatmap_data(video["url"])
+            if heatmap_list and len(heatmap_list) >= 10:
+                start, _ = find_peak_window(heatmap_list, window)
+                peak_sec = int(start + window / 2)
+
+        # 30% fallback
+        if not peak_sec:
+            peak_sec = int(duration * 0.3)
+            print(f"[pipeline] using 30% fallback: {peak_sec}s")
+
+        # STEP 5 — CLIP ANALYZER (Qwen2.5-VL watches the segment)
+        print("[pipeline] running visual clip analysis")
+        analysis = clip_analyzer.analyze_clip(
+            video_url=video["url"],
+            peak_sec_global=float(peak_sec),
+            video_duration=duration
+        )
+        global_start = analysis["global_start"]
+        global_end = analysis["global_end"]
+        visual_description = analysis["description"]
+        peak_pct = round((peak_sec / max(duration, 1)) * 100, 1)
+        print(f"[pipeline] final clip: {global_start:.1f}s → {global_end:.1f}s")
+
+        # STEP 6 — TRANSCRIPT CONTEXT (around peak, may be empty)
+        transcript_context = transcript.get_video_context(video["url"], float(peak_sec))
+
+        # STEP 7 — HOOK (visual description is primary source)
+        hook_text = hook.get_hook_with_fallback(
+            video_title=video["title"],
+            visual_description=visual_description,
+            transcript_context=transcript_context,
+            timestamp_comments=timestamp_comments
+        )
 
         # STEP 8 — VOICE
         hook_audio = f"/tmp/hook_{video['video_id']}.wav"
@@ -146,12 +204,12 @@ def run_pipeline() -> None:
             commit_data_files()
             return
 
-        # STEP 9 — EDIT
+        # STEP 9 — EDIT (now uses global_start and global_end from clip_analyzer)
         short_path = f"/tmp/short_{video['video_id']}.mp4"
         if not editor.build_short(
             video_url=video["url"],
-            start_time=start_time,
-            end_time=end_time,
+            global_start=global_start,
+            global_end=global_end,
             hook_audio=hook_audio,
             hook_text=hook_text,
             output_path=short_path
@@ -185,9 +243,15 @@ def run_pipeline() -> None:
             "source_type": video["source_type"],
             "hook_text": hook_text,
             "hook_word_count": len(hook_text.split()),
-            "peak_start": start_time,
+            "peak_start": global_start,
             "peak_position_pct": peak_pct,
-            "clip_duration": round(end_time - start_time, 1),
+            "clip_duration": round(global_end - global_start, 1),
+            "visual_description": visual_description,
+            "natural_boundaries_used": True,
+            "peak_signal": "comments" if timestamp_comments else "audio_or_fallback",
+            "peak_sec": peak_sec,
+            "global_start": global_start,
+            "global_end": global_end,
             "snapshots": {
                 "24h": {"views": 0, "likes": 0, "comments": 0},
                 "72h": {"views": 0, "likes": 0, "comments": 0},

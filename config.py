@@ -62,3 +62,6 @@ LOGS = {
     "performance_path": "data/performance_log.json",
     "snapshot_intervals": [(24, "24h"), (72, "72h"), (168, "7d")]
 }
+
+import os
+YOUTUBE_COOKIES_PATH = os.environ.get("YOUTUBE_COOKIES_PATH", "")

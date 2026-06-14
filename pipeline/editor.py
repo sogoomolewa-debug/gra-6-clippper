@@ -15,11 +15,19 @@ def download_clip(video_url: str, start_time: float, end_time: float, output_pat
         cmd = [
             "yt-dlp",
             "--download-sections", f"*{start_time:.2f}-{end_time:.2f}",
-            "-f", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080]",
+            "-f", "bestvideo[vcodec^=avc1][height<=1080]+bestaudio[acodec^=mp4a]/best[vcodec^=avc1][height<=1080]",
             "--merge-output-format", "mp4",
-            "-o", output_path,
-            video_url
+            "-o", output_path
         ]
+        if config.YOUTUBE_COOKIES_PATH and pathlib.Path(config.YOUTUBE_COOKIES_PATH).exists():
+            cmd.extend(["--cookies", config.YOUTUBE_COOKIES_PATH])
+        
+        import shutil
+        node_path = shutil.which("node")
+        if node_path:
+            cmd.extend(["--js-runtimes", f"node:{node_path}"])
+            
+        cmd.append(video_url)
         print(f"[editor] downloading clip: {start_time:.1f}s → {end_time:.1f}s")
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         if result.returncode != 0:
@@ -207,81 +215,86 @@ def concatenate_clips(clip1: str, clip2: str, output_path: str) -> bool:
         return False
 
 
-def build_short(video_url: str, start_time: float, end_time: float,
-                hook_audio: str, hook_text: str, output_path: str) -> bool:
+def build_short(
+    video_url: str,
+    global_start: float,        # From clip_analyzer — natural start in global time
+    global_end: float,          # From clip_analyzer — natural end in global time
+    hook_audio: str,
+    hook_text: str,
+    output_path: str
+) -> bool:
     """Build complete YouTube Short: blurred hook intro + clear reveal."""
     try:
-        tmp_dir = pathlib.Path(tempfile.mkdtemp())
-        print(f"[editor] building short in temp dir: {tmp_dir}")
+        tmp = pathlib.Path(tempfile.mkdtemp())
+        clip_duration = global_end - global_start
+        print(f"[editor] building short in temp dir: {tmp} (duration: {clip_duration:.1f}s)")
 
-        # STEP 1 — Download raw segment
-        raw = tmp_dir / "raw.mp4"
-        print("[editor] step 1/9: downloading raw segment")
-        if not download_clip(video_url, start_time, end_time, str(raw)):
-            shutil.rmtree(tmp_dir, ignore_errors=True)
+        # STEP 1 — Download the naturally-bounded clip
+        raw = tmp / "raw.mp4"
+        success = download_clip(video_url, global_start, global_end, str(raw))
+        if not success:
+            shutil.rmtree(tmp, ignore_errors=True)
             return False
 
-        # STEP 2 — Crop to vertical
-        vertical = tmp_dir / "vertical.mp4"
-        print("[editor] step 2/9: cropping to vertical")
-        if not crop_to_vertical(str(raw), str(vertical)):
-            shutil.rmtree(tmp_dir, ignore_errors=True)
+        # STEP 2 — Crop to 9:16 vertical
+        vertical = tmp / "vertical.mp4"
+        success = crop_to_vertical(str(raw), str(vertical))
+        if not success:
+            shutil.rmtree(tmp, ignore_errors=True)
             return False
 
         # STEP 3 — Get hook audio duration
         hook_dur = get_audio_duration(hook_audio)
-        reveal_start = hook_dur
-        print(f"[editor] step 3/9: hook duration = {hook_dur:.2f}s")
 
-        # STEP 4 — Trim hook section
-        hook_vid = tmp_dir / "hook_vid.mp4"
-        print("[editor] step 4/9: trimming hook section")
-        if not trim_clip(str(vertical), 0, hook_dur, str(hook_vid)):
-            shutil.rmtree(tmp_dir, ignore_errors=True)
+        # STEP 4 — Trim hook section (first hook_dur seconds)
+        hook_vid = tmp / "hook_vid.mp4"
+        success = trim_clip(str(vertical), 0, hook_dur, str(hook_vid))
+        if not success:
+            shutil.rmtree(tmp, ignore_errors=True)
             return False
 
         # STEP 5 — Blur hook section
-        hook_blurred = tmp_dir / "hook_blurred.mp4"
-        print("[editor] step 5/9: blurring hook section")
-        if not apply_blur(str(hook_vid), str(hook_blurred)):
-            shutil.rmtree(tmp_dir, ignore_errors=True)
+        hook_blurred = tmp / "hook_blurred.mp4"
+        success = apply_blur(str(hook_vid), str(hook_blurred))
+        if not success:
+            shutil.rmtree(tmp, ignore_errors=True)
             return False
 
-        # STEP 6 — Replace hook section audio with TTS
-        hook_with_audio = tmp_dir / "hook_audio.mp4"
-        print("[editor] step 6/9: replacing audio with voiceover")
-        if not replace_audio(str(hook_blurred), hook_audio, str(hook_with_audio)):
-            shutil.rmtree(tmp_dir, ignore_errors=True)
+        # STEP 6 — Replace hook audio with TTS voice
+        hook_with_audio = tmp / "hook_with_audio.mp4"
+        success = replace_audio(str(hook_blurred), hook_audio, str(hook_with_audio))
+        if not success:
+            shutil.rmtree(tmp, ignore_errors=True)
             return False
 
         # STEP 7 — Burn captions onto hook section
-        hook_captioned = tmp_dir / "hook_captioned.mp4"
-        print("[editor] step 7/9: burning captions")
-        if not burn_caption(str(hook_with_audio), hook_text, str(hook_captioned)):
-            shutil.rmtree(tmp_dir, ignore_errors=True)
+        hook_captioned = tmp / "hook_captioned.mp4"
+        success = burn_caption(str(hook_with_audio), hook_text, str(hook_captioned))
+        if not success:
+            shutil.rmtree(tmp, ignore_errors=True)
             return False
 
-        # STEP 8 — Trim reveal section
-        reveal_dur = (end_time - start_time) - hook_dur
-        if reveal_dur <= 0:
-             reveal_dur = 0.1 # Minimal duration
-        reveal = tmp_dir / "reveal.mp4"
-        print(f"[editor] step 8/9: trimming reveal ({reveal_dur:.1f}s)")
-        if not trim_clip(str(vertical), reveal_start, reveal_dur, str(reveal)):
-            shutil.rmtree(tmp_dir, ignore_errors=True)
+        # STEP 8 — Trim reveal section (after hook_dur to end)
+        reveal_dur = clip_duration - hook_dur
+        reveal = tmp / "reveal.mp4"
+        success = trim_clip(str(vertical), hook_dur, reveal_dur, str(reveal))
+        if not success:
+            shutil.rmtree(tmp, ignore_errors=True)
             return False
 
         # STEP 9 — Concatenate hook + reveal
-        print("[editor] step 9/9: concatenating final short")
-        if not concatenate_clips(str(hook_captioned), str(reveal), output_path):
-            shutil.rmtree(tmp_dir, ignore_errors=True)
+        success = concatenate_clips(str(hook_captioned), str(reveal), output_path)
+        if not success:
+            shutil.rmtree(tmp, ignore_errors=True)
             return False
 
-        # Cleanup
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-        print(f"[editor] short built: {output_path}")
+        # CLEANUP
+        shutil.rmtree(tmp, ignore_errors=True)
+        print(f"[editor] short built: {output_path} ({clip_duration:.1f}s)")
         return True
+
     except Exception as e:
+        shutil.rmtree(tmp, ignore_errors=True)
         print(f"[editor] build_short error: {e}")
         return False
 

@@ -56,7 +56,7 @@ def get_video_details(youtube, video_ids: list[str]) -> list[dict]:
         results = []
         channel_ids_map = {}  # channel_id -> list of result indices
 
-        # Process in chunks of 50
+        # Process in batches of 50
         for i in range(0, len(video_ids), 50):
             chunk = video_ids[i:i + 50]
             try:
@@ -209,6 +209,40 @@ def get_top_videos(api_key: str, tier_name: str, limit: int = 5) -> list[dict]:
         return top
     except Exception as e:
         print(f"[search] error in get_top_videos: {e}")
+        return []
+
+
+def fetch_comments(video_id: str, api_key: str) -> list[dict]:
+    """Fetch top comment threads for a video using YouTube Data API."""
+    try:
+        from googleapiclient.discovery import build
+        youtube = build_youtube(api_key)
+        if not youtube:
+            return []
+
+        print(f"[search] fetching comments for video: {video_id}")
+        response = youtube.commentThreads().list(
+            part="snippet",
+            videoId=video_id,
+            textFormat="plainText",
+            maxResults=100
+        ).execute()
+
+        comments = []
+        for item in response.get("items", []):
+            try:
+                snippet = item["snippet"]["topLevelComment"]["snippet"]
+                comments.append({
+                    "text": snippet.get("textDisplay", ""),
+                    "like_count": int(snippet.get("likeCount", 0)),
+                    "published_at": snippet.get("publishedAt", "")
+                })
+            except Exception:
+                continue
+        print(f"[search] fetched {len(comments)} comments for {video_id}")
+        return comments
+    except Exception as e:
+        print(f"[search] error fetching comments: {e}")
         return []
 
 
