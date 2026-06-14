@@ -127,6 +127,12 @@ def get_video_details(youtube, video_ids: list[str]) -> list[dict]:
 def is_eligible(video: dict, tier: dict) -> bool:
     """Check if video meets all eligibility criteria for the given tier."""
     try:
+        # Block Rockstar Games official channels to avoid copying original source directly
+        ch_title = video.get("channel_title", "").lower()
+        if "rockstar games" in ch_title or "rockstargames" in ch_title:
+            print(f"[search] blocked video {video.get('video_id')} from Rockstar Games channel: {video.get('channel_title')}")
+            return False
+
         published_at = video.get("published_at", "")
         # Remove 'Z' for fromisoformat and ensure it's UTC
         published_dt = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
