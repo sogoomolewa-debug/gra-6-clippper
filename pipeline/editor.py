@@ -70,12 +70,12 @@ def crop_to_vertical(input_path: str, output_path: str) -> bool:
         cmd = [
             "ffmpeg", "-y", "-i", input_path,
             "-vf", "scale=-2:1920,crop=1080:1920",
-            "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+            "-c:v", "libx264", "-preset", "superfast", "-crf", "23",
             "-c:a", "aac",
             output_path
         ]
         print("[editor] cropping to vertical 1080x1920")
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         if result.returncode != 0:
             print(f"[editor] crop error: {result.stderr.strip()[:500]}")
             return False
@@ -92,12 +92,12 @@ def trim_clip(input_path: str, start: float, duration: float, output_path: str) 
             "ffmpeg", "-y",
             "-ss", str(start), "-t", str(duration),
             "-i", input_path,
-            "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+            "-c:v", "libx264", "-preset", "superfast", "-crf", "23",
             "-c:a", "aac",
             output_path
         ]
         print(f"[editor] trimming: start={start:.1f}s duration={duration:.1f}s")
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         if result.returncode != 0:
             print(f"[editor] trim error: {result.stderr.strip()[:500]}")
             return False
@@ -113,12 +113,12 @@ def apply_blur(input_path: str, output_path: str) -> bool:
         cmd = [
             "ffmpeg", "-y", "-i", input_path,
             "-vf", "boxblur=20:5",
-            "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+            "-c:v", "libx264", "-preset", "superfast", "-crf", "23",
             "-c:a", "aac",
             output_path
         ]
         print("[editor] applying blur")
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         if result.returncode != 0:
             print(f"[editor] blur error: {result.stderr.strip()[:500]}")
             return False
@@ -164,12 +164,12 @@ def burn_caption(input_path: str, text: str, output_path: str) -> bool:
         cmd = [
             "ffmpeg", "-y", "-i", input_path,
             "-vf", drawtext_filter,
-            "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+            "-c:v", "libx264", "-preset", "superfast", "-crf", "23",
             "-c:a", "copy",
             output_path
         ]
         print(f"[editor] burning caption: {text}")
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         if result.returncode != 0:
             print(f"[editor] caption error: {result.stderr.strip()[:500]}")
             return False
@@ -193,12 +193,12 @@ def concatenate_clips(clip1: str, clip2: str, output_path: str) -> bool:
             "ffmpeg", "-y",
             "-f", "concat", "-safe", "0",
             "-i", str(tmp_list_path),
-            "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+            "-c:v", "libx264", "-preset", "superfast", "-crf", "23",
             "-c:a", "aac",
             output_path
         ]
         print("[editor] concatenating clips")
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
 
         # Cleanup list file
         try:
