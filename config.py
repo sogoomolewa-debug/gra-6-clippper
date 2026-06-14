@@ -48,8 +48,37 @@ CLIP = {
 
 TTS = {
     "voice_sample_path": "assets/voice_sample.wav",
-    "modal_timeout_seconds": 90
+    "modal_timeout_seconds": 90,
+    "breath_pad_ms": 200,           # silence before speech starts
+    "chunk_gap_ms": 280,            # silence between chunks
+    "speed_suspense": 0.85,         # slower for build-up chunks
+    "speed_reveal": 1.08,           # faster for payoff chunks
+    "speed_default": 0.95,          # neutral speed
 }
+
+# Rotating hook delivery styles to break the AI pattern
+HOOK_STYLES = [
+    {
+        "name": "shocked",
+        "instruction": "React like you just witnessed something unbelievable. Use a dramatic pause before the reveal.",
+        "example": "Wait... they actually LANDED on the helicopter",
+    },
+    {
+        "name": "deadpan",
+        "instruction": "State the fact calmly, almost dismissively, then let the absurdity speak for itself.",
+        "example": "So this guy just... drove off a cliff and survived",
+    },
+    {
+        "name": "hype",
+        "instruction": "Pure energy and disbelief. Short punchy fragments with emphasis on the action word.",
+        "example": "Bro WHAT... the car just flew across the map",
+    },
+    {
+        "name": "storyteller",
+        "instruction": "Set up a mini-narrative tension. Make the viewer feel like they're about to hear a secret.",
+        "example": "Nobody talks about this... but watch what happens NEXT",
+    },
+]
 
 UPLOAD = {
     "limit_per_run": 1,
