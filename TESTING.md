@@ -87,8 +87,9 @@ Once all individual modules pass, run the full orchestrator:
 2.  **Verification Steps**:
     *   Check `data/queue.json`: Is it populated with new search results?
     *   Check `data/performance_log.json`: Is the new Short logged?
-    *   Check `/tmp/short_*.mp4`: Is the final video output correct?
+    *   Check `scratch/final_test_output.mp4`: Is the final video output correct?
     *   Check `git status`: Are the data files ready to be committed?
+3.  **Current Status**: **PASS** (E2E dry-run successfully ran, verified all AI models and compiled the final 9:16 vertical video at `scratch/final_test_output.mp4`).
 
 ---
 
