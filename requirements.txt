@@ -12,3 +12,4 @@ librosa
 soundfile
 numpy
 groq
+yt-dlp-ejs
