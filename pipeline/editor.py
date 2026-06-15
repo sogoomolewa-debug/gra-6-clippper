@@ -135,7 +135,7 @@ def apply_blur(input_path: str, output_path: str) -> bool:
     """Apply heavy blur to a video clip."""
     cmd = [
         "ffmpeg", "-y", "-i", input_path,
-        "-vf", "boxblur=20:5",
+        "-vf", "gblur=sigma=20:steps=3",
         "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
         "-c:a", "copy",
         output_path
@@ -163,6 +163,30 @@ def replace_audio(
     return run_ffmpeg(cmd, "replace_audio")
 
 
+def wrap_text_by_chars(text: str, max_chars: int = 18) -> str:
+    """Wrap text into multiple lines by character count, splitting at word boundaries."""
+    try:
+        words = text.split()
+        lines = []
+        current_line = []
+        current_len = 0
+        for word in words:
+            if current_len + len(word) + (1 if current_line else 0) > max_chars:
+                if current_line:
+                    lines.append(" ".join(current_line))
+                current_line = [word]
+                current_len = len(word)
+            else:
+                current_line.append(word)
+                current_len += len(word) + (1 if len(current_line) > 1 else 0)
+        if current_line:
+            lines.append(" ".join(current_line))
+        return "\n".join(lines)
+    except Exception as e:
+        print(f"[editor] text wrap error: {e}")
+        return text
+
+
 def burn_caption(
     input_path: str,
     text: str,
@@ -170,14 +194,37 @@ def burn_caption(
 ) -> bool:
     """Burn caption text onto video."""
     try:
+        font_path = config.CLIP.get("font_path", "assets/Oswald-Bold.ttf")
+        font_path_abs = str(pathlib.Path(font_path).absolute())
+        
+        fontsize = config.CLIP.get("font_size_hook", 90)
+        outline_w = config.CLIP.get("caption_outline_width", 6)
+        outline_color = config.CLIP.get("caption_outline_color", "black")
+        shadow_x = config.CLIP.get("caption_shadow_x", 3)
+        shadow_y = config.CLIP.get("caption_shadow_y", 3)
+        shadow_color = config.CLIP.get("caption_shadow_color", "black")
+        hook_caps = config.CLIP.get("hook_caps", True)
+        
+        if hook_caps:
+            text = text.upper()
+            
+        wrapped_text = wrap_text_by_chars(text, max_chars=18)
+        
         # Escape special characters for ffmpeg drawtext
-        escaped = text.replace("'", "\\'").replace(":", "\\:")
+        escaped = wrapped_text.replace("'", "\\'").replace(":", "\\:")
+        
         drawtext = (
             f"drawtext=text='{escaped}':"
-            f"fontsize=55:fontcolor=white:"
-            f"x=(w-text_w)/2:y=h-180:"
-            f"box=1:boxcolor=black@0.6:boxborderw=12:"
-            f"line_spacing=10"
+            f"fontfile='{font_path_abs}':"
+            f"fontsize={fontsize}:"
+            f"fontcolor=white:"
+            f"borderw={outline_w}:"
+            f"bordercolor={outline_color}:"
+            f"shadowx={shadow_x}:"
+            f"shadowy={shadow_y}:"
+            f"shadowcolor={shadow_color}:"
+            f"x=(w-text_w)/2:y=(h-text_h)/2:"
+            f"line_spacing=15"
         )
         cmd = [
             "ffmpeg", "-y", "-i", input_path,

@@ -43,7 +43,17 @@ CLIP = {
     "max_duration_seconds": 55,
     "hook_duration_seconds": 3,
     "output_width": 1080,
-    "output_height": 1920
+    "output_height": 1920,
+    "font_path": "assets/Oswald-Bold.ttf",
+    "font_size_hook": 90,
+    "font_size_reveal": 65,
+    "caption_outline_width": 6,
+    "caption_outline_color": "black",
+    "caption_shadow_x": 3,
+    "caption_shadow_y": 3,
+    "caption_shadow_color": "black",
+    "hook_caps": True,
+    "safe_zone_margin_bottom": 220
 }
 
 TTS = {
