@@ -69,6 +69,41 @@
         }
       },
       "notes": ""
+    },
+    {
+      "short_id": "dryrun_bfCmNQ1o9AM",
+      "uploaded_at": "2026-06-15T23:46:36.180267Z",
+      "source_video_id": "bfCmNQ1o9AM",
+      "source_type": "gta6",
+      "hook_text": "Gorilla just jumped off a skyscraper with FRANKLIN on him...",
+      "hook_word_count": 10,
+      "peak_start": 668.0,
+      "peak_position_pct": 67.9,
+      "clip_duration": 45.0,
+      "visual_description": "A gorilla carrying Franklin on its shoulders leaps off a high platform and flies through the sky over a city.",
+      "natural_boundaries_used": true,
+      "peak_signal": "comments",
+      "peak_sec": 673,
+      "global_start": 668.0,
+      "global_end": 713.0,
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      },
+      "notes": ""
     }
   ]
 }
