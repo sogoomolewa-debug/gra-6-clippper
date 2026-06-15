@@ -27,7 +27,3 @@ share/python-wheels/
 venv/
 ENV/
 env/
-
-# Project specifics
-.env
-scratch/
