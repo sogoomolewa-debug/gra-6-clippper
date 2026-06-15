@@ -35,15 +35,15 @@ This guide outlines how to manually verify every stage of the pipeline to ensure
 *   **Expected Result**: A block of text representing the dialogue around the 45-second mark.
 *   **Current Status**: **PASS** (Successfully downloads and parses JSON3 transcripts).
 
-### 4. Clip Analysis (Qwen2.5-VL)
-*   **Goal**: Verify video chunk downloading and Qwen2.5-VL visual analysis via Modal.
+### 4. Clip Analysis (Gemini 2.5 Flash)
+*   **Goal**: Verify video chunk downloading and Gemini 2.5 Flash visual analysis via File API.
 *   **Command**:
     ```bash
     set -a; source .env; set +a
     python3 -m pipeline.clip_analyzer "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 10.0
     ```
 *   **Expected Result**: Visual description of the clip and boundaries returned as JSON.
-*   **Current Status**: **PASS** (Qwen2.5-VL Modal backend responds successfully with visual descriptions and natural clip boundaries).
+*   **Current Status**: **NEEDS RETEST** (Migrated from Modal Qwen2.5-VL to Gemini 2.5 Flash — requires verification with valid GEMINI_API_KEY).
 
 ### 5. Hook Generation (Groq Llama 3.3)
 *   **Goal**: Verify Groq writes a valid hook (< 12 words, no emojis) with two-stage delivery markup (pauses, emphasis).

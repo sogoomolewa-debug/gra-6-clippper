@@ -1,15 +1,16 @@
-# pipeline/clip_analyzer.py — Downloads clip segment and calls the Modal video analysis endpoint
-# BUG 1 FIX: Passes comment_context to Modal so Qwen focuses on comment-identified moment
-# BUG 4 FIX: Clamps natural boundaries to config max_duration_seconds immediately after Qwen returns
+# pipeline/clip_analyzer.py — Downloads clip segment and analyzes via Gemini 2.5 Flash
+# BUG 1 FIX: Passes comment_context so Gemini focuses on comment-identified moment
+# BUG 4 FIX: Clamps natural boundaries to config max_duration_seconds immediately after Gemini returns
 
-import base64
+from google import genai
 import os
 import subprocess
 import pathlib
 import tempfile
-import requests
-import sys
 import shutil
+import time
+import re
+import sys
 
 import config
 
@@ -70,55 +71,98 @@ def get_segment_duration(video_path: str) -> float:
         return 120.0
 
 
-def call_video_endpoint(
-    video_path: str,
+def upload_to_gemini(video_path: str) -> object | None:
+    """Upload video segment to Gemini File API, wait for processing."""
+    try:
+        print("[analyzer] uploading segment to Gemini…")
+        video_file = client.files.upload(file=video_path)
+        waited = 0
+        max_wait = 120
+        while True:
+            file_info = client.files.get(name=video_file.name)
+            if file_info.state.name == "ACTIVE":
+                break
+            elif file_info.state.name == "FAILED":
+                print("[analyzer] Gemini file processing failed")
+                return None
+            time.sleep(3)
+            waited += 3
+            if waited >= max_wait:
+                print("[analyzer] Gemini processing timeout")
+                return None
+        print(f"[analyzer] Gemini file ready: {video_file.name}")
+        return file_info
+    except Exception as e:
+        print(f"[analyzer] Gemini upload error: {e}")
+        return None
+
+
+def analyze_with_gemini(
+    video_file: object,
     peak_sec_local: float,
     segment_duration: float,
     comment_context: str
 ) -> dict:
-    """Call Modal Qwen2.5-VL video understanding endpoint with comment context."""
-    fallback = {
-        "description": "",
-        "natural_start": max(0.0, peak_sec_local - 8.0),
-        "natural_end": max(0.0, peak_sec_local - 8.0) + 52.0,
-        "error": "endpoint failed"
-    }
+    """
+    Ask Gemini two questions about the video segment.
+    Returns: {"description": str, "natural_start": float, "natural_end": float}
+    """
     try:
-        endpoint = os.environ.get("MODAL_VIDEO_ENDPOINT", "")
-        if not endpoint:
-            print("[analyzer] error: MODAL_VIDEO_ENDPOINT env var not set")
-            fallback["error"] = "MODAL_VIDEO_ENDPOINT not set"
-            return fallback
+        # QUESTION 1 — Describe the peak moment using comment as anchor
+        prompt_q1 = (
+            f"This is a GTA 6 gameplay video. "
+            f"A viewer left this comment about what happens at {peak_sec_local:.0f} seconds: "
+            f"'{comment_context}'. "
+            f"Describe in ONE specific sentence exactly what visually happens at that "
+            f"timestamp. Focus ONLY on that moment — ignore everything else."
+        )
+        response_q1 = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[video_file, prompt_q1]
+        )
+        description = response_q1.text.strip()
+        print(f"[analyzer] description: {description}")
 
-        # Read video file as bytes and base64 encode
-        path = pathlib.Path(video_path)
-        if not path.exists():
-            print(f"[analyzer] video file not found: {video_path}")
-            return fallback
+        # QUESTION 2 — Find natural clip boundaries
+        prompt_q2 = (
+            f"This GTA 6 gameplay video is {segment_duration:.0f} seconds long. "
+            f"A viewer described what happens at {peak_sec_local:.0f} seconds: '{comment_context}'. "
+            f"Find where this action NATURALLY BEGINS (setup before the peak) "
+            f"and NATURALLY ENDS (after full reaction completes). "
+            f"Requirements: window must be 45-55 seconds long, "
+            f"peak at {peak_sec_local:.0f}s must be inside the window. "
+            f"Reply with ONLY two numbers separated by comma: start_second,end_second "
+            f"Example: 22,74 — No explanation. Just the two numbers."
+        )
+        response_q2 = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[video_file, prompt_q2]
+        )
+        boundary_text = response_q2.text.strip()
+        print(f"[analyzer] raw boundaries: {boundary_text}")
 
-        video_bytes = path.read_bytes()
-        video_b64 = base64.b64encode(video_bytes).decode("utf-8")
+        # Parse boundaries
+        numbers = re.findall(r'\d+\.?\d*', boundary_text)
+        if len(numbers) >= 2:
+            natural_start = float(numbers[0])
+            natural_end = float(numbers[1])
+        else:
+            print("[analyzer] boundary parse failed, using smart offset")
+            natural_start = max(0.0, peak_sec_local - 8.0)
+            natural_end = natural_start + 52.0
 
-        payload = {
-            "video_b64": video_b64,
-            "peak_sec_local": peak_sec_local,
-            "segment_duration": segment_duration,
-            "comment_context": comment_context
+        return {
+            "description": description,
+            "natural_start": natural_start,
+            "natural_end": natural_end
         }
-
-        print(f"[analyzer] calling Modal endpoint at: {endpoint}")
-        print(f"[analyzer] comment context: {comment_context[:80]}...")
-        response = requests.post(endpoint, json=payload, timeout=180)
-        if response.status_code != 200:
-            print(f"[analyzer] endpoint error {response.status_code}: {response.text[:500]}")
-            fallback["error"] = f"status {response.status_code}"
-            return fallback
-
-        return response.json()
     except Exception as e:
-        print(f"[analyzer] endpoint call failed: {e}")
-        fallback["error"] = str(e)
-        return fallback
+        print(f"[analyzer] Gemini analysis error: {e}")
+        return {
+            "description": "",
+            "natural_start": max(0.0, peak_sec_local - 8.0),
+            "natural_end": max(0.0, peak_sec_local - 8.0) + 52.0
+        }
 
 
 def clamp_boundaries(
@@ -169,10 +213,10 @@ def analyze_clip(
 ) -> dict:
     """
     Downloads a video segment (peak-30s to peak+90s) and gets visual description
-    and natural clip boundaries from Qwen2.5-VL via Modal.
+    and natural clip boundaries from Gemini 2.5 Flash.
 
-    BUG 1 FIX: Passes comment_context so Qwen focuses on the right moment.
-    BUG 4 FIX: Clamps boundaries via clamp_boundaries() immediately after Qwen returns.
+    BUG 1 FIX: Passes comment_context so Gemini focuses on the right moment.
+    BUG 4 FIX: Clamps boundaries via clamp_boundaries() immediately after Gemini returns.
 
     Returns:
     {
@@ -184,8 +228,17 @@ def analyze_clip(
     if timestamp_comments is None:
         timestamp_comments = []
 
+    def fallback(reason: str) -> dict:
+        print(f"[analyzer] {reason} — using smart offset fallback")
+        fallback_start = max(0.0, peak_sec_global - 8.0)
+        return {
+            "description": "",
+            "global_start": fallback_start,
+            "global_end": fallback_start + float(config.CLIP["max_duration_seconds"])
+        }
+
     try:
-        # Build comment context string for Qwen — use highest-liked comment
+        # Build comment context string for Gemini — use highest-liked comment
         comment_context = "an interesting gameplay moment"
         if timestamp_comments:
             top_comments = sorted(
@@ -210,18 +263,33 @@ def analyze_clip(
 
         if not success:
             shutil.rmtree(str(tmp), ignore_errors=True)
-            print("[analyzer] download failed — using smart offset fallback")
-            fallback_start = max(0.0, peak_sec_global - 8.0)
-            return {
-                "description": "",
-                "global_start": fallback_start,
-                "global_end": fallback_start + float(config.CLIP["max_duration_seconds"])
-            }
+            return fallback("download failed")
 
         actual_duration = get_segment_duration(segment_path)
-        result = call_video_endpoint(segment_path, peak_sec_local, actual_duration, comment_context)
 
-        shutil.rmtree(str(tmp), ignore_errors=True)
+        video_file = upload_to_gemini(segment_path)
+        shutil.rmtree(str(tmp), ignore_errors=True)  # Delete local segment after upload
+
+        if video_file is None:
+            return fallback("Gemini upload failed")
+
+        try:
+            result = analyze_with_gemini(
+                video_file, peak_sec_local, actual_duration, comment_context
+            )
+        except Exception as e:
+            print(f"[analyzer] Gemini analysis error: {e}")
+            result = {
+                "description": "",
+                "natural_start": max(0.0, peak_sec_local - 8.0),
+                "natural_end": max(0.0, peak_sec_local - 8.0) + 52.0
+            }
+        finally:
+            try:
+                client.files.delete(name=video_file.name)
+                print(f"[analyzer] deleted Gemini file: {video_file.name}")
+            except:
+                pass
 
         # BUG 4 FIX: Clamp local boundaries immediately
         local_start, local_end = clamp_boundaries(
@@ -252,6 +320,10 @@ def analyze_clip(
             "global_start": fallback_start,
             "global_end": fallback_start + float(config.CLIP["max_duration_seconds"])
         }
+
+
+# Module-level Gemini setup
+client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 
 if __name__ == "__main__":

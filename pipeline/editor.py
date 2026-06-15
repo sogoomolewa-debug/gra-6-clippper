@@ -303,6 +303,13 @@ def build_short(
 
         reveal_raw = tmp / "reveal_raw.mp4"
 
+        # Dynamically calculate the maximum allowed reveal duration so that the total
+        # combined duration (hook + reveal) does not exceed 59.0 seconds.
+        max_total_dur = 59.0
+        allowed_reveal_dur = max_total_dur - hook_dur
+        reveal_dur = min(global_end - global_start, allowed_reveal_dur)
+        print(f"[editor] allowed reveal duration to stay under {max_total_dur}s: {allowed_reveal_dur:.2f}s (using {reveal_dur:.2f}s)")
+
         if cached_video_path and pathlib.Path(cached_video_path).exists():
             # Cached file IS the actual clip — use directly
             import shutil as sh
@@ -311,14 +318,14 @@ def build_short(
         else:
             # Download actual clip from global_start — clean natural boundary
             # BUG 2 FIX: starts at global_start so viewer gets full context
-            if not download_clip(video_url, global_start, global_end, str(reveal_raw)):
+            if not download_clip(video_url, global_start, global_start + reveal_dur, str(reveal_raw)):
                 shutil.rmtree(str(tmp), ignore_errors=True)
                 return False
 
         # Trim reveal to the correct window before cropping
         reveal_trimmed_raw = tmp / "reveal_trimmed_raw.mp4"
         if cached_video_path and pathlib.Path(cached_video_path).exists():
-            if not trim_clip(str(reveal_raw), global_start, global_end - global_start, str(reveal_trimmed_raw)):
+            if not trim_clip(str(reveal_raw), global_start, reveal_dur, str(reveal_trimmed_raw)):
                 shutil.rmtree(str(tmp), ignore_errors=True)
                 return False
         else:

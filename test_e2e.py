@@ -271,33 +271,47 @@ def run_e2e_test() -> None:
     video_duration = clip_analyzer.get_segment_duration(CACHED_VIDEO_PATH)
     print(f"[test] Cached video duration: {video_duration:.2f}s")
 
-    # 2. Call Qwen VL endpoint to discover boundaries & description
-    print("\n[test] 1. Discovering viral moment via Qwen VL video endpoint...")
+    # 2. Call Gemini 2.5 Flash to discover boundaries & description
+    print("\n[test] 1. Discovering viral moment via Gemini 2.5 Flash...")
     peak_sec_local = 30.0
     comment_context = "the money glitch is insane"
     
-    # Try calling endpoint
-    res = clip_analyzer.call_video_endpoint(
-        video_path=CACHED_VIDEO_PATH,
-        peak_sec_local=peak_sec_local,
-        segment_duration=video_duration,
-        comment_context=comment_context
-    )
+    # Upload to Gemini File API, then analyze
+    video_file = clip_analyzer.upload_to_gemini(CACHED_VIDEO_PATH)
     
     description_text = ""
-    if "error" in res and res["error"]:
-        print(f"[test] ⚠️ Qwen VL endpoint call failed: {res['error']}")
+    if video_file is None:
+        print("[test] ⚠️ Gemini upload failed.")
         print("[test] Using fallback boundaries & description for E2E validation.")
         natural_start = 22.0
         natural_end = 74.0
         description_text = "A player shows an inventory screen with a huge amount of glitched money."
     else:
-        print("[test] ✓ Qwen VL endpoint succeeded.")
-        natural_start = res["natural_start"]
-        natural_end = res["natural_end"]
-        description_text = res.get("description", "")
-        print(f"[test] Raw boundaries returned: {natural_start}s → {natural_end}s")
-        print(f"[test] Description: {description_text}")
+        try:
+            res = clip_analyzer.analyze_with_gemini(
+                video_file=video_file,
+                peak_sec_local=peak_sec_local,
+                segment_duration=video_duration,
+                comment_context=comment_context
+            )
+            print("[test] ✓ Gemini analysis succeeded.")
+            natural_start = res["natural_start"]
+            natural_end = res["natural_end"]
+            description_text = res.get("description", "")
+            print(f"[test] Raw boundaries returned: {natural_start}s → {natural_end}s")
+            print(f"[test] Description: {description_text}")
+        except Exception as e:
+            print(f"[test] ⚠️ Gemini analysis error: {e}")
+            print("[test] Using fallback boundaries & description for E2E validation.")
+            natural_start = 22.0
+            natural_end = 74.0
+            description_text = "A player shows an inventory screen with a huge amount of glitched money."
+        finally:
+            try:
+                clip_analyzer.client.files.delete(name=video_file.name)
+                print(f"[test] deleted Gemini file: {video_file.name}")
+            except:
+                pass
 
     # Clamp boundaries
     local_start, local_end = clip_analyzer.clamp_boundaries(

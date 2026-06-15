@@ -39,6 +39,6 @@ jobs:
           YOUTUBE_OAUTH_JSON: ${{ secrets.YOUTUBE_OAUTH_JSON }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           MODAL_TTS_ENDPOINT: ${{ secrets.MODAL_TTS_ENDPOINT }}
-          MODAL_VIDEO_ENDPOINT: ${{ secrets.MODAL_VIDEO_ENDPOINT }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           REF_TEXT: ${{ secrets.REF_TEXT }}
         run: python pipeline.py

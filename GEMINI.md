@@ -5,7 +5,7 @@ This document serves as a comprehensive guide for any AI agent or developer taki
 ## Current Project Status
 - **Core Engine**: Fully implemented in `pipeline/*.py`. All modules follow the "Universal Rules" (try/except, strict logging, pathlib).
 *   **Infrastructure**: Qwen3-TTS voice cloning backend deployed on Modal with speed control.
-*   **Visual Analysis**: Qwen2.5-VL-7B deployed on Modal for clip scene understanding.
+*   **Visual Analysis**: Gemini 2.5 Flash API for clip scene understanding (migrated from Modal Qwen2.5-VL).
 *   **Hook Generation**: Two-stage LLM pipeline (Groq/Llama 3.3 70B) with delivery markup for natural TTS.
 *   **Voice Synthesis**: Chunk-based TTS — hooks are split at delivery markers, each chunk synthesized at different speeds, then stitched with silence gaps for natural rhythm.
 *   **Automation**: GitHub Actions workflows created for daily processing and weekly performance tracking.
@@ -18,7 +18,7 @@ This document serves as a comprehensive guide for any AI agent or developer taki
 The pipeline follows a **Search → Analyze → Generate → Compose → Upload** flow:
 1.  **Search**: `pipeline/search.py` finds viral long-form videos based on tiered queries (GTA 6 primary, GTA 5 fallback). Filters out Rockstar Games channel.
 2.  **Heatmap**: `pipeline/heatmap.py` uses comments, audio energy, yt-dlp heatmap, and 30% fallback to find the viral moment.
-3.  **Clip Analysis**: `pipeline/clip_analyzer.py` sends the peak segment to Qwen2.5-VL-7B (Modal) for visual scene description.
+3.  **Clip Analysis**: `pipeline/clip_analyzer.py` uploads the peak segment to Gemini 2.5 Flash via the File API for visual scene description and boundary detection.
 4.  **Transcript**: `pipeline/transcript.py` pulls captions around the peak timestamp for AI context.
 5.  **Hook (Two-Stage)**:
     - Stage 1: `pipeline/hook.py` calls Groq (Llama 3.3 70B) to write a conversational hook using a randomly rotated style (shocked/deadpan/hype/storyteller).
@@ -32,6 +32,7 @@ The following environment variables are required in `.env` (local) and GitHub Se
 - `YOUTUBE_API_KEY`: For searching and stats fetching.
 - `YOUTUBE_OAUTH_JSON`: Full JSON string for OAuth2 (upload scope).
 - `GROQ_API_KEY`: For hook generation via Llama 3.3 70B.
+- `GEMINI_API_KEY`: For clip visual analysis via Gemini 2.5 Flash.
 - `MODAL_TTS_ENDPOINT`: `https://richardmarenco55--qwen3-tts-generate.modal.run`
 - `REF_TEXT`: `Disparity between the number of foreign and local patent application`
 - `YOUTUBE_COOKIES_PATH`: Path to Netscape-format cookies file for yt-dlp bot bypass.
@@ -45,7 +46,7 @@ The following environment variables are required in `.env` (local) and GitHub Se
 ├── pipeline/            # Core Python modules
 │   ├── search.py        # Video discovery + Rockstar filter
 │   ├── heatmap.py       # Viral moment detection (4 signals)
-│   ├── clip_analyzer.py # Qwen2.5-VL visual analysis
+│   ├── clip_analyzer.py # Gemini 2.5 Flash visual analysis
 │   ├── transcript.py    # Caption extraction
 │   ├── hook.py          # Two-stage hook generation + delivery markup
 │   ├── voice.py         # Chunk-based TTS synthesis + WAV stitching

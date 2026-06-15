@@ -29,13 +29,12 @@ This document tracks the iterative development and verification of the GTA6 Shor
     *   Verified the **Tiered Search logic**: Correctly filtered 36 results down to 10 high-quality viral candidates.
     *   Top candidates identified (e.g., videos with 200k+ views in < 48h).
 
-### ✅ 4. Intelligence & Extraction (Qwen2.5-VL video analyzer on Modal)
-*   **Status**: **COMPLETE & VERIFIED**
+### ✅ 4. Intelligence & Extraction (Gemini 2.5 Flash visual analysis)
+*   **Status**: **COMPLETE & MIGRATED**
 *   **Details**:
     *   **YouTube Bot Bypass**: Configured cookie authentication (`cookies.txt` support) across all downloader scripts.
     *   **Signature Decryption**: Installed `yt-dlp-ejs` and implemented dynamic Node.js JS runtime lookup using `shutil.which("node")` to solve YouTube's n-challenges.
-    *   **H.264 Format Lock**: Restricted downloads to `vcodec=avc1` (H.264) and `acodec=mp4a` (AAC) to ensure compatibility with `decord` on Modal.
-    *   **Visual Analysis Endpoint**: Deployed Qwen2.5-VL-7B-Instruct to Modal GPU. It successfully downloads segments, reads frames via `decord`, and describes the visual peak action + natural clip boundaries. Tested successfully on the official GTA 6 Trailer.
+    *   **Visual Analysis**: Migrated from Modal Qwen2.5-VL-7B to **Gemini 2.5 Flash API**. Uploads video segments via Gemini File API, asks two targeted questions (scene description + natural clip boundaries), then cleans up the uploaded file. No GPU deployment needed.
 
 ### ✅ 5. AI Reasoning (Groq Hook)
 *   **Status**: **COMPLETE & VERIFIED**
