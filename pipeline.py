@@ -176,7 +176,8 @@ def run_pipeline() -> None:
         analysis = clip_analyzer.analyze_clip(
             video_url=video["url"],
             peak_sec_global=float(peak_sec),
-            video_duration=duration
+            video_duration=duration,
+            timestamp_comments=timestamp_comments
         )
         global_start = analysis["global_start"]
         global_end = analysis["global_end"]

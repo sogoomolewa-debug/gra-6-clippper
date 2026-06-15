@@ -42,7 +42,8 @@ def analyze_clip(request: dict) -> dict:
     {
         "video_b64": str,          # base64 encoded mp4 segment
         "peak_sec_local": float,   # peak timestamp within THIS segment (not global)
-        "segment_duration": float  # total duration of the segment in seconds
+        "segment_duration": float, # total duration of the segment in seconds
+        "comment_context": str     # viewer comment describing the viral moment
     }
     Output:
     {
@@ -72,6 +73,7 @@ def analyze_clip(request: dict) -> dict:
 
     peak_local = float(request["peak_sec_local"])
     segment_dur = float(request["segment_duration"])
+    comment_context = request.get("comment_context", "an interesting gameplay moment")
 
     try:
         # Load model
@@ -86,7 +88,7 @@ def analyze_clip(request: dict) -> dict:
             max_pixels=512*28*28
         )
 
-        # --- QUESTION 1: Describe the peak moment ---
+        # --- QUESTION 1: Describe the peak moment (guided by comment context) ---
         q1_messages = [
             {
                 "role": "user",
@@ -101,9 +103,11 @@ def analyze_clip(request: dict) -> dict:
                         "type": "text",
                         "text": (
                             f"This is a GTA 6 gameplay video segment. "
-                            f"Focus on what happens at approximately {peak_local:.0f} seconds into this clip. "
-                            f"Describe in ONE specific sentence what the most shocking, funny, or impressive "
-                            f"thing that happens is. Be specific about the action — not generic."
+                            f"At approximately {peak_local:.0f} seconds into this clip, "
+                            f"viewers left this comment: '{comment_context}'. "
+                            f"Based on that comment, describe in ONE sentence exactly what visually "
+                            f"happens at that specific timestamp. "
+                            f"Focus ONLY on that moment — ignore everything else in the clip."
                         )
                     }
                 ]
@@ -129,7 +133,7 @@ def analyze_clip(request: dict) -> dict:
             skip_special_tokens=True
         ).strip()
 
-        # --- QUESTION 2: Find natural boundaries ---
+        # --- QUESTION 2: Find natural boundaries (guided by comment context) ---
         q2_messages = [
             {
                 "role": "user",
@@ -144,13 +148,13 @@ def analyze_clip(request: dict) -> dict:
                         "type": "text",
                         "text": (
                             f"This GTA 6 gameplay clip is {segment_dur:.0f} seconds long. "
-                            f"The main action happens around {peak_local:.0f} seconds. "
-                            f"Identify where this action sequence NATURALLY BEGINS (when the setup starts) "
-                            f"and where it NATURALLY ENDS (when the reaction is complete). "
+                            f"A viewer described this moment at {peak_local:.0f} seconds: '{comment_context}'. "
+                            f"Find where this specific action NATURALLY BEGINS (the setup before it) "
+                            f"and where it NATURALLY ENDS (after the full reaction plays out). "
                             f"Reply with ONLY two numbers separated by a comma: start_second,end_second. "
-                            f"Example: 18,67 "
-                            f"The clip must be between 45 and 55 seconds long. "
-                            f"Do not explain. Just the two numbers."
+                            f"The window must be between 45 and 55 seconds long. "
+                            f"The peak moment at {peak_local:.0f}s must be INSIDE the window. "
+                            f"Do not explain. Just two numbers."
                         )
                     }
                 ]
