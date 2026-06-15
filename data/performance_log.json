@@ -104,6 +104,41 @@
         }
       },
       "notes": ""
+    },
+    {
+      "short_id": "dryrun_DsWKi3-sDDA",
+      "uploaded_at": "2026-06-15T23:52:28.908300Z",
+      "source_video_id": "DsWKi3-sDDA",
+      "source_type": "gta6",
+      "hook_text": "Dude they just leaked a 2027 RELEASE date for GTA 6...",
+      "hook_word_count": 11,
+      "peak_start": 165.0,
+      "peak_position_pct": 32.2,
+      "clip_duration": 52.0,
+      "visual_description": "",
+      "natural_boundaries_used": true,
+      "peak_signal": "comments",
+      "peak_sec": 173,
+      "global_start": 165.0,
+      "global_end": 217.0,
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      },
+      "notes": ""
     }
   ]
 }
