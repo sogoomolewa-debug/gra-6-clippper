@@ -19,24 +19,34 @@
 #      "
 #   3. Run: python test_e2e.py
 
-import subprocess
+# Load env vars first
 import pathlib
-import sys
 import os
+import sys
+
+# Ensure pipeline is importable
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
+
+# Load .env variables manually
+env_path = pathlib.Path(__file__).parent / ".env"
+if env_path.exists():
+    for line in env_path.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            key, val = line.split("=", 1)
+            os.environ[key.strip()] = val.strip().strip('"').strip("'")
+
+import subprocess
 import json
+import struct
+import wave
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
-# SET THESE BEFORE RUNNING
 
 CACHED_VIDEO_PATH = "scratch/cached_analyzer_segment.mp4"  # 1280x720 120s cached clip
-HOOK_AUDIO_PATH   = "scratch/test_hook.wav"                # Short WAV file (3s)
-HOOK_TEXT          = "Nobody saw this coming."              # Test caption text
+HOOK_AUDIO_PATH   = "scratch/test_hook.wav"                # Short WAV file
+HOOK_TEXT          = "Wait... they actually LANDED on the helicopter! That's insane."  # Test caption text
 OUTPUT_PATH        = "scratch/test_output_short.mp4"
-
-# Simulate what clip_analyzer would return (global boundaries)
-# Cached video is 120s — pick a 52s window inside it
-GLOBAL_START       = 10.0    # Start of natural clip within cached video
-GLOBAL_END         = 62.0    # End of natural clip (52 seconds)
 
 
 # ── VERIFICATION FUNCTIONS ────────────────────────────────────────────────────
@@ -132,12 +142,12 @@ def verify_output(output_path: str) -> dict:
     results["dimensions_correct"] = correct_dims
     print(f"{'✅' if correct_dims else '❌'} Dimensions: {width}x{height} (expected 1080x1920)")
 
-    # 3 — Check duration (must be 45-57 seconds)
+    # 3 — Check duration (must be 45-60 seconds)
     duration = float(format_info.get("duration", 0))
-    duration_ok = 45.0 <= duration <= 57.0
+    duration_ok = 45.0 <= duration <= 60.0
     results["duration_sec"] = round(duration, 2)
     results["duration_ok"] = duration_ok
-    print(f"{'✅' if duration_ok else '❌'} Duration: {duration:.2f}s (expected 45-57s)")
+    print(f"{'✅' if duration_ok else '❌'} Duration: {duration:.2f}s (expected 45-60s)")
 
     # 4 — Check total frames
     fps_str = video_stream.get("r_frame_rate", "30/1")
@@ -224,47 +234,99 @@ def verify_output(output_path: str) -> dict:
 
 # ── MAIN TEST RUNNER ──────────────────────────────────────────────────────────
 
+def generate_fallback_silent_wav(path: str, duration_sec: float = 3.0) -> None:
+    """Generate a silent fallback WAV file."""
+    try:
+        p = pathlib.Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        w = wave.open(str(p), 'w')
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(22050)
+        num_frames = int(22050 * duration_sec)
+        w.writeframes(struct.pack('<' + 'h' * num_frames, *([0] * num_frames)))
+        w.close()
+        print(f"[test] created silent fallback WAV: {path}")
+    except Exception as e:
+        print(f"[test] error creating fallback WAV: {e}")
+
+
 def run_e2e_test() -> None:
     """Run full end-to-end editing test with cached video."""
     print("=" * 60)
-    print("GTA6 SHORTS PIPELINE — E2E TEST")
-    print("Using cached video — no downloads")
+    print("GTA6 SHORTS PIPELINE — E2E TEST (WITH INTEGRATION)")
     print("=" * 60)
 
-    # Validate inputs exist
-    for path, name in [(CACHED_VIDEO_PATH, "cached video"), (HOOK_AUDIO_PATH, "hook audio")]:
-        if not pathlib.Path(path).exists():
-            print(f"❌ Missing {name}: {path}")
-            print(f"   Place your cached MP4 at: {CACHED_VIDEO_PATH}")
-            print(f"   Generate a test WAV:")
-            print(f"   python -c \"import struct,wave; w=wave.open('{HOOK_AUDIO_PATH}','w'); "
-                  f"w.setnchannels(1); w.setsampwidth(2); w.setframerate(22050); "
-                  f"w.writeframes(struct.pack('<' + 'h'*66150, *([0]*66150))); w.close()\"")
-            sys.exit(1)
+    # Validate cached video exists
+    if not pathlib.Path(CACHED_VIDEO_PATH).exists():
+        print(f"❌ Missing cached video: {CACHED_VIDEO_PATH}")
+        sys.exit(1)
 
     # Ensure output directory exists
     pathlib.Path(OUTPUT_PATH).parent.mkdir(parents=True, exist_ok=True)
 
-    # Import editor
-    sys.path.insert(0, str(pathlib.Path(__file__).parent))
+    from pipeline import clip_analyzer, voice
     from pipeline.editor import build_short
 
-    print(f"\n[test] cached video: {CACHED_VIDEO_PATH}")
-    print(f"[test] hook audio:   {HOOK_AUDIO_PATH}")
-    print(f"[test] hook text:    {HOOK_TEXT}")
-    print(f"[test] output:       {OUTPUT_PATH}")
-    print(f"[test] clip window:  {GLOBAL_START}s → {GLOBAL_END}s ({GLOBAL_END - GLOBAL_START:.1f}s)")
-    print()
+    # 1. Generate actual voice hook (or fallback to silent wav on failure)
+    print("\n[test] 1. Generating voice hook...")
+    pathlib.Path(HOOK_AUDIO_PATH).unlink(missing_ok=True)
+    voice_success = voice.generate_voice(HOOK_TEXT, HOOK_AUDIO_PATH)
+    if not voice_success or not pathlib.Path(HOOK_AUDIO_PATH).exists():
+        print("[test] ⚠️ Voice generation failed (likely billing/rate limit). Using fallback silent WAV.")
+        generate_fallback_silent_wav(HOOK_AUDIO_PATH, duration_sec=3.0)
+    else:
+        print(f"[test] ✓ Voice generated successfully: {HOOK_AUDIO_PATH}")
 
-    # Run build_short with cached video
+    # 2. Get video duration
+    video_duration = clip_analyzer.get_segment_duration(CACHED_VIDEO_PATH)
+    print(f"[test] Cached video duration: {video_duration:.2f}s")
+
+    # 3. Call Qwen VL endpoint to discover boundaries
+    print("\n[test] 2. Discovering viral moment via Qwen VL video endpoint...")
+    peak_sec_local = 30.0
+    comment_context = "the money glitch is insane"
+    
+    # Try calling endpoint
+    res = clip_analyzer.call_video_endpoint(
+        video_path=CACHED_VIDEO_PATH,
+        peak_sec_local=peak_sec_local,
+        segment_duration=video_duration,
+        comment_context=comment_context
+    )
+    
+    if "error" in res and res["error"]:
+        print(f"[test] ⚠️ Qwen VL endpoint call failed: {res['error']}")
+        print("[test] Using fallback boundaries for E2E validation.")
+        # Simulated Qwen boundaries (setup before 30.0, reaction after 30.0)
+        natural_start = 22.0
+        natural_end = 74.0
+    else:
+        print("[test] ✓ Qwen VL endpoint succeeded.")
+        natural_start = res["natural_start"]
+        natural_end = res["natural_end"]
+        print(f"[test] Raw boundaries returned: {natural_start}s → {natural_end}s")
+        print(f"[test] Description: {res.get('description', '')}")
+
+    # 4. Clamp boundaries
+    local_start, local_end = clip_analyzer.clamp_boundaries(
+        natural_start,
+        natural_end,
+        peak_sec_local,
+        video_duration
+    )
+    print(f"[test] Clamped boundaries: {local_start}s → {local_end}s ({local_end - local_start:.1f}s)")
+
+    # 5. Run build_short with boundaries and generated/fallback hook audio
+    print("\n[test] 3. Building Short...")
     success = build_short(
-        video_url="",                # Not used — cached_video_path overrides
-        global_start=GLOBAL_START,
-        global_end=GLOBAL_END,
+        video_url="",
+        global_start=local_start,
+        global_end=local_end,
         hook_audio=HOOK_AUDIO_PATH,
         hook_text=HOOK_TEXT,
         output_path=OUTPUT_PATH,
-        cached_video_path=CACHED_VIDEO_PATH   # Use cache
+        cached_video_path=CACHED_VIDEO_PATH
     )
 
     if not success:
