@@ -45,7 +45,6 @@ import wave
 
 CACHED_VIDEO_PATH = "scratch/cached_analyzer_segment.mp4"  # 1280x720 120s cached clip
 HOOK_AUDIO_PATH   = "scratch/test_hook.wav"                # Short WAV file
-HOOK_TEXT          = "Wait... they actually LANDED on the helicopter! That's insane."  # Test caption text
 OUTPUT_PATH        = "scratch/test_output_short.mp4"
 
 
@@ -265,25 +264,15 @@ def run_e2e_test() -> None:
     # Ensure output directory exists
     pathlib.Path(OUTPUT_PATH).parent.mkdir(parents=True, exist_ok=True)
 
-    from pipeline import clip_analyzer, voice
+    from pipeline import clip_analyzer, voice, hook
     from pipeline.editor import build_short
 
-    # 1. Generate actual voice hook (or fallback to silent wav on failure)
-    print("\n[test] 1. Generating voice hook...")
-    pathlib.Path(HOOK_AUDIO_PATH).unlink(missing_ok=True)
-    voice_success = voice.generate_voice(HOOK_TEXT, HOOK_AUDIO_PATH)
-    if not voice_success or not pathlib.Path(HOOK_AUDIO_PATH).exists():
-        print("[test] ⚠️ Voice generation failed (likely billing/rate limit). Using fallback silent WAV.")
-        generate_fallback_silent_wav(HOOK_AUDIO_PATH, duration_sec=3.0)
-    else:
-        print(f"[test] ✓ Voice generated successfully: {HOOK_AUDIO_PATH}")
-
-    # 2. Get video duration
+    # 1. Get video duration
     video_duration = clip_analyzer.get_segment_duration(CACHED_VIDEO_PATH)
     print(f"[test] Cached video duration: {video_duration:.2f}s")
 
-    # 3. Call Qwen VL endpoint to discover boundaries
-    print("\n[test] 2. Discovering viral moment via Qwen VL video endpoint...")
+    # 2. Call Qwen VL endpoint to discover boundaries & description
+    print("\n[test] 1. Discovering viral moment via Qwen VL video endpoint...")
     peak_sec_local = 30.0
     comment_context = "the money glitch is insane"
     
@@ -295,20 +284,22 @@ def run_e2e_test() -> None:
         comment_context=comment_context
     )
     
+    description_text = ""
     if "error" in res and res["error"]:
         print(f"[test] ⚠️ Qwen VL endpoint call failed: {res['error']}")
-        print("[test] Using fallback boundaries for E2E validation.")
-        # Simulated Qwen boundaries (setup before 30.0, reaction after 30.0)
+        print("[test] Using fallback boundaries & description for E2E validation.")
         natural_start = 22.0
         natural_end = 74.0
+        description_text = "A player shows an inventory screen with a huge amount of glitched money."
     else:
         print("[test] ✓ Qwen VL endpoint succeeded.")
         natural_start = res["natural_start"]
         natural_end = res["natural_end"]
+        description_text = res.get("description", "")
         print(f"[test] Raw boundaries returned: {natural_start}s → {natural_end}s")
-        print(f"[test] Description: {res.get('description', '')}")
+        print(f"[test] Description: {description_text}")
 
-    # 4. Clamp boundaries
+    # Clamp boundaries
     local_start, local_end = clip_analyzer.clamp_boundaries(
         natural_start,
         natural_end,
@@ -317,14 +308,34 @@ def run_e2e_test() -> None:
     )
     print(f"[test] Clamped boundaries: {local_start}s → {local_end}s ({local_end - local_start:.1f}s)")
 
+    # 3. Generate hook dynamically via Groq
+    print("\n[test] 2. Generating hook dynamically via Groq...")
+    hook_text = hook.get_hook_with_fallback(
+        video_title="GTA 6 Money Glitch Gameplay",
+        visual_description=description_text,
+        transcript_context="",
+        timestamp_comments=[{"text": comment_context, "like_count": 100}]
+    )
+    print(f"[test] Generated hook: {hook_text}")
+
+    # 4. Generate actual voice hook (or fallback to silent wav on failure)
+    print("\n[test] 3. Generating voice hook...")
+    pathlib.Path(HOOK_AUDIO_PATH).unlink(missing_ok=True)
+    voice_success = voice.generate_voice(hook_text, HOOK_AUDIO_PATH)
+    if not voice_success or not pathlib.Path(HOOK_AUDIO_PATH).exists():
+        print("[test] ⚠️ Voice generation failed (likely billing/rate limit). Using fallback silent WAV.")
+        generate_fallback_silent_wav(HOOK_AUDIO_PATH, duration_sec=3.0)
+    else:
+        print(f"[test] ✓ Voice generated successfully: {HOOK_AUDIO_PATH}")
+
     # 5. Run build_short with boundaries and generated/fallback hook audio
-    print("\n[test] 3. Building Short...")
+    print("\n[test] 4. Building Short...")
     success = build_short(
         video_url="",
         global_start=local_start,
         global_end=local_end,
         hook_audio=HOOK_AUDIO_PATH,
-        hook_text=HOOK_TEXT,
+        hook_text=hook_text,
         output_path=OUTPUT_PATH,
         cached_video_path=CACHED_VIDEO_PATH
     )
