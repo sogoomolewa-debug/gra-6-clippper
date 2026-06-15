@@ -34,6 +34,41 @@
         }
       },
       "notes": ""
+    },
+    {
+      "short_id": "FbUICzVkgtQ",
+      "uploaded_at": "2026-06-15T23:22:00.630026Z",
+      "source_video_id": "tXjnN6jlp4Q",
+      "source_type": "gta6",
+      "hook_text": "Guy just yelled HALF Life... in the middle of a heist",
+      "hook_word_count": 11,
+      "peak_start": 11.0,
+      "peak_position_pct": 6.3,
+      "clip_duration": 55.0,
+      "visual_description": "",
+      "natural_boundaries_used": true,
+      "peak_signal": "comments",
+      "peak_sec": 19,
+      "global_start": 11.0,
+      "global_end": 66.0,
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      },
+      "notes": ""
     }
   ]
 }
