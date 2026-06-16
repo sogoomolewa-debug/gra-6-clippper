@@ -1,0 +1,49 @@
+{
+  "last_updated": "2026-06-16T20:43:55.215201Z",
+  "channels": {
+    "unknown": {
+      "channel_title": "unknown",
+      "production": {
+        "total_sourced": 7,
+        "total_uploaded": 7,
+        "total_rejected": 0,
+        "rejection_rate": 0.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-14T09:57:21.761297Z",
+      "last_sourced": "2026-06-16T01:08:53.653058Z"
+    }
+  }
+}
