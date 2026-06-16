@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-16T23:20:14.463104Z",
+  "last_updated": "2026-06-16T23:23:57.488273Z",
   "channels": {
     "unknown": {
       "channel_title": "unknown",
@@ -352,6 +352,50 @@
       "confidence": "low",
       "first_sourced": "2026-06-16T01:08:53.653058Z",
       "last_sourced": "2026-06-16T01:08:53.653058Z"
+    },
+    "whatever57010": {
+      "channel_title": "whatever57010",
+      "production": {
+        "total_sourced": 1,
+        "total_uploaded": 1,
+        "total_rejected": 0,
+        "rejection_rate": 0.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-16T23:23:49.575456Z",
+      "last_sourced": "2026-06-16T23:23:49.575456Z"
     }
   }
 }
