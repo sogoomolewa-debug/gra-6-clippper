@@ -93,14 +93,34 @@ def download_clip(
         return False
 
 
-def crop_to_vertical(input_path: str, output_path: str) -> bool:
+def crop_to_vertical(input_path: str, output_path: str, original_channel: str = "") -> bool:
     """
     Converts ANY input resolution to exactly 1080x1920 (9:16 portrait).
+    Burns credit watermark at top-left if original_channel is provided.
 
     BUG 5 FIX: force_original_aspect_ratio=increase ensures no black bars.
     Works for landscape (1920x1080), portrait (1080x1920), square, any resolution.
     """
     filter_chain = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920"
+    if original_channel:
+        escaped_channel = original_channel.replace("'", "\\'").replace(":", "\\:")
+        font_path = config.CLIP.get("font_path", "assets/Oswald-Bold.ttf")
+        font_path_abs = str(pathlib.Path(font_path).absolute())
+        
+        watermark_text = f"CLIP: @{escaped_channel}" if not escaped_channel.startswith("@") else f"CLIP: {escaped_channel}"
+        watermark_text = watermark_text.upper()
+        
+        drawtext_watermark = (
+            f",drawtext=text='{watermark_text}':"
+            f"fontfile='{font_path_abs}':"
+            f"fontsize=40:"
+            f"fontcolor=white@0.6:"
+            f"borderw=3:"
+            f"bordercolor=black@0.6:"
+            f"x=50:y=100"
+        )
+        filter_chain += drawtext_watermark
+
     cmd = [
         "ffmpeg", "-y", "-i", input_path,
         "-vf", filter_chain,
@@ -272,7 +292,8 @@ def build_short(
     hook_audio: str,
     hook_text: str,
     output_path: str,
-    cached_video_path: str = ""  # If set, skip download and use this file
+    cached_video_path: str = "", # If set, skip download and use this file
+    original_channel: str = ""   # Original video creator for watermark credit
 ) -> bool:
     """
     OPTION B — Separate backdrop approach (matches reference creator format).
@@ -322,7 +343,7 @@ def build_short(
 
         # Crop backdrop to vertical
         backdrop_vertical = tmp / "backdrop_vertical.mp4"
-        if not crop_to_vertical(str(backdrop_trimmed_raw), str(backdrop_vertical)):
+        if not crop_to_vertical(str(backdrop_trimmed_raw), str(backdrop_vertical), original_channel=original_channel):
             shutil.rmtree(str(tmp), ignore_errors=True)
             return False
 
@@ -383,7 +404,7 @@ def build_short(
         # Crop reveal to vertical — this is the reveal master, never modify it
         # BUG 3 FIX: reveal_vertical has its own original audio, never touched
         reveal_vertical = tmp / "reveal_vertical.mp4"
-        if not crop_to_vertical(str(reveal_trimmed_raw), str(reveal_vertical)):
+        if not crop_to_vertical(str(reveal_trimmed_raw), str(reveal_vertical), original_channel=original_channel):
             shutil.rmtree(str(tmp), ignore_errors=True)
             return False
 

@@ -103,17 +103,24 @@ def run_pipeline() -> None:
         print(queue_manager.get_status(queue))
 
         # STEP 2 — SEARCH AND REFILL QUEUE
-        print("[pipeline] searching tier: gta6")
-        gta6_videos = search.get_top_videos(api_key, tier_name="gta6", limit=5)
-        added = queue_manager.add_to_queue(queue, gta6_videos, source_type="gta6")
-        print(f"[pipeline] added {added} new gta6 videos to queue")
+        mode = getattr(config, "SOURCING", {}).get("mode", "search")
+        if mode == "whitelist":
+            print("[pipeline] sourcing from whitelist channels")
+            whitelist_videos = search.get_top_videos(api_key, tier_name="whitelist", limit=5)
+            added = queue_manager.add_to_queue(queue, whitelist_videos, source_type="gta")
+            print(f"[pipeline] added {added} new whitelisted videos to queue")
+        else:
+            print("[pipeline] searching tier: gta6")
+            gta6_videos = search.get_top_videos(api_key, tier_name="gta6", limit=5)
+            added = queue_manager.add_to_queue(queue, gta6_videos, source_type="gta6")
+            print(f"[pipeline] added {added} new gta6 videos to queue")
 
-        # STEP 3 — FALLBACK TIER IF QUEUE LOW
-        if len(queue["pending"]) < config.QUEUE["min_size"]:
-            print(f"[pipeline] queue low ({len(queue['pending'])}), activating gta5 fallback")
-            gta5_videos = search.get_top_videos(api_key, tier_name="gta5", limit=5)
-            added5 = queue_manager.add_to_queue(queue, gta5_videos, source_type="gta5")
-            print(f"[pipeline] added {added5} new gta5 videos to queue")
+            # STEP 3 — FALLBACK TIER IF QUEUE LOW
+            if len(queue["pending"]) < config.QUEUE["min_size"]:
+                print(f"[pipeline] queue low ({len(queue['pending'])}), activating gta5 fallback")
+                gta5_videos = search.get_top_videos(api_key, tier_name="gta5", limit=5)
+                added5 = queue_manager.add_to_queue(queue, gta5_videos, source_type="gta5")
+                print(f"[pipeline] added {added5} new gta5 videos to queue")
 
         queue_manager.save_queue(queue)
 
@@ -222,7 +229,8 @@ def run_pipeline() -> None:
             global_end=global_end,
             hook_audio=hook_audio,
             hook_text=hook_text,
-            output_path=short_path
+            output_path=short_path,
+            original_channel=video.get("channel_title", "")
         ):
             print("[pipeline] ❌ video editing failed — requeueing")
             queue_manager.requeue(queue, video)

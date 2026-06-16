@@ -351,7 +351,8 @@ def run_e2e_test() -> None:
         hook_audio=HOOK_AUDIO_PATH,
         hook_text=hook_text,
         output_path=OUTPUT_PATH,
-        cached_video_path=CACHED_VIDEO_PATH
+        cached_video_path=CACHED_VIDEO_PATH,
+        original_channel="Hazardous"
     )
 
     if not success:

@@ -195,9 +195,62 @@ def score_video(video: dict) -> float:
 
 
 def get_top_videos(api_key: str, tier_name: str, limit: int = 5) -> list[dict]:
-    """Get top eligible videos for a content tier."""
+    """Get top eligible videos (either via global search or whitelist channels)."""
     try:
-        # Find tier config
+        youtube = build_youtube(api_key)
+        if youtube is None:
+            return []
+
+        mode = getattr(config, "SOURCING", {}).get("mode", "search")
+        if mode == "whitelist":
+            print("[search] whitelist mode active, sourcing from curated channels")
+            whitelist_channels = config.SOURCING.get("whitelist_channels", [])
+            video_ids = []
+            for ch in whitelist_channels:
+                try:
+                    ch_id = ch["id"]
+                    # Replace 'UC' with 'UU' to get the uploads playlist ID
+                    playlist_id = "UU" + ch_id[2:]
+                    print(f"[search] fetching latest uploads for channel '{ch['name']}' (playlist: {playlist_id})")
+                    
+                    response = youtube.playlistItems().list(
+                        part="snippet,contentDetails",
+                        playlistId=playlist_id,
+                        maxResults=5
+                    ).execute()
+                    
+                    for item in response.get("items", []):
+                        vid = item["contentDetails"].get("videoId")
+                        if vid and vid not in video_ids:
+                            video_ids.append(vid)
+                except Exception as e:
+                    print(f"[search] error fetching uploads for channel {ch.get('name')}: {e}")
+                    continue
+            
+            if not video_ids:
+                print("[search] no videos found in whitelisted channels")
+                return []
+                
+            details = get_video_details(youtube, video_ids)
+            
+            # Relaxed eligibility for whitelist
+            tier = {
+                "max_age_hours": config.SOURCING.get("max_age_hours", 168),
+                "min_views": config.SOURCING.get("min_views", 2000),
+                "min_channel_subscribers": 0,
+            }
+            
+            eligible = [v for v in details if is_eligible(v, tier)]
+            
+            for v in eligible:
+                v["score"] = score_video(v)
+                
+            eligible.sort(key=lambda x: x["score"], reverse=True)
+            top = eligible[:limit]
+            print(f"[search] whitelist mode found={len(eligible)} eligible, returning top {len(top)}")
+            return top
+
+        # Else: Fallback to global keyword search
         tier = None
         for t in config.CONTENT_TIERS:
             if t["name"] == tier_name:
@@ -208,10 +261,6 @@ def get_top_videos(api_key: str, tier_name: str, limit: int = 5) -> list[dict]:
             return []
 
         published_after = datetime.utcnow() - timedelta(hours=tier["max_age_hours"])
-        youtube = build_youtube(api_key)
-        if youtube is None:
-            return []
-
         video_ids = search_recent_videos(youtube, tier["queries"], published_after)
         if not video_ids:
             print(f"[search] no videos found for tier {tier_name}")

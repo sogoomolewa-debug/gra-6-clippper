@@ -9,7 +9,8 @@ This document serves as a comprehensive guide for any AI agent or developer taki
 *   **Hook Generation**: Two-stage LLM pipeline (Groq/Llama 3.3 70B) with rotating delivery styles and markup for natural TTS phrasing.
 *   **Voice Synthesis**: Tone variation and strategic pauses implemented by chunking hooks at delivery markers (`...` and `—`), synthesizing chunks at custom speeds, and stitching them with 280ms silences.
 *   **Video Editor**: Crop to 9:16 vertical format, high-quality Gaussian background blur, word wrapping, and stylized safe-zone captions using thick outlines and 3D drop shadows (Oswald Bold font).
-*   **Sourcing Filters**: Strict filtering layers applied to queries: restricting videos to YouTube Gaming Category (`20`), blocking channels from Rockstar Games, and filtering out news, essays, or podcasts using a keyword blacklist.
+*   **On-Screen Credit Watermark**: Translucent overlay (`CLIP: @[CHANNEL_NAME]`) burned at `x=50:y=100` on the vertical crop to credit original creators and ensure fair-use compliance.
+*   **Sourcing & Whitelist Filters**: Exclusive sourcing from curated gameplay channels (Red Arcade, Prestige Clips, Hazardous) by querying uploads playlists directly. Enforces Gaming category (`20`), 7-day recency, and a relaxed 2,000 views filter.
 *   **Dry-Run Mode**: Pipeline executes fully but bypasses YouTube uploads, saving output locally to `scratch/latest_output.mp4` for quality control review.
 *   **Automation**: GitHub Actions workflows created for daily processing (`daily.yml`) and weekly performance tracking (`fetch_stats.yml`).
 
@@ -17,32 +18,30 @@ This document serves as a comprehensive guide for any AI agent or developer taki
 
 ## Technical Architecture
 
-The pipeline follows a **Search → Analyze → Generate → Compose → Upload (or Dry Run)** flow:
+The pipeline follows a **Search (Whitelist Sync) → Analyze → Generate → Compose → Upload (or Dry Run)** flow:
 
 ```mermaid
 graph TD
-    A[Search: filter queries, cat 20, keywords, Rockstar block] --> B[Heatmap: comments, audio, yt-dlp]
-    B --> C[Clip Analysis: download segment & call Gemini 2.5 Flash]
-    C -->|is_gameplay: False| D[Skip video & Pop next]
-    C -->|is_gameplay: True| E[Transcript & Hook Generation: Groq Llama 3.3]
-    E --> F[TTS Voice: chunked synthesis & stitching]
-    F --> G[Editor: FFmpeg Gaussian blur, wrap & burn captions]
-    G --> H[Output check]
-    H -->|DRY_RUN: True| I[Save locally to scratch/latest_output.mp4]
-    H -->|DRY_RUN: False| J[Uploader: YouTube Shorts OAuth2 upload]
+    A[Sourcing: Whitelist channels uploads playlists] --> B[Metadata Check: Category 20, Age, Views]
+    B --> C[Heatmap: comments, audio, yt-dlp]
+    C --> D[Clip Analysis: download segment & call Gemini 2.5 Flash]
+    D -->|is_gameplay: False| E[Skip video & Pop next]
+    D -->|is_gameplay: True| F[Transcript & Hook Generation: Groq Llama 3.3]
+    F --> G[TTS Voice: chunked synthesis & stitching]
+    G --> H[Editor: FFmpeg Gaussian blur, wrap & burn captions, burn CLIP credit watermark]
+    H --> I[Output check]
+    I -->|DRY_RUN: True| J[Save locally to scratch/latest_output.mp4]
+    I -->|DRY_RUN: False| K[Uploader: YouTube Shorts OAuth2 upload]
 ```
 
-1.  **Search** (`pipeline/search.py`): Finds candidate gameplay videos matching refined queries. Filters out Rockstar Games channel, restricts candidate videos strictly to category `20` (Gaming), and discards videos with blacklist keywords (e.g. `rant`, `podcast`, `news`, `essay`) in the title/description.
-2.  **Heatmap** (`pipeline/heatmap.py`): Detects viral spikes in the video timeline using 4 signals: comments volume, audio energy peaks, yt-dlp heatmap data, or 30% duration fallback.
-3.  **Clip Analysis** (`pipeline/clip_analyzer.py`): Downloads a segment (peak -30s to +90s) and uploads it to Gemini 2.5 Flash. Executes a single structured API call with a Pydantic schema to:
-    *   Validate if it shows actual direct gameplay (`is_gameplay` flag).
-    *   Produce a one-sentence visual description.
-    *   Identify natural start and end clip boundaries (clamped to target Short duration bounds).
-4.  **Transcript** (`pipeline/transcript.py`): Pulls caption segments around the peak timestamp to provide verbal context for the hook generator.
-5.  **Hook** (`pipeline/hook.py`): Calls Groq Llama 3.3 70B to write a hook rotating through 4 styles (Shocked, Deadpan, Hype, Storyteller) and applies delivery markup (silence gaps `...`, stress `CAPS`, tone shifts `—`).
-6.  **Voice** (`pipeline/voice.py`): Splits the marked-up hook into chunks, synthesizes them at distinct speeds (suspense: 0.85x, reveal: 1.08x) using Modal Qwen3-TTS, and stitches them with 280ms silences and a 200ms breath pad.
-7.  **Editor** (`pipeline/editor.py`): Trims and crops backdrop footage to 9:16. Applies smooth Gaussian blur (`gblur=sigma=20:steps=3`) to the intro hook backdrop, wraps caption text automatically (limit 18 chars/line), and burns capitalized text in Oswald Bold (`fontsize=90`) with thick black outlines and drop shadows.
-8.  **Uploader / Dry Run** (`pipeline/uploader.py` & `pipeline.py`): Checks `config.DRY_RUN`. If enabled, saves the compiled video to `scratch/latest_output.mp4`. Otherwise, executes the OAuth2 resumable upload to YouTube Shorts.
+1.  **Sourcing** (`pipeline/search.py`): If `config.SOURCING["mode"] == "whitelist"`, fetches the latest 5 uploads from each whitelisted channel's uploads playlist (`UU...` ID). Bypasses global YouTube search to consume almost zero API quota.
+2.  **Metadata Check** (`pipeline/search.py`): Restricts candidate videos strictly to category `20` (Gaming), checks that published age is under 7 days (`max_age_hours: 168`), and view count is above 2,000.
+3.  **Heatmap** (`pipeline/heatmap.py`): Detects viral spikes in the video timeline using comments, audio peaks, yt-dlp heatmap data, or 30% duration fallback.
+4.  **Clip Analysis** (`pipeline/clip_analyzer.py`): Downloads a segment and calls Gemini 2.5 Flash with a structured Pydantic schema to validate gameplay (`is_gameplay`), generate description, and identify natural boundaries.
+5.  **Hook** (`pipeline/hook.py`): Calls Groq Llama 3.3 70B to write a hook rotating through 4 styles (Shocked, Deadpan, Hype, Storyteller) and applies delivery markup.
+6.  **Voice** (`pipeline/voice.py`): Splits the marked-up hook into chunks, synthesizes them at distinct speeds using Modal Qwen3-TTS, and stitches them with 280ms silences.
+7.  **Editor** (`pipeline/editor.py`): Crops backdrop to 9:16, applies Gaussian blur, and burns dynamic captions. Dynamically burns a translucent credit watermark (`CLIP: @[CHANNEL_NAME]`) at `x=50:y=100` to credit the creator.
+8.  **Uploader / Dry Run** (`pipeline.py`): If `config.DRY_RUN` is active, copies the completed short to `scratch/latest_output.mp4` and skips upload. Otherwise, executes the OAuth2 resumable upload to YouTube Shorts.
 
 ---
 
@@ -53,17 +52,17 @@ graph TD
 ├── assets/              # Oswald-Bold.ttf, Montserrat-Black.ttf, voice_sample.wav
 ├── data/                # queue.json, performance_log.json
 ├── pipeline/            # Core Python modules
-│   ├── search.py        # Video discovery + category & blacklist filters
+│   ├── search.py        # Whitelist uploads syncing + eligibility filters
 │   ├── heatmap.py       # Viral moment detection (4 signals)
 │   ├── clip_analyzer.py # Gemini 2.5 Flash structured visual analysis
 │   ├── transcript.py    # Caption extraction
 │   ├── hook.py          # Two-stage hook generation + delivery markup
 │   ├── voice.py         # Chunk-based TTS synthesis + WAV stitching
-│   ├── editor.py        # FFmpeg video cropping, Gaussian blur, caption styling
+│   ├── editor.py        # FFmpeg cropping, Gaussian blur, caption styling, watermark credits
 │   ├── uploader.py      # YouTube Shorts OAuth2 upload
 │   └── queue_manager.py # Queue management
 ├── modal_tts.py         # Modal TTS deployment (1.7B parameter Qwen3-TTS)
-├── config.py            # All pipeline constants, queries, and DRY_RUN settings
+├── config.py            # All pipeline constants, whitelist channel IDs, and DRY_RUN settings
 ├── pipeline.py          # Main orchestrator
 └── fetch_stats.py       # Weekly stats updater
 ```

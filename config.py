@@ -104,3 +104,14 @@ LOGS = {
 import os
 YOUTUBE_COOKIES_PATH = os.environ.get("YOUTUBE_COOKIES_PATH", "")
 DRY_RUN = os.environ.get("DRY_RUN", "true").lower() == "true"
+
+SOURCING = {
+    "mode": "whitelist",
+    "whitelist_channels": [
+        {"name": "Red Arcade", "id": "UCHZZo1h1cI1vg4I9g2RqOUQ"},
+        {"name": "Prestige Clips", "id": "UCC-uu-OqgYEx52KYQ-nJLRw"},
+        {"name": "Hazardous", "id": "UCgXfEXQBy0r4MywuzNf3iGQ"}
+    ],
+    "max_age_hours": 168,
+    "min_views": 2000,
+}
