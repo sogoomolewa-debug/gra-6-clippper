@@ -82,52 +82,71 @@ def calculate_priority_score(channel_data: dict) -> tuple[float, str]:
 
 def aggregate_channel_data(log_entries: list[dict]) -> dict:
     """Groups performance log entries by channel title."""
-    channel_map = {}
-    for entry in log_entries:
-        # The prompt says: channel_key = entry.get("source", {}).get("channel_title", "unknown")
-        # Let's inspect pipeline.py log entry structure: we put source_video_id, but where is channel_title?
-        # Wait, the prompt says "channel_key = entry.get('source', {}).get('channel_title', 'unknown')"
-        # Let's also fallback to entry.get("channel_title") or queue if structure differs
-        source_info = entry.get("source", {})
-        if not source_info and "source_channel_title" in entry:
-            channel_key = entry["source_channel_title"]
-        elif not source_info and "channel_title" in entry:
-            channel_key = entry["channel_title"]
-        else:
-            channel_key = source_info.get("channel_title", "unknown")
-            
-        if channel_key == "unknown" and "notes" in entry:
-            # Let's check if channel title is stored differently in existing logs
+    import os
+    youtube = None
+    api_key = os.environ.get("YOUTUBE_API_KEY", "")
+    if api_key:
+        try:
+            from googleapiclient.discovery import build
+            youtube = build("youtube", "v3", developerKey=api_key)
+        except Exception:
             pass
+
+    channel_map = {}
+    modified = False
+    for entry in log_entries:
+        source_info = entry.get("source", {})
+        channel_key = None
+        if source_info and "channel_title" in source_info:
+            channel_key = source_info["channel_title"]
+        elif "source_channel_title" in entry:
+            channel_key = entry["source_channel_title"]
+        elif "channel_title" in entry:
+            channel_key = entry["channel_title"]
+
+        if (not channel_key or channel_key == "unknown") and youtube:
+            source_id = entry.get("source_video_id")
+            if source_id:
+                try:
+                    res = youtube.videos().list(part="snippet", id=source_id).execute()
+                    items = res.get("items", [])
+                    if items:
+                        channel_key = items[0]["snippet"].get("channelTitle", "unknown")
+                        entry["source_channel_title"] = channel_key
+                        modified = True
+                        print(f"[channel_tracker] resolved channel '{channel_key}' for video {source_id}")
+                except Exception as e:
+                    print(f"[channel_tracker] error resolving channel for video {source_id}: {e}")
+
+        if not channel_key:
+            channel_key = "unknown"
 
         if channel_key not in channel_map:
             channel_map[channel_key] = {"channel_title": channel_key, "entries": []}
         channel_map[channel_key]["entries"].append(entry)
+
+    if modified:
+        try:
+            with open(LOG_PATH, "w") as f:
+                json.dump({"shorts": log_entries}, f, indent=2)
+            print("[channel_tracker] updated performance log with resolved channel titles")
+        except Exception as e:
+            print(f"[channel_tracker] error saving updated performance log: {e}")
+
     return channel_map
 
 def build_channel_record(channel_title: str, entries: list[dict]) -> dict:
     """Builds a single channel record from aggregated log entries."""
     # Status check: count uploaded and rejected
-    uploaded = [e for e in entries if e.get("status") == "uploaded" or e.get("short_id", "").startswith("dryrun_") or "snapshots" in e]
-    rejected = [e for e in entries if e.get("status") == "rejected" or e.get("status") == "skipped_non_gameplay"]
-
-    # Since E2E/Dry Run logs might not have "status" explicitly set to "uploaded", 
-    # we treat any entry that has a short_id and was not explicitly rejected as uploaded.
-    # Let's double check if we need to filter status.
-    # The prompt:
-    # uploaded = [e for e in entries if e.get("status") == "uploaded"]
-    # rejected = [e for e in entries if e.get("status") == "rejected"]
-    # Let's support both the explicit "status" check and the presence of short_id.
-    uploaded_explicit = [e for e in entries if e.get("status") == "uploaded"]
-    rejected_explicit = [e for e in entries if e.get("status") == "rejected"]
-    
-    if not uploaded_explicit and not rejected_explicit:
-        # Fallback for old/dryrun logs
-        uploaded = [e for e in entries if e.get("short_id") and e.get("short_id") != "skipped_non_gameplay"]
-        rejected = [e for e in entries if e.get("short_id") == "skipped_non_gameplay"]
-    else:
-        uploaded = uploaded_explicit
-        rejected = rejected_explicit
+    uploaded = []
+    rejected = []
+    for e in entries:
+        status = str(e.get("status", ""))
+        short_id = str(e.get("short_id", ""))
+        if status.startswith("skipped_") or short_id.startswith("skipped_") or status == "rejected":
+            rejected.append(e)
+        else:
+            uploaded.append(e)
 
     # filter those with 7d views > 0
     with_7d = [e for e in uploaded if e.get("performance", {}).get("7d", {}).get("views", 0) > 0 or e.get("snapshots", {}).get("7d", {}).get("views", 0) > 0]

@@ -143,12 +143,19 @@ def is_eligible(video: dict, tier: dict) -> bool:
             return False
 
         # Block negative keywords in title and description
-        blacklist = ["rant", "essay", "podcast", "review", "opinion", "thoughts", "news", "drama", "speculation"]
+        blacklist = ["rant", "essay", "podcast", "review", "opinion", "thoughts", "news", "drama", "speculation", "vlog", "rambles", "reaction", "reacts", "stream highlight", "let's talk", "face reveal", "real talk"]
         title_desc_lower = (video.get("title", "") + " " + video.get("description", "")).lower()
         for word in blacklist:
             if word in title_desc_lower:
                 print(f"[search] blocked video {video.get('video_id')} due to blacklist word '{word}' in title/description")
                 return False
+
+        # Ensure it contains positive GTA keywords (for whitelist/gta tiers)
+        gta_keywords = ["gta", "grand theft auto", "los santos", "vice city", "liberty city", "san andreas", "grove street", "niko bellic", "bellic", "trevor", "michael", "franklin", "lester", "rockstar"]
+        has_gta = any(kw in title_desc_lower for kw in gta_keywords)
+        if not has_gta:
+            print(f"[search] blocked video {video.get('video_id')} due to missing GTA keywords in title/description")
+            return False
 
         published_at = video.get("published_at", "")
         # Remove 'Z' for fromisoformat and ensure it's UTC
@@ -227,6 +234,18 @@ def get_top_videos(api_key: str, tier_name: str, limit: int = 5) -> list[dict]:
                     ).execute()
                     
                     for item in response.get("items", []):
+                        snippet = item.get("snippet", {})
+                        title = snippet.get("title", "")
+                        description = snippet.get("description", "")
+                        
+                        # Pre-API Positive Keyword Check
+                        text_lower = (title + " " + description).lower()
+                        gta_keywords = ["gta", "grand theft auto", "los santos", "vice city", "liberty city", "san andreas", "grove street", "niko bellic", "bellic", "trevor", "michael", "franklin", "lester", "rockstar"]
+                        has_gta = any(kw in text_lower for kw in gta_keywords)
+                        if not has_gta:
+                            print(f"[search] pre-API skipped non-GTA video '{title}' from channel {ch['name']}")
+                            continue
+
                         vid = item["contentDetails"].get("videoId")
                         if vid and vid not in video_ids:
                             video_ids.append(vid)

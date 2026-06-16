@@ -5,8 +5,11 @@ import json
 from datetime import datetime
 import pathlib
 import subprocess
+import dotenv
 
-from pipeline import search, heatmap, transcript, hook, voice, editor, uploader, queue_manager, clip_analyzer
+dotenv.load_dotenv()
+
+from pipeline import search, heatmap, transcript, hook, voice, editor, uploader, queue_manager, clip_analyzer, clip_validator
 import config
 
 
@@ -41,6 +44,30 @@ def append_log_entry(log: dict, entry: dict) -> None:
         log["shorts"].append(entry)
     except Exception as e:
         print(f"[pipeline] error appending log entry: {e}")
+
+
+def log_skip(video: dict, status: str, notes: str = "") -> None:
+    """Log a skipped/rejected video to performance_log.json."""
+    try:
+        log = load_performance_log()
+        entry = {
+            "short_id": status,
+            "uploaded_at": datetime.utcnow().isoformat() + "Z",
+            "source_video_id": video["video_id"],
+            "source_channel_title": video.get("channel_title", "unknown"),
+            "source_type": video["source_type"],
+            "status": status,
+            "notes": notes,
+            "snapshots": {
+                "24h": {"views": 0, "likes": 0, "comments": 0},
+                "72h": {"views": 0, "likes": 0, "comments": 0},
+                "7d": {"views": 0, "likes": 0, "comments": 0}
+            }
+        }
+        append_log_entry(log, entry)
+        save_performance_log(log)
+    except Exception as e:
+        print(f"[pipeline] error logging skip: {e}")
 
 
 def commit_data_files() -> None:
@@ -148,35 +175,45 @@ def run_pipeline() -> None:
         window = float(cfg.CLIP["max_duration_seconds"]) - 3.0
         timestamp_comments = []
         peak_sec = None
+        peak_signal = "fallback"
 
-        # Comment signal
-        if comments:
+        # 1. yt-dlp heatmap as the primary signal
+        heatmap_list = get_heatmap_data(video["url"])
+        if heatmap_list and len(heatmap_list) >= 10:
+            start, _ = find_peak_window(heatmap_list, window)
+            peak_sec = int(start + window / 2)
+            peak_signal = "heatmap"
+            print(f"[pipeline] peak from heatmap: {peak_sec}s")
+
+        # 2. Comment signal fallback
+        if not peak_sec and comments:
             clusters = extract_and_score_timestamps(comments, int(duration))
             peak_sec = get_best_comment_timestamp(clusters)
             if peak_sec:
-                timestamp_comments = get_timestamp_comments(comments, peak_sec)
-                print(f"[pipeline] peak from comments: {peak_sec}s")
+                peak_signal = "comments"
+                print(f"[pipeline] peak from comment timestamps: {peak_sec}s")
 
-        # Audio energy fallback
+        # 3. Audio energy fallback
         if not peak_sec:
-            print("[pipeline] no comment timestamps, trying audio energy")
+            print("[pipeline] trying audio energy")
             tmp_audio = f"/tmp/audio_{video['video_id']}.mp3"
             if download_audio_only(video["url"], tmp_audio):
                 start, _ = audio_energy_peak(tmp_audio, window)
                 peak_sec = int(start + window / 2)
+                peak_signal = "audio_energy"
                 pathlib.Path(tmp_audio).unlink(missing_ok=True)
+                print(f"[pipeline] peak from audio energy: {peak_sec}s")
 
-        # yt-dlp heatmap fallback
-        if not peak_sec:
-            heatmap_list = get_heatmap_data(video["url"])
-            if heatmap_list and len(heatmap_list) >= 10:
-                start, _ = find_peak_window(heatmap_list, window)
-                peak_sec = int(start + window / 2)
-
-        # 30% fallback
+        # 4. 30% fallback
         if not peak_sec:
             peak_sec = int(duration * 0.3)
+            peak_signal = "fallback_30"
             print(f"[pipeline] using 30% fallback: {peak_sec}s")
+
+        # Decouple comments from primary signal detection - still extract them for downstream context
+        if comments and peak_sec:
+            timestamp_comments = get_timestamp_comments(comments, peak_sec)
+            print(f"[pipeline] extracted {len(timestamp_comments)} timestamp comments around peak {peak_sec}s for context")
 
         # STEP 5 — CLIP ANALYZER (Qwen2.5-VL watches the segment)
         print("[pipeline] running visual clip analysis")
@@ -190,6 +227,7 @@ def run_pipeline() -> None:
         # Check if the video contains actual gameplay
         if not analysis.get("is_gameplay", True):
             print(f"[pipeline] ❌ video {video['video_id']} is not gameplay (flagged by Gemini). Skipping and marking processed.")
+            log_skip(video, "skipped_non_gameplay", "Flagged as non-gameplay by Gemini")
             queue_manager.mark_processed(queue, video, "skipped_non_gameplay")
             queue_manager.save_queue(queue)
             commit_data_files()
@@ -199,6 +237,7 @@ def run_pipeline() -> None:
         if not analysis.get("is_punchy", True):
             reason = analysis.get("punchiness_reasoning", "No reason provided")
             print(f"[pipeline] ❌ video {video['video_id']} is not punchy (flagged by Gemini: {reason}). Skipping and marking processed.")
+            log_skip(video, "skipped_not_punchy", f"Flagged as not punchy: {reason}")
             queue_manager.mark_processed(queue, video, "skipped_not_punchy")
             queue_manager.save_queue(queue)
             commit_data_files()
@@ -209,6 +248,23 @@ def run_pipeline() -> None:
         visual_description = analysis["description"]
         peak_pct = round((peak_sec / max(duration, 1)) * 100, 1)
         print(f"[pipeline] final clip: {global_start:.1f}s → {global_end:.1f}s")
+
+        # STEP 5b — VALIDATE DESCRIPTION (vagueness + comment cross-check)
+        validation = clip_validator.validate_clip(
+            description=visual_description,
+            timestamp_comments=timestamp_comments
+        )
+        if not validation.get("valid", True):
+            reason = validation.get("reason", "unknown")
+            detail = validation.get("detail", "")
+            print(f"[pipeline] ❌ clip validation failed ({reason}): {detail}. Skipping.")
+            log_skip(video, f"skipped_{reason}", detail)
+            queue_manager.mark_processed(queue, video, f"skipped_{reason}")
+            queue_manager.save_queue(queue)
+            commit_data_files()
+            return
+        if validation.get("skipped_comment_check"):
+            print("[pipeline] ⚠ no timestamp comments — skipped comment cross-validation")
 
         # STEP 6 — TRANSCRIPT CONTEXT (around peak, may be empty)
         transcript_context = transcript.get_video_context(video["url"], float(peak_sec))
@@ -274,6 +330,7 @@ def run_pipeline() -> None:
             "short_id": short_id,
             "uploaded_at": datetime.utcnow().isoformat() + "Z",
             "source_video_id": video["video_id"],
+            "source_channel_title": video.get("channel_title", ""),
             "source_type": video["source_type"],
             "hook_text": hook_text,
             "hook_word_count": len(hook_text.split()),
@@ -282,10 +339,11 @@ def run_pipeline() -> None:
             "clip_duration": round(global_end - global_start, 1),
             "visual_description": visual_description,
             "natural_boundaries_used": True,
-            "peak_signal": "comments" if timestamp_comments else "audio_or_fallback",
+            "peak_signal": peak_signal,
             "peak_sec": peak_sec,
             "global_start": global_start,
             "global_end": global_end,
+            "status": "uploaded",
             "snapshots": {
                 "24h": {"views": 0, "likes": 0, "comments": 0},
                 "72h": {"views": 0, "likes": 0, "comments": 0},

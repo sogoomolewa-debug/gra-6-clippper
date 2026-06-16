@@ -117,5 +117,5 @@ SOURCING = {
         {"name": "Call Me Kevin", "id": "UCdoPCztTOW7BJUPk2h5ttXA", "priority": 0.5}
     ],
     "max_age_hours": 168,
-    "min_views": 2000,
+    "min_views": 20000,
 }

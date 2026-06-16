@@ -124,7 +124,7 @@ def analyze_with_gemini(
             f"Perform the following analysis tasks:\n"
             f"1. Determine if this clip shows actual, direct in-game gameplay graphics of a GTA game being played. If it is a talking head, news/speculation slides, podcast, commentary show, or reaction video with minimal gameplay, set is_gameplay to false.\n"
             f"2. Determine if the moment is 'punchy'. Can this moment be fully understood, enjoyed, and impactful in under 15 seconds? If it requires a long buildup or extended context to make sense (e.g., a 40-second conversation or a long chase), set is_punchy to false. We only want fast, punchy action or immediate comedy.\n"
-            f"3. Describe in exactly ONE sentence what visually happens at {peak_sec_local:.0f} seconds.\n"
+            f"3. Describe in exactly ONE sentence what visually happens at {peak_sec_local:.0f} seconds. Focus on the physical action, stunt, crash, or character interaction (e.g., car collisions, character physics/ragdoll launches, stunt failures or successes, explosive chain reactions) rather than static scenery. Be specific about the vehicles, characters, and motion involved. Avoid generic descriptions (e.g., do NOT just say 'a player drives a car' or 'gameplay footage showing a scene').\n"
             f"4. Find where the peak action at {peak_sec_local:.0f} seconds naturally begins (setup) and naturally ends (reaction complete). "
             f"Requirements: window must be 10-14 seconds long — just the core moment, tight and punchy, no buildup, no aftermath. Peak at {peak_sec_local:.0f}s must be inside the window."
         )
