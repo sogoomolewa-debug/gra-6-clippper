@@ -3,6 +3,7 @@
 # BUG 4 FIX: Clamps natural boundaries to config max_duration_seconds immediately after Gemini returns
 
 from google import genai
+from pydantic import BaseModel, Field
 import os
 import subprocess
 import pathlib
@@ -97,6 +98,13 @@ def upload_to_gemini(video_path: str) -> object | None:
         return None
 
 
+class VideoAnalysis(BaseModel):
+    is_gameplay: bool = Field(description="True if the video segment shows actual direct game graphics/gameplay. False if it is a talking head, reaction video (facecam dominant with minimal gameplay), commentary slides, or news/fandom rant.")
+    description: str = Field(description="A single sentence describing the visual action at the peak timestamp.")
+    natural_start: float = Field(description="The timestamp in seconds where the action peak's setup naturally begins.")
+    natural_end: float = Field(description="The timestamp in seconds where the reaction to the action peak naturally ends.")
+
+
 def analyze_with_gemini(
     video_file: object,
     peak_sec_local: float,
@@ -104,61 +112,43 @@ def analyze_with_gemini(
     comment_context: str
 ) -> dict:
     """
-    Ask Gemini two questions about the video segment.
-    Returns: {"description": str, "natural_start": float, "natural_end": float}
+    Ask Gemini to verify gameplay, describe the video segment, and find natural clip boundaries in a single structured call.
+    Returns: {"is_gameplay": bool, "description": str, "natural_start": float, "natural_end": float}
     """
     try:
-        # QUESTION 1 — Describe the peak moment using comment as anchor
-        prompt_q1 = (
-            f"This is a GTA 6 gameplay video. "
-            f"A viewer left this comment about what happens at {peak_sec_local:.0f} seconds: "
-            f"'{comment_context}'. "
-            f"Describe in ONE specific sentence exactly what visually happens at that "
-            f"timestamp. Focus ONLY on that moment — ignore everything else."
+        prompt = (
+            f"This is a clip from a video related to Grand Theft Auto. "
+            f"A viewer left this comment about what happens at {peak_sec_local:.0f} seconds: '{comment_context}'. "
+            f"Perform the following analysis tasks:\n"
+            f"1. Determine if this clip shows actual, direct in-game gameplay graphics of a GTA game being played (driving, shooting, missions, etc.). If it is a talking head (person's face), news/speculation slides, podcast, commentary show, or reaction video with minimal gameplay, set is_gameplay to false.\n"
+            f"2. Describe in exactly ONE sentence what visually happens at {peak_sec_local:.0f} seconds.\n"
+            f"3. Find where the peak action at {peak_sec_local:.0f} seconds naturally begins (setup) and naturally ends (reaction complete). "
+            f"The window must be between 45 and 55 seconds long, and must include the peak at {peak_sec_local:.0f} seconds."
         )
-        response_q1 = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[video_file, prompt_q1]
-        )
-        description = response_q1.text.strip()
-        print(f"[analyzer] description: {description}")
 
-        # QUESTION 2 — Find natural clip boundaries
-        prompt_q2 = (
-            f"This GTA 6 gameplay video is {segment_duration:.0f} seconds long. "
-            f"A viewer described what happens at {peak_sec_local:.0f} seconds: '{comment_context}'. "
-            f"Find where this action NATURALLY BEGINS (setup before the peak) "
-            f"and NATURALLY ENDS (after full reaction completes). "
-            f"Requirements: window must be 45-55 seconds long, "
-            f"peak at {peak_sec_local:.0f}s must be inside the window. "
-            f"Reply with ONLY two numbers separated by comma: start_second,end_second "
-            f"Example: 22,74 — No explanation. Just the two numbers."
-        )
-        response_q2 = client.models.generate_content(
+        response = client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=[video_file, prompt_q2]
+            contents=[video_file, prompt],
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": VideoAnalysis,
+            }
         )
-        boundary_text = response_q2.text.strip()
-        print(f"[analyzer] raw boundaries: {boundary_text}")
 
-        # Parse boundaries
-        numbers = re.findall(r'\d+\.?\d*', boundary_text)
-        if len(numbers) >= 2:
-            natural_start = float(numbers[0])
-            natural_end = float(numbers[1])
-        else:
-            print("[analyzer] boundary parse failed, using smart offset")
-            natural_start = max(0.0, peak_sec_local - 8.0)
-            natural_end = natural_start + 52.0
+        import json
+        data = json.loads(response.text)
+        print(f"[analyzer] Gemini analysis result: {data}")
 
         return {
-            "description": description,
-            "natural_start": natural_start,
-            "natural_end": natural_end
+            "is_gameplay": data.get("is_gameplay", True),
+            "description": data.get("description", ""),
+            "natural_start": float(data.get("natural_start", max(0.0, peak_sec_local - 8.0))),
+            "natural_end": float(data.get("natural_end", max(0.0, peak_sec_local - 8.0) + 52.0))
         }
     except Exception as e:
         print(f"[analyzer] Gemini analysis error: {e}")
         return {
+            "is_gameplay": True,
             "description": "",
             "natural_start": max(0.0, peak_sec_local - 8.0),
             "natural_end": max(0.0, peak_sec_local - 8.0) + 52.0
@@ -232,6 +222,7 @@ def analyze_clip(
         print(f"[analyzer] {reason} — using smart offset fallback")
         fallback_start = max(0.0, peak_sec_global - 8.0)
         return {
+            "is_gameplay": True,
             "description": "",
             "global_start": fallback_start,
             "global_end": fallback_start + float(config.CLIP["max_duration_seconds"])
@@ -307,6 +298,7 @@ def analyze_clip(
         print(f"[analyzer] global boundaries: {global_start}s → {global_end}s ({global_end - global_start:.1f}s)")
 
         return {
+            "is_gameplay": result.get("is_gameplay", True),
             "description": result.get("description", ""),
             "global_start": global_start,
             "global_end": global_end

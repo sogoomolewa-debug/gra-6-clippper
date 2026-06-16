@@ -76,6 +76,7 @@ def get_video_details(youtube, video_ids: list[str]) -> list[dict]:
                             "url": f"https://youtube.com/watch?v={item['id']}",
                             "title": snippet.get("title", ""),
                             "description": snippet.get("description", ""),
+                            "category_id": snippet.get("categoryId", ""),
                             "channel_id": snippet.get("channelId", ""),
                             "channel_title": channel_title,
                             "channel_url": f"https://youtube.com/@{channel_title.replace(' ', '')}",
@@ -132,6 +133,20 @@ def is_eligible(video: dict, tier: dict) -> bool:
         if "rockstar games" in ch_title or "rockstargames" in ch_title:
             print(f"[search] blocked video {video.get('video_id')} from Rockstar Games channel: {video.get('channel_title')}")
             return False
+
+        # Restrict to Gaming Category (ID: 20)
+        cat_id = video.get("category_id", "")
+        if cat_id != "20":
+            print(f"[search] blocked video {video.get('video_id')} due to non-gaming category: {cat_id}")
+            return False
+
+        # Block negative keywords in title and description
+        blacklist = ["rant", "essay", "podcast", "review", "opinion", "thoughts", "news", "drama", "speculation"]
+        title_desc_lower = (video.get("title", "") + " " + video.get("description", "")).lower()
+        for word in blacklist:
+            if word in title_desc_lower:
+                print(f"[search] blocked video {video.get('video_id')} due to blacklist word '{word}' in title/description")
+                return False
 
         published_at = video.get("published_at", "")
         # Remove 'Z' for fromisoformat and ensure it's UTC

@@ -179,6 +179,15 @@ def run_pipeline() -> None:
             video_duration=duration,
             timestamp_comments=timestamp_comments
         )
+
+        # Check if the video contains actual gameplay
+        if not analysis.get("is_gameplay", True):
+            print(f"[pipeline] ❌ video {video['video_id']} is not gameplay (flagged by Gemini). Skipping and marking processed.")
+            queue_manager.mark_processed(queue, video, "skipped_non_gameplay")
+            queue_manager.save_queue(queue)
+            commit_data_files()
+            return
+
         global_start = analysis["global_start"]
         global_end = analysis["global_end"]
         visual_description = analysis["description"]
@@ -222,12 +231,19 @@ def run_pipeline() -> None:
             return
 
         # STEP 10 — UPLOAD
-        short_id = uploader.upload_short(
-            file_path=short_path,
-            video_title=video["title"],
-            original_channel=video["channel_title"],
-            original_url=video["url"]
-        )
+        dry_run = getattr(config, "DRY_RUN", True)
+        if dry_run:
+            print("[pipeline] [DRY RUN] Bypassing upload, saving output to scratch/latest_output.mp4")
+            import shutil
+            shutil.copy(short_path, "scratch/latest_output.mp4")
+            short_id = f"dryrun_{video['video_id']}"
+        else:
+            short_id = uploader.upload_short(
+                file_path=short_path,
+                video_title=video["title"],
+                original_channel=video["channel_title"],
+                original_url=video["url"]
+            )
         if not short_id:
             print("[pipeline] ❌ upload failed — requeueing")
             queue_manager.requeue(queue, video)

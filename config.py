@@ -4,11 +4,10 @@ CONTENT_TIERS = [
     {
         "name": "gta6",
         "queries": [
-            "GTA 6 gameplay",
-            "GTA VI trailer",
-            "Grand Theft Auto 6",
-            "GTA 6 new footage",
-            "GTA 6 details"
+            "GTA 6 gameplay walkthrough",
+            "GTA VI gameplay",
+            "Grand Theft Auto 6 gameplay",
+            "GTA 6 stunts gameplay"
         ],
         "min_views": 20000,
         "max_age_hours": 48,
@@ -17,9 +16,9 @@ CONTENT_TIERS = [
     {
         "name": "gta5",
         "queries": [
-            "GTA 5 funny moments 2026",
-            "GTA V best clips",
-            "GTA 5 insane moments"
+            "GTA 5 stunts gameplay",
+            "GTA 5 funny moments gameplay",
+            "GTA V heist gameplay"
         ],
         "min_views": 50000,
         "max_age_hours": 168,
@@ -104,3 +103,4 @@ LOGS = {
 
 import os
 YOUTUBE_COOKIES_PATH = os.environ.get("YOUTUBE_COOKIES_PATH", "")
+DRY_RUN = os.environ.get("DRY_RUN", "true").lower() == "true"
