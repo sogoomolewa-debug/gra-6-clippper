@@ -1,25 +1,5 @@
 {
-  "pending": [
-    {
-      "video_id": "10dhT94ekgY",
-      "url": "https://youtube.com/watch?v=10dhT94ekgY",
-      "title": "Why I Almost Stopped Speedrunning GTA 5 | Viper Rambles #9",
-      "description": "00:00 - Why I Stopped Speedrunning GTA 5\n03:22 - The Vehicle That Killed GTA Online Public Lobbies\n05:37 - This is My Most Stolen GTA Series\n07:17 - The Reality of YouTube Collabs & Social Media Boundaries\n09:46 - Twitch Turbo vs. YouTube Premium Explained\n10:21 - My Plans for Future Single-Player Games\n11:30 - Windows 11 is garbage\n12:21 - The Real Origin of \"DarkViperAU\"\n13:49 - Why Viper Rambles is Back (And What's Changing)\n15:05 - Engagement Photo Disasters & Six-Day Benders\n17:42 - How I Finally Managed My Weight Lost\n\n\u2b50 Follow Me Everywhere\nInstagram: https://go.darkviper.au/Instagram\nTwitch: https://go.darkviper.au/Twitch\nTikTok: https://go.darkviper.au/TikTok\nPast Livestreams: https://go.darkviper.au/OldLivestreams\nTwitter (X): https://go.darkviper.au/Twitter\nBlueSky: https://go.darkviper.au/Bsky \nFacebook: https://go.darkviper.au/Facebook\n\n\u2b50 Join the Community\nDiscord: https://go.darkviper.au/Discord\nSubreddit: https://go.darkviper.au/Reddit\nGTA 5 Speedrun Discord: https://go.darkviper.au/SpeedrunDiscord\n\n\u2b50 Support Me\nFull Setup and Daily Gear: https://darkviper.au/products-i-use/\nMerch: https://go.darkviper.au/Merch\nYouTube Membership: https://go.darkviper.au/YouTubeMembership\nTwitch Sub: https://go.darkviper.au/TwitchMembership\nTikTok Sub: https://go.darkviper.au/TikTokSubscribe\nGamerSupps (Why I Drink It): https://go.darkviper.au/GamerSupps\n\n\u2b50 Business Contact\nbusiness@darkviper.au\n\n#gta #gta5 #gtaonline #darkviperau #darkviper",
-      "category_id": "20",
-      "channel_id": "UCV6mNrW8CrmWtcxWfQXy11g",
-      "channel_title": "DarkViperAU",
-      "channel_url": "https://youtube.com/@DarkViperAU",
-      "view_count": 11461,
-      "like_count": 1006,
-      "duration_seconds": 1174,
-      "published_at": "2026-06-16T14:00:38Z",
-      "thumbnail_url": "https://i.ytimg.com/vi/10dhT94ekgY/hqdefault.jpg",
-      "subscriber_count": 2210000,
-      "score": 8717.4,
-      "source_type": "gta",
-      "queued_at": "2026-06-16T21:55:55.596698Z"
-    }
-  ],
+  "pending": [],
   "processed": [
     {
       "video_id": "VlVs65QgCcw",
@@ -86,6 +66,12 @@
       "short_id": "dryrun_WWLIyjkWwFI",
       "source_type": "gta",
       "uploaded_at": "2026-06-16T23:23:49.576687Z"
+    },
+    {
+      "video_id": "10dhT94ekgY",
+      "short_id": "skipped_non_gameplay",
+      "source_type": "gta",
+      "uploaded_at": "2026-06-16T23:57:56.294861Z"
     }
   ]
 }
