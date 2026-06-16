@@ -90,7 +90,7 @@ This guide outlines how to manually verify every stage of the pipeline to ensure
     python3 -m pipeline.uploader
     ```
 *   **Expected Result**: A "✅ successfully uploaded" message and a YouTube link.
-*   **Current Status**: **PENDING** (Bypassed during dry-runs to avoid accidental uploads).
+*   **Current Status**: **PASS** (Resumable upload verified with successful live upload of Short `FbUICzVkgtQ`).
 
 ---
 
