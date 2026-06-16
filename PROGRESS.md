@@ -1,6 +1,6 @@
 # GTA6 Shorts Pipeline — Project Progress Report
 
-## 📅 Last Updated: June 14, 2026
+## 📅 Last Updated: June 16, 2026
 
 This document tracks the iterative development and verification of the GTA6 Shorts automation pipeline.
 
@@ -22,38 +22,39 @@ This document tracks the iterative development and verification of the GTA6 Shor
     *   Verified output via test generation (`test_cloned_voice_1.7B.wav`).
     *   Voice source `assets/voice_sample.wav` converted and verified.
 
-### ✅ 3. YouTube Search & Filtering
+### ✅ 3. YouTube Search & Filtering (Refined Sourcing)
+*   **Status**: **COMPLETE & STRICTLY FILTERED**
+*   **Details**:
+    *   **Query Tuning**: Refined queries in `config.py` to target pure gameplay (e.g. `walkthrough`, `stunts`, `funny moments`) to ensure the pipeline targets high-quality in-game captures and avoids talk shows or fan speculation.
+    *   **YouTube Gaming Category Filter**: Enforced that candidate videos must be in YouTube Category `20` (Gaming), filtering out blogs, essays, and entertainment news uploads.
+    *   **Metadata Blacklist**: Rejects videos containing blacklist terms (`rant`, `essay`, `podcast`, `review`, `opinion`, `thoughts`, `news`, `drama`, `speculation`) in the title or description before they join the queue.
+    *   **Channel Block**: Rockstar Games official channel is blocked in `search.py` to prevent copyright issues.
+
+### ✅ 4. Visual Gameplay Verification & Clip Boundaries (Gemini 2.5 Flash API)
+*   **Status**: **COMPLETE & COMBINED**
+*   **Details**:
+    *   **Structured API Call**: Upgraded the visual analysis to a single structured Gemini 2.5 Flash API call using a Pydantic response schema (`VideoAnalysis`). This obtains the clip description, natural start/end boundaries, and a gameplay validation flag all in one API transaction.
+    *   **Visual Logic**: Gemini assesses the segment frames to check if they show direct gameplay. If `is_gameplay` is `False` (flagging vlogs, news recap slides, or talk shows), the orchestrator drops the video and proceeds to the next queue item.
+    *   **Cost/Latency Optimization**: Combining boundaries and description calls into a single query cuts Gemini API latency and token costs in half.
+
+### ✅ 5. AI Reasoning & Hook Synthesis
 *   **Status**: **COMPLETE & VERIFIED**
 *   **Details**:
-    *   Successfully connected to YouTube Data API v3.
-    *   Verified the **Tiered Search logic**: Correctly filtered 36 results down to 10 high-quality viral candidates.
-    *   Top candidates identified (e.g., videos with 200k+ views in < 48h).
+    *   Groq API using `llama-3.3-70b-versatile` writes hooks based on Gemini's visual description, comments, and captions.
+    *   **Upgraded Styling & Outlines**: Replaced the semi-transparent black background box with a thick black outline (`borderw=6`) and drop shadows (`shadowx=3:shadowy=3`) using the Oswald Bold font in a bottom-centered safe zone.
+    *   **Gaussian Blur**: Intro hook blur updated to a high-quality smooth Gaussian blur (`gblur=sigma=20:steps=3`).
 
-### ✅ 4. Intelligence & Extraction (Gemini 2.5 Flash visual analysis)
-*   **Status**: **COMPLETE & MIGRATED**
+### ✅ 6. Dry Run & Safety Checks
+*   **Status**: **COMPLETE & VALIDATED**
 *   **Details**:
-    *   **YouTube Bot Bypass**: Configured cookie authentication (`cookies.txt` support) across all downloader scripts.
-    *   **Signature Decryption**: Installed `yt-dlp-ejs` and implemented dynamic Node.js JS runtime lookup using `shutil.which("node")` to solve YouTube's n-challenges.
-    *   **Visual Analysis**: Migrated from Modal Qwen2.5-VL-7B to **Gemini 2.5 Flash API**. Uploads video segments via Gemini File API, asks two targeted questions (scene description + natural clip boundaries), then cleans up the uploaded file. No GPU deployment needed.
-
-### ✅ 5. AI Reasoning (Groq Hook)
-*   **Status**: **COMPLETE & VERIFIED**
-*   **Details**:
-    *   Switched hook generator from Anthropic/Claude to Groq API using `llama-3.3-70b-versatile` for faster, cost-effective inference.
-    *   Context prompt built with three layers: visual description (primary), transcripts (verbal), and timestamps comments (audience reaction).
-    *   Graceful fallback to randomized hooks verified in the absence of an API key.
-
-### ✅ 6. Video Composition (FFmpeg)
-*   **Status**: **COMPLETE & VERIFIED**
-*   **Details**:
-    *   Logic for Blur Intro → Captions → Reveal Clip is fully implemented in `pipeline/editor.py`.
-    *   Updated signature to use dynamic global start/end timestamps returned by the clip analyzer.
+    *   **Dry-Run Mode**: Implemented a global `DRY_RUN = True` safety setting in `config.py`. When active, the pipeline runs the E2E download, visual analysis, hook writing, voice generation, and editing, but bypasses the YouTube uploader, copying the finished file to `scratch/latest_output.mp4` for quality control review.
+    *   Successfully ran the E2E verification test suite (`test_e2e.py`) with `ALL CHECKS PASSED`.
 
 ---
 
 ## 🚀 Roadmap to Launch
-1.  [x] Deploy Visual clip analyzer to Modal.
+1.  [x] Deploy Visual clip analyzer to Modal / Migrate to Gemini 2.5 Flash API.
 2.  [x] Bypass cloud YouTube IP blocks (cookies + EJS challenge solver).
 3.  [x] Connect Groq API key for hook generation.
-4.  [ ] Run first End-to-End (E2E) cycle in "Dry Run" mode.
-5.  [ ] Activate daily GitHub Actions cron job.
+4.  [x] Run first End-to-End (E2E) cycle in "Dry Run" mode.
+5.  [ ] Activate daily GitHub Actions cron job (when ready to publish live).
