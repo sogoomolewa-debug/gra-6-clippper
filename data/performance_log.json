@@ -244,6 +244,41 @@
         }
       },
       "notes": ""
+    },
+    {
+      "short_id": "dryrun_52A58Kyr29Y",
+      "uploaded_at": "2026-06-16T22:01:19.052318Z",
+      "source_video_id": "52A58Kyr29Y",
+      "source_type": "gta",
+      "hook_text": "Wait... what just happened to that SUV",
+      "hook_word_count": 7,
+      "peak_start": 134.0,
+      "peak_position_pct": 15.2,
+      "clip_duration": 10.0,
+      "visual_description": "A player swiftly gets into a blue sports car just as a black SUV parked next to it unexpectedly explodes.",
+      "natural_boundaries_used": true,
+      "peak_signal": "comments",
+      "peak_sec": 138,
+      "global_start": 134.0,
+      "global_end": 144.0,
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      },
+      "notes": ""
     }
   ]
 }
