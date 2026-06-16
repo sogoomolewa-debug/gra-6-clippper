@@ -1,11 +1,11 @@
 {
-  "last_updated": "2026-06-16T20:43:55.215201Z",
+  "last_updated": "2026-06-16T23:20:14.463104Z",
   "channels": {
     "unknown": {
       "channel_title": "unknown",
       "production": {
-        "total_sourced": 7,
-        "total_uploaded": 7,
+        "total_sourced": 8,
+        "total_uploaded": 8,
         "total_rejected": 0,
         "rejection_rate": 0.0
       },
@@ -43,6 +43,314 @@
       "priority_score": 5.0,
       "confidence": "low",
       "first_sourced": "2026-06-14T09:57:21.761297Z",
+      "last_sourced": "2026-06-16T22:01:19.052318Z"
+    },
+    "Parkerr": {
+      "channel_title": "Parkerr",
+      "production": {
+        "total_sourced": 1,
+        "total_uploaded": 1,
+        "total_rejected": 0,
+        "rejection_rate": 0.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-14T09:57:21.761297Z",
+      "last_sourced": "2026-06-14T09:57:21.761297Z"
+    },
+    "SomeOrdinaryGamers": {
+      "channel_title": "SomeOrdinaryGamers",
+      "production": {
+        "total_sourced": 1,
+        "total_uploaded": 1,
+        "total_rejected": 0,
+        "rejection_rate": 0.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-15T23:22:00.630026Z",
+      "last_sourced": "2026-06-15T23:22:00.630026Z"
+    },
+    "Bangla Gamer YT": {
+      "channel_title": "Bangla Gamer YT",
+      "production": {
+        "total_sourced": 1,
+        "total_uploaded": 1,
+        "total_rejected": 0,
+        "rejection_rate": 0.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-15T23:46:36.180267Z",
+      "last_sourced": "2026-06-15T23:46:36.180267Z"
+    },
+    "The GTA Assassin": {
+      "channel_title": "The GTA Assassin",
+      "production": {
+        "total_sourced": 1,
+        "total_uploaded": 1,
+        "total_rejected": 0,
+        "rejection_rate": 0.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-15T23:52:28.908300Z",
+      "last_sourced": "2026-06-15T23:52:28.908300Z"
+    },
+    "GameStar": {
+      "channel_title": "GameStar",
+      "production": {
+        "total_sourced": 1,
+        "total_uploaded": 1,
+        "total_rejected": 0,
+        "rejection_rate": 0.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-15T23:59:01.001807Z",
+      "last_sourced": "2026-06-15T23:59:01.001807Z"
+    },
+    "Red Arcade": {
+      "channel_title": "Red Arcade",
+      "production": {
+        "total_sourced": 2,
+        "total_uploaded": 2,
+        "total_rejected": 0,
+        "rejection_rate": 0.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-16T00:30:33.447899Z",
+      "last_sourced": "2026-06-16T22:01:19.052318Z"
+    },
+    "Call Me Kevin": {
+      "channel_title": "Call Me Kevin",
+      "production": {
+        "total_sourced": 1,
+        "total_uploaded": 1,
+        "total_rejected": 0,
+        "rejection_rate": 0.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-16T01:08:53.653058Z",
       "last_sourced": "2026-06-16T01:08:53.653058Z"
     }
   }

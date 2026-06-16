@@ -1,25 +1,6 @@
 {
   "pending": [
     {
-      "video_id": "WWLIyjkWwFI",
-      "url": "https://youtube.com/watch?v=WWLIyjkWwFI",
-      "title": "Why can't people drive in this country? - Niko Bellic",
-      "description": "Watch Liberty City drivers do what they do best, crash, hit pedestrians and cause chaos.\n\n\u25baTwitter - https://twitter.com/whatever57010\n\u25baBluesky - https://bsky.app/profile/whatever57010.bsky.social\n\u25bapatreon - https://www.patreon.com/whatever57010\n\nThanks for Watching!! \n#gta4  #gtaiv  #gtadriving",
-      "category_id": "20",
-      "channel_id": "UCoKYYUrm0En0U2wAIkxSh5A",
-      "channel_title": "whatever57010",
-      "channel_url": "https://youtube.com/@whatever57010",
-      "view_count": 6730,
-      "like_count": 501,
-      "duration_seconds": 292,
-      "published_at": "2026-06-11T07:08:43Z",
-      "thumbnail_url": "https://i.ytimg.com/vi/WWLIyjkWwFI/hqdefault.jpg",
-      "subscriber_count": 336000,
-      "score": 12828.279346210995,
-      "source_type": "gta",
-      "queued_at": "2026-06-16T00:58:07.492040Z"
-    },
-    {
       "video_id": "10dhT94ekgY",
       "url": "https://youtube.com/watch?v=10dhT94ekgY",
       "title": "Why I Almost Stopped Speedrunning GTA 5 | Viper Rambles #9",
@@ -99,6 +80,12 @@
       "short_id": "skipped_vague_description",
       "source_type": "gta",
       "uploaded_at": "2026-06-16T22:59:53.568366Z"
+    },
+    {
+      "video_id": "WWLIyjkWwFI",
+      "short_id": "dryrun_WWLIyjkWwFI",
+      "source_type": "gta",
+      "uploaded_at": "2026-06-16T23:23:49.576687Z"
     }
   ]
 }
