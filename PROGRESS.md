@@ -22,11 +22,12 @@ This document tracks the iterative development and verification of the GTA6 Shor
     *   Verified output via test generation (`test_cloned_voice_1.7B.wav`).
     *   Voice source `assets/voice_sample.wav` converted and verified.
 
-### ✅ 3. YouTube Search & Sourcing (Curated Whitelist)
+### ✅ 3. YouTube Sourcing & Priority Scoring (Curated Whitelist)
 *   **Status**: **COMPLETE & CURATED**
 *   **Details**:
-    *   **Sourcing Method**: Transitioned from global keyword searches to a curated list of trusted, English-speaking GTA stunt and compilation channels (Red Arcade, Prestige Clips, Hazardous).
-    *   **Uploads Playlist Syncing**: Sourcing logic resolves uploads playlists (`UU...` IDs) and pulls the latest 5 uploads from each channel directly. This uses minimal API quota.
+    *   **Sourcing Method**: Transitioned from global keyword searches to a curated list of trusted, GTA stunt, fails, and challenge creators (Red Arcade, Prestige Clips, Hazardous, whatever57010, DarkViperAU, Call Me Kevin).
+    *   **Uploads Playlist Syncing**: Sourcing logic resolves uploads playlists (`UU...` IDs) and pulls the latest 5 uploads from each channel directly.
+    *   **Priority-Weighted Ranking**: Implemented a priority scoring system to boost specific channels (2.0x for visual stunt/fail compilation channels: Hazardous, whatever57010, Red Arcade, Prestige Clips) and down-weight others (0.5x for personality/commentary-heavy channels: DarkViperAU, Call Me Kevin).
     *   **Relaxed Filters**: Ignored subscriber checks and lowered the view count threshold to 2,000 views to fetch fresh gameplay uploads faster, while maintaining 7-day age recency checks.
     *   **Rockstar Channel Block**: Rockstar Games official channel is blocked in `search.py` as a safety fallback.
 
@@ -47,8 +48,8 @@ This document tracks the iterative development and verification of the GTA6 Shor
 *   **Status**: **COMPLETE & VALIDATED**
 *   **Details**:
     *   **Dry-Run Mode**: Implemented a global `DRY_RUN = True` safety setting in `config.py`. When active, the pipeline runs the E2E download, visual analysis, hook writing, voice generation, and editing, but bypasses the YouTube uploader, copying the finished file to `scratch/latest_output.mp4` for quality control review.
-    *   Successfully ran the E2E verification test suite (`test_e2e.py`) with `ALL CHECKS PASSED`.
-    *   Successfully ran a full whitelisted pipeline cycle, generating a Short from Red Arcade's uploads feed and saving it locally with the credit watermark.
+    *   Successfully ran the E2E verification test suite (`test_e2e.py`) with `ALL CHECKS PASSED` (confirming watermark and layout compatibility).
+    *   Successfully ran a full whitelisted, priority-ranked E2E pipeline run. Sourced new uploads, ranked them using the priority multipliers, skipped duplicates, popped Call Me Kevin's video, compiled it with a `CLIP: @CALL ME KEVIN` watermark, and outputted the Short to `scratch/latest_output.mp4`.
 
 ---
 
@@ -58,4 +59,5 @@ This document tracks the iterative development and verification of the GTA6 Shor
 3.  [x] Connect Groq API key for hook generation.
 4.  [x] Run first End-to-End (E2E) cycle in "Dry Run" mode.
 5.  [x] Implement channel whitelist uploads syncing & credit watermark.
-6.  [ ] Activate daily GitHub Actions cron job (when ready to publish live).
+6.  [x] Implement channel priority-weighted scoring (High/Low priorities).
+7.  [ ] Activate daily GitHub Actions cron job (when ready to publish live).

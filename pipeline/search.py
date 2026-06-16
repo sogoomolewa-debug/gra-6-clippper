@@ -242,8 +242,12 @@ def get_top_videos(api_key: str, tier_name: str, limit: int = 5) -> list[dict]:
             
             eligible = [v for v in details if is_eligible(v, tier)]
             
+            # Apply priority multipliers
+            priority_map = {ch["id"]: ch.get("priority", 1.0) for ch in config.SOURCING.get("whitelist_channels", [])}
             for v in eligible:
-                v["score"] = score_video(v)
+                base_score = score_video(v)
+                priority_multiplier = priority_map.get(v["channel_id"], 1.0)
+                v["score"] = base_score * priority_multiplier
                 
             eligible.sort(key=lambda x: x["score"], reverse=True)
             top = eligible[:limit]

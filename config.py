@@ -108,9 +108,12 @@ DRY_RUN = os.environ.get("DRY_RUN", "true").lower() == "true"
 SOURCING = {
     "mode": "whitelist",
     "whitelist_channels": [
-        {"name": "Red Arcade", "id": "UCHZZo1h1cI1vg4I9g2RqOUQ"},
-        {"name": "Prestige Clips", "id": "UCC-uu-OqgYEx52KYQ-nJLRw"},
-        {"name": "Hazardous", "id": "UCgXfEXQBy0r4MywuzNf3iGQ"}
+        {"name": "Hazardous", "id": "UCgXfEXQBy0r4MywuzNf3iGQ", "priority": 2.0},
+        {"name": "whatever57010", "id": "UCoKYYUrm0En0U2wAIkxSh5A", "priority": 2.0},
+        {"name": "Red Arcade", "id": "UCHZZo1h1cI1vg4I9g2RqOUQ", "priority": 2.0},
+        {"name": "Prestige Clips", "id": "UCC-uu-OqgYEx52KYQ-nJLRw", "priority": 2.0},
+        {"name": "DarkViperAU", "id": "UCV6mNrW8CrmWtcxWfQXy11g", "priority": 0.5},
+        {"name": "Call Me Kevin", "id": "UCdoPCztTOW7BJUPk2h5ttXA", "priority": 0.5}
     ],
     "max_age_hours": 168,
     "min_views": 2000,

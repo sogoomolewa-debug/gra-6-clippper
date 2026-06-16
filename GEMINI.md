@@ -10,7 +10,11 @@ This document serves as a comprehensive guide for any AI agent or developer taki
 *   **Voice Synthesis**: Tone variation and strategic pauses implemented by chunking hooks at delivery markers (`...` and `—`), synthesizing chunks at custom speeds, and stitching them with 280ms silences.
 *   **Video Editor**: Crop to 9:16 vertical format, high-quality Gaussian background blur, word wrapping, and stylized safe-zone captions using thick outlines and 3D drop shadows (Oswald Bold font).
 *   **On-Screen Credit Watermark**: Translucent overlay (`CLIP: @[CHANNEL_NAME]`) burned at `x=50:y=100` on the vertical crop to credit original creators and ensure fair-use compliance.
-*   **Sourcing & Whitelist Filters**: Exclusive sourcing from curated gameplay channels (Red Arcade, Prestige Clips, Hazardous) by querying uploads playlists directly. Enforces Gaming category (`20`), 7-day recency, and a relaxed 2,000 views filter.
+*   **Sourcing & Whitelist Filters**: Exclusive sourcing from curated gameplay channels (Red Arcade, Prestige Clips, Hazardous, whatever57010, DarkViperAU, Call Me Kevin) by querying uploads playlists directly.
+*   **Priority-Weighted Ranking**: Channels are configured with priority multipliers:
+    *   **High Priority (2.0x Boost)**: Hazardous, whatever57010, Red Arcade, Prestige Clips.
+    *   **Low Priority (0.5x multiplier)**: DarkViperAU, Call Me Kevin.
+    *   Videos are ranked dynamically: `score = base_score * priority_multiplier`.
 *   **Dry-Run Mode**: Pipeline executes fully but bypasses YouTube uploads, saving output locally to `scratch/latest_output.mp4` for quality control review.
 *   **Automation**: GitHub Actions workflows created for daily processing (`daily.yml`) and weekly performance tracking (`fetch_stats.yml`).
 
@@ -35,7 +39,7 @@ graph TD
 ```
 
 1.  **Sourcing** (`pipeline/search.py`): If `config.SOURCING["mode"] == "whitelist"`, fetches the latest 5 uploads from each whitelisted channel's uploads playlist (`UU...` ID). Bypasses global YouTube search to consume almost zero API quota.
-2.  **Metadata Check** (`pipeline/search.py`): Restricts candidate videos strictly to category `20` (Gaming), checks that published age is under 7 days (`max_age_hours: 168`), and view count is above 2,000.
+2.  **Metadata Check & Scoring** (`pipeline/search.py`): Restricts candidate videos strictly to category `20` (Gaming), checks that published age is under 7 days (`max_age_hours: 168`), and view count is above 2,000. Multiplies the calculated base score by the channel's priority multiplier (2.0x or 0.5x).
 3.  **Heatmap** (`pipeline/heatmap.py`): Detects viral spikes in the video timeline using comments, audio peaks, yt-dlp heatmap data, or 30% duration fallback.
 4.  **Clip Analysis** (`pipeline/clip_analyzer.py`): Downloads a segment and calls Gemini 2.5 Flash with a structured Pydantic schema to validate gameplay (`is_gameplay`), generate description, and identify natural boundaries.
 5.  **Hook** (`pipeline/hook.py`): Calls Groq Llama 3.3 70B to write a hook rotating through 4 styles (Shocked, Deadpan, Hype, Storyteller) and applies delivery markup.
@@ -52,7 +56,7 @@ graph TD
 ├── assets/              # Oswald-Bold.ttf, Montserrat-Black.ttf, voice_sample.wav
 ├── data/                # queue.json, performance_log.json
 ├── pipeline/            # Core Python modules
-│   ├── search.py        # Whitelist uploads syncing + eligibility filters
+│   ├── search.py        # Whitelist uploads syncing + eligibility & priority scoring
 │   ├── heatmap.py       # Viral moment detection (4 signals)
 │   ├── clip_analyzer.py # Gemini 2.5 Flash structured visual analysis
 │   ├── transcript.py    # Caption extraction
