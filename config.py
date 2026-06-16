@@ -39,7 +39,8 @@ QUEUE = {
 }
 
 CLIP = {
-    "max_duration_seconds": 55,
+    "max_duration_seconds": 14,
+    "min_duration_seconds": 10,
     "hook_duration_seconds": 3,
     "output_width": 1080,
     "output_height": 1920,

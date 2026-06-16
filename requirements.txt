@@ -12,5 +12,6 @@ librosa
 soundfile
 numpy
 groq
-google-generativeai
+google-genai
 yt-dlp-ejs
+pydantic

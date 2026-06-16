@@ -100,6 +100,8 @@ def upload_to_gemini(video_path: str) -> object | None:
 
 class VideoAnalysis(BaseModel):
     is_gameplay: bool = Field(description="True if the video segment shows actual direct game graphics/gameplay. False if it is a talking head, reaction video (facecam dominant with minimal gameplay), commentary slides, or news/fandom rant.")
+    is_punchy: bool = Field(description="True if this moment can be fully understood, enjoyed, and impactful in under 15 seconds. False if it requires a long buildup or extended context to make sense (e.g., a 40-second conversation or a long chase).")
+    punchiness_reasoning: str = Field(description="One sentence explaining why this clip is or is not punchy.")
     description: str = Field(description="A single sentence describing the visual action at the peak timestamp.")
     natural_start: float = Field(description="The timestamp in seconds where the action peak's setup naturally begins.")
     natural_end: float = Field(description="The timestamp in seconds where the reaction to the action peak naturally ends.")
@@ -120,10 +122,11 @@ def analyze_with_gemini(
             f"This is a clip from a video related to Grand Theft Auto. "
             f"A viewer left this comment about what happens at {peak_sec_local:.0f} seconds: '{comment_context}'. "
             f"Perform the following analysis tasks:\n"
-            f"1. Determine if this clip shows actual, direct in-game gameplay graphics of a GTA game being played (driving, shooting, missions, etc.). If it is a talking head (person's face), news/speculation slides, podcast, commentary show, or reaction video with minimal gameplay, set is_gameplay to false.\n"
-            f"2. Describe in exactly ONE sentence what visually happens at {peak_sec_local:.0f} seconds.\n"
-            f"3. Find where the peak action at {peak_sec_local:.0f} seconds naturally begins (setup) and naturally ends (reaction complete). "
-            f"The window must be between 45 and 55 seconds long, and must include the peak at {peak_sec_local:.0f} seconds."
+            f"1. Determine if this clip shows actual, direct in-game gameplay graphics of a GTA game being played. If it is a talking head, news/speculation slides, podcast, commentary show, or reaction video with minimal gameplay, set is_gameplay to false.\n"
+            f"2. Determine if the moment is 'punchy'. Can this moment be fully understood, enjoyed, and impactful in under 15 seconds? If it requires a long buildup or extended context to make sense (e.g., a 40-second conversation or a long chase), set is_punchy to false. We only want fast, punchy action or immediate comedy.\n"
+            f"3. Describe in exactly ONE sentence what visually happens at {peak_sec_local:.0f} seconds.\n"
+            f"4. Find where the peak action at {peak_sec_local:.0f} seconds naturally begins (setup) and naturally ends (reaction complete). "
+            f"Requirements: window must be 10-14 seconds long — just the core moment, tight and punchy, no buildup, no aftermath. Peak at {peak_sec_local:.0f}s must be inside the window."
         )
 
         response = client.models.generate_content(
@@ -141,17 +144,21 @@ def analyze_with_gemini(
 
         return {
             "is_gameplay": data.get("is_gameplay", True),
+            "is_punchy": data.get("is_punchy", True),
+            "punchiness_reasoning": data.get("punchiness_reasoning", ""),
             "description": data.get("description", ""),
-            "natural_start": float(data.get("natural_start", max(0.0, peak_sec_local - 8.0))),
-            "natural_end": float(data.get("natural_end", max(0.0, peak_sec_local - 8.0) + 52.0))
+            "natural_start": float(data.get("natural_start", max(0.0, peak_sec_local - 4.0))),
+            "natural_end": float(data.get("natural_end", max(0.0, peak_sec_local - 4.0) + config.CLIP["max_duration_seconds"]))
         }
     except Exception as e:
         print(f"[analyzer] Gemini analysis error: {e}")
         return {
             "is_gameplay": True,
+            "is_punchy": True,
+            "punchiness_reasoning": "fallback error",
             "description": "",
-            "natural_start": max(0.0, peak_sec_local - 8.0),
-            "natural_end": max(0.0, peak_sec_local - 8.0) + 52.0
+            "natural_start": max(0.0, peak_sec_local - 4.0),
+            "natural_end": max(0.0, peak_sec_local - 4.0) + config.CLIP["max_duration_seconds"]
         }
 
 
@@ -168,7 +175,7 @@ def clamp_boundaries(
     BUG 4 FIX: Qwen sometimes returns 95s windows — this clamps to config max.
     """
     max_dur = float(config.CLIP["max_duration_seconds"])
-    min_dur = 45.0
+    min_dur = float(config.CLIP["min_duration_seconds"])
 
     duration = natural_end - natural_start
 
@@ -184,7 +191,7 @@ def clamp_boundaries(
 
     # Verify peak is inside window — if not, re-center around peak
     if not (natural_start <= peak_sec_local <= natural_end):
-        natural_start = max(0.0, peak_sec_local - 8.0)
+        natural_start = max(0.0, peak_sec_local - 4.0)
         natural_end = natural_start + max_dur
         print(f"[analyzer] re-centered around peak: {natural_start:.1f}s → {natural_end:.1f}s")
 
@@ -220,9 +227,11 @@ def analyze_clip(
 
     def fallback(reason: str) -> dict:
         print(f"[analyzer] {reason} — using smart offset fallback")
-        fallback_start = max(0.0, peak_sec_global - 8.0)
+        fallback_start = max(0.0, peak_sec_global - 4.0)
         return {
             "is_gameplay": True,
+            "is_punchy": True,
+            "punchiness_reasoning": reason,
             "description": "",
             "global_start": fallback_start,
             "global_end": fallback_start + float(config.CLIP["max_duration_seconds"])
@@ -270,10 +279,11 @@ def analyze_clip(
             )
         except Exception as e:
             print(f"[analyzer] Gemini analysis error: {e}")
+            fallback_start = max(0.0, peak_sec_local - 4.0)
             result = {
                 "description": "",
-                "natural_start": max(0.0, peak_sec_local - 8.0),
-                "natural_end": max(0.0, peak_sec_local - 8.0) + 52.0
+                "natural_start": fallback_start,
+                "natural_end": fallback_start + config.CLIP["max_duration_seconds"]
             }
         finally:
             try:
@@ -299,6 +309,8 @@ def analyze_clip(
 
         return {
             "is_gameplay": result.get("is_gameplay", True),
+            "is_punchy": result.get("is_punchy", True),
+            "punchiness_reasoning": result.get("punchiness_reasoning", ""),
             "description": result.get("description", ""),
             "global_start": global_start,
             "global_end": global_end
@@ -306,8 +318,11 @@ def analyze_clip(
 
     except Exception as e:
         print(f"[analyzer] analyze_clip error: {e}")
-        fallback_start = max(0.0, peak_sec_global - 8.0)
+        fallback_start = max(0.0, peak_sec_global - 4.0)
         return {
+            "is_gameplay": True,
+            "is_punchy": True,
+            "punchiness_reasoning": "error",
             "description": "",
             "global_start": fallback_start,
             "global_end": fallback_start + float(config.CLIP["max_duration_seconds"])

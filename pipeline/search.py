@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 import isodate
 
 import config
+from pipeline.channel_tracker import get_channel_priority
+
 
 
 def build_youtube(api_key: str):
@@ -174,21 +176,26 @@ def is_eligible(video: dict, tier: dict) -> bool:
 
 
 def score_video(video: dict) -> float:
-    """Score a video based on views, recency, and engagement."""
+    """Score a video based on views, recency, and engagement, and apply channel priority boost."""
     try:
+        from datetime import datetime
         published_at = video.get("published_at", "")
-        published_dt = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
-        age_hours = (datetime.utcnow().replace(tzinfo=published_dt.tzinfo) - published_dt).total_seconds() / 3600
+        # Remove Z and tzinfo for local-agnostic comparison matching the new score_video signature
+        published_dt = datetime.fromisoformat(published_at.replace("Z", ""))
+        age_hours = (datetime.utcnow() - published_dt).total_seconds() / 3600
+        recency_weight = 1.0 if age_hours < 12 else 0.7 if age_hours < 24 else 0.4
 
-        if age_hours < 12:
-            recency_weight = 1.0
-        elif age_hours < 24:
-            recency_weight = 0.7
-        else:
-            recency_weight = 0.4
+        like_ratio = video["like_count"] / max(video["view_count"], 1) if video.get("like_count") else 0
+        base_score = (video["view_count"] * recency_weight) + (like_ratio * 50000)
 
-        like_ratio = video["like_count"] / video["view_count"] if video["view_count"] > 0 else 0
-        return (video["view_count"] * recency_weight) + (like_ratio * 50000)
+        # Channel priority multiplier — high-performing channels surface higher
+        channel_priority = get_channel_priority(video.get("channel_title", ""))
+        channel_multiplier = 0.7 + (channel_priority / 10.0) * 0.8
+
+        # priority=1 -> 0.78x, priority=5 -> 1.1x, priority=10 -> 1.5x
+        final_score = round(base_score * channel_multiplier, 1)
+        print(f"[search] {video['channel_title'][:20]}: base={base_score:.0f} x channel_mult={channel_multiplier:.2f} = {final_score:.0f}")
+        return final_score
     except Exception as e:
         print(f"[search] scoring error: {e}")
         return 0.0

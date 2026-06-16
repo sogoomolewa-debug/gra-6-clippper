@@ -54,7 +54,7 @@ def commit_data_files() -> None:
         commands = [
             ["git", "config", "user.name", "pipeline-bot"],
             ["git", "config", "user.email", "bot@pipeline"],
-            ["git", "add", "data/queue.json", "data/performance_log.json"],
+            ["git", "add", "data/queue.json", "data/performance_log.json", "data/channel_analytics.json"],
         ]
         for cmd in commands:
             try:
@@ -191,6 +191,15 @@ def run_pipeline() -> None:
         if not analysis.get("is_gameplay", True):
             print(f"[pipeline] ❌ video {video['video_id']} is not gameplay (flagged by Gemini). Skipping and marking processed.")
             queue_manager.mark_processed(queue, video, "skipped_non_gameplay")
+            queue_manager.save_queue(queue)
+            commit_data_files()
+            return
+
+        # Check if the video is punchy enough for a short clip
+        if not analysis.get("is_punchy", True):
+            reason = analysis.get("punchiness_reasoning", "No reason provided")
+            print(f"[pipeline] ❌ video {video['video_id']} is not punchy (flagged by Gemini: {reason}). Skipping and marking processed.")
+            queue_manager.mark_processed(queue, video, "skipped_not_punchy")
             queue_manager.save_queue(queue)
             commit_data_files()
             return

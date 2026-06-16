@@ -6,6 +6,8 @@ from datetime import datetime
 import pathlib
 
 import config
+from pipeline import channel_tracker
+
 
 
 def get_youtube_client():
@@ -128,6 +130,8 @@ def run() -> None:
                         print(f"[stats] {entry['short_id']} @ {label}: {stats}")
 
         save_log(log)
+        print("[stats] refreshing channel analytics...")
+        channel_tracker.update_channel_analytics()
         print(f"[stats] complete — {updates} snapshots updated")
     except Exception as e:
         print(f"[stats] error: {e}")

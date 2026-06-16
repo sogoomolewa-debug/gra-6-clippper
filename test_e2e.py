@@ -46,6 +46,8 @@ import wave
 CACHED_VIDEO_PATH = "scratch/cached_analyzer_segment.mp4"  # 1280x720 120s cached clip
 HOOK_AUDIO_PATH   = "scratch/test_hook.wav"                # Short WAV file
 OUTPUT_PATH        = "scratch/test_output_short.mp4"
+GLOBAL_START      = 10.0
+GLOBAL_END        = 23.0   # 13 second reveal — matches new format
 
 
 # ── VERIFICATION FUNCTIONS ────────────────────────────────────────────────────
@@ -141,12 +143,12 @@ def verify_output(output_path: str) -> dict:
     results["dimensions_correct"] = correct_dims
     print(f"{'✅' if correct_dims else '❌'} Dimensions: {width}x{height} (expected 1080x1920)")
 
-    # 3 — Check duration (must be 45-60 seconds)
+    # 3 — Check duration (must be 12-18 seconds)
     duration = float(format_info.get("duration", 0))
-    duration_ok = 45.0 <= duration <= 60.0
+    duration_ok = 12.0 <= duration <= 18.0   # hook (3s) + reveal (10-14s)
     results["duration_sec"] = round(duration, 2)
     results["duration_ok"] = duration_ok
-    print(f"{'✅' if duration_ok else '❌'} Duration: {duration:.2f}s (expected 45-60s)")
+    print(f"{'✅' if duration_ok else '❌'} Duration: {duration:.2f}s (expected 12-18s)")
 
     # 4 — Check total frames
     fps_str = video_stream.get("r_frame_rate", "30/1")
@@ -283,8 +285,8 @@ def run_e2e_test() -> None:
     if video_file is None:
         print("[test] ⚠️ Gemini upload failed.")
         print("[test] Using fallback boundaries & description for E2E validation.")
-        natural_start = 22.0
-        natural_end = 74.0
+        natural_start = GLOBAL_START
+        natural_end = GLOBAL_END
         description_text = "A player shows an inventory screen with a huge amount of glitched money."
     else:
         try:
@@ -303,8 +305,8 @@ def run_e2e_test() -> None:
         except Exception as e:
             print(f"[test] ⚠️ Gemini analysis error: {e}")
             print("[test] Using fallback boundaries & description for E2E validation.")
-            natural_start = 22.0
-            natural_end = 74.0
+            natural_start = GLOBAL_START
+            natural_end = GLOBAL_END
             description_text = "A player shows an inventory screen with a huge amount of glitched money."
         finally:
             try:
