@@ -454,6 +454,43 @@
           "comments": 0
         }
       }
+    },
+    {
+      "short_id": "dryrun_WWLIyjkWwFI",
+      "uploaded_at": "2026-06-17T00:12:38.256454Z",
+      "source_video_id": "WWLIyjkWwFI",
+      "source_channel_title": "Red Arcade",
+      "source_type": "gta",
+      "hook_text": "Dude he just slammed into that SUV on PURPOSE...",
+      "hook_word_count": 9,
+      "peak_start": 60.0,
+      "peak_position_pct": 21.6,
+      "clip_duration": 10.0,
+      "visual_description": "A character intentionally runs into the side of a grey SUV, falls to the ground, then quickly gets up to confront the driver.",
+      "natural_boundaries_used": true,
+      "peak_signal": "comments",
+      "peak_sec": 63,
+      "global_start": 60.0,
+      "global_end": 70.0,
+      "status": "uploaded",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      },
+      "notes": ""
     }
   ]
 }

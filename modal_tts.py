@@ -91,15 +91,10 @@ def generate(request: dict) -> dict:
         
         print(f"[modal] final audio shape: {final_wav.shape}, sr: {sr}")
 
-        # Apply speed adjustment via linear interpolation (time-stretching)
-        speed = float(request.get("speed", 1.0))
-        speed = max(0.5, min(2.0, speed))  # clamp to safe range
-        if abs(speed - 1.0) > 0.01:
-            original_len = len(final_wav)
-            new_len = int(original_len / speed)
-            indices = np.linspace(0, original_len - 1, new_len)
-            final_wav = np.interp(indices, np.arange(original_len), final_wav)
-            print(f"[modal] speed={speed:.2f}: {original_len} → {new_len} samples")
+        # NOTE: Speed adjustment removed from server-side.
+        # It is now handled client-side via proper phase-vocoder
+        # time-stretching in pipeline/voice_humanizer.py
+        # (np.interp was shifting pitch proportionally — incorrect)
 
         # Write to temporary WAV file
         out_path = "/tmp/out.wav"

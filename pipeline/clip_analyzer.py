@@ -129,14 +129,24 @@ def analyze_with_gemini(
             f"Requirements: window must be 10-14 seconds long — just the core moment, tight and punchy, no buildup, no aftermath. Peak at {peak_sec_local:.0f}s must be inside the window."
         )
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[video_file, prompt],
-            config={
-                "response_mime_type": "application/json",
-                "response_schema": VideoAnalysis,
-            }
-        )
+        response = None
+        max_attempts = 3
+        for attempt in range(1, max_attempts + 1):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=[video_file, prompt],
+                    config={
+                        "response_mime_type": "application/json",
+                        "response_schema": VideoAnalysis,
+                    }
+                )
+                break  # Success!
+            except Exception as ex:
+                print(f"[analyzer] Gemini attempt {attempt}/{max_attempts} failed: {ex}")
+                if attempt == max_attempts:
+                    raise ex
+                time.sleep(5)
 
         import json
         data = json.loads(response.text)

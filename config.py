@@ -64,6 +64,15 @@ TTS = {
     "speed_suspense": 0.85,         # slower for build-up chunks
     "speed_reveal": 1.08,           # faster for payoff chunks
     "speed_default": 0.95,          # neutral speed
+    # --- Humanization parameters ---
+    "humanize_pitch_jitter_pct": 1.0,           # ±% random pitch per 200ms window
+    "humanize_room_tone_db": -42,               # brownian noise floor level
+    "humanize_breath_db": -30,                  # synthetic breath level in gaps
+    "humanize_reverb_rt60": 0.1,                # room impulse response decay (seconds)
+    "humanize_high_shelf_cut_db": -2,            # HF rolloff above 12kHz
+    "humanize_low_shelf_boost_db": 1.5,          # warmth boost at 150Hz
+    "humanize_compression_threshold_db": -18,    # compressor threshold
+    "humanize_compression_ratio": 2.0,           # compressor ratio
 }
 
 # Rotating hook delivery styles to break the AI pattern

@@ -12,6 +12,7 @@ from typing import List, Tuple
 import requests
 
 import config
+from pipeline.voice_humanizer import humanize
 
 
 def split_into_chunks(text: str) -> List[dict]:
@@ -289,6 +290,13 @@ def generate_voice(text: str, output_path: str) -> bool:
         if not final_wav:
             print("[voice] error: failed to build final WAV")
             return False
+
+        # Humanize: pitch jitter, dynamics, room tone, breath, reverb
+        try:
+            final_wav = humanize(final_wav)
+            print(f"[voice] humanization applied")
+        except Exception as e:
+            print(f"[voice] humanization failed (using raw): {e}")
 
         # Write to output path
         output = pathlib.Path(output_path)
