@@ -5,6 +5,9 @@ on:
     - cron: '0 8 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
@@ -41,4 +44,7 @@ jobs:
           MODAL_TTS_ENDPOINT: ${{ secrets.MODAL_TTS_ENDPOINT }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           REF_TEXT: ${{ secrets.REF_TEXT }}
+          DRY_RUN: "false"
+          YOUTUBE_COOKIES_PATH: ${{ github.workspace }}/www.youtube.com_cookies.txt
         run: python pipeline.py
+
