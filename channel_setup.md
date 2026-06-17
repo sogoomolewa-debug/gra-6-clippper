@@ -2,8 +2,14 @@
 
 Here is the proposed branding package for your GTA Shorts channel.
 
-## 1. Profile Avatar
+## 1. Channel Art
+
+### Profile Avatar
 ![Velocity Vice Gaming Logo](assets/channel_logo.jpg)
+
+### Channel Banner (16:9)
+![GTA VI Synthwave Channel Banner](assets/channel_banner.jpg)
+
 
 ---
 
