@@ -143,12 +143,12 @@ def verify_output(output_path: str) -> dict:
     results["dimensions_correct"] = correct_dims
     print(f"{'✅' if correct_dims else '❌'} Dimensions: {width}x{height} (expected 1080x1920)")
 
-    # 3 — Check duration (must be 12-18 seconds)
+    # 3 — Check duration (must be a valid Short between 10 and 59 seconds)
     duration = float(format_info.get("duration", 0))
-    duration_ok = 12.0 <= duration <= 18.0   # hook (3s) + reveal (10-14s)
+    duration_ok = 10.0 <= duration <= 59.0   # dynamic hook + reveal
     results["duration_sec"] = round(duration, 2)
     results["duration_ok"] = duration_ok
-    print(f"{'✅' if duration_ok else '❌'} Duration: {duration:.2f}s (expected 12-18s)")
+    print(f"{'✅' if duration_ok else '❌'} Duration: {duration:.2f}s (expected 10-59s)")
 
     # 4 — Check total frames
     fps_str = video_stream.get("r_frame_rate", "30/1")

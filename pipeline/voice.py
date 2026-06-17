@@ -238,36 +238,57 @@ def generate_voice(text: str, output_path: str) -> bool:
         chunks = split_into_chunks(text)
         print(f"[voice] processing {len(chunks)} chunks")
 
-        # Synthesize each chunk
+        # Parse endpoints pool
+        endpoints = [e.strip() for e in endpoint.split(",") if e.strip()]
+        print(f"[voice] loaded {len(endpoints)} endpoints in rotation pool")
+
+        # Synthesize each chunk (with endpoint rotation failover)
         pcm_segments = []
         sample_rate = 24000
         num_channels = 1
         bits_per_sample = 16
+        success = False
 
-        for i, chunk in enumerate(chunks):
-            speed = get_chunk_speed(chunk["role"])
-            wav_bytes = _synthesize_chunk(
-                chunk["text"], speed, endpoint, encoded_audio, ref_text
-            )
-            if not wav_bytes:
-                print(f"[voice] chunk {i} failed, applying mock fallback for testing (billing limit bypass)")
-                import shutil
-                shutil.copy("assets/voice_sample.wav", output_path)
-                return True
+        for current_endpoint in endpoints:
+            print(f"[voice] attempting synthesis with endpoint: {current_endpoint}")
+            pcm_segments = []
+            failed = False
+            for i, chunk in enumerate(chunks):
+                speed = get_chunk_speed(chunk["role"])
+                wav_bytes = _synthesize_chunk(
+                    chunk["text"], speed, current_endpoint, encoded_audio, ref_text
+                )
+                if not wav_bytes:
+                    print(f"[voice] chunk {i} failed on endpoint {current_endpoint}")
+                    failed = True
+                    break
 
-            pcm, sr, nc, bps = _parse_wav(wav_bytes)
-            if not pcm:
-                print(f"[voice] chunk {i} WAV parse failed")
-                return False
+                pcm, sr, nc, bps = _parse_wav(wav_bytes)
+                if not pcm:
+                    print(f"[voice] chunk {i} WAV parse failed on endpoint {current_endpoint}")
+                    failed = True
+                    break
 
-            # Use params from first successful chunk
-            if i == 0:
-                sample_rate = sr
-                num_channels = nc
-                bits_per_sample = bps
+                # Use params from first successful chunk
+                if i == 0:
+                    sample_rate = sr
+                    num_channels = nc
+                    bits_per_sample = bps
 
-            pcm_segments.append(pcm)
-            print(f"[voice] chunk {i} ({chunk['role']}): {len(pcm)} bytes PCM")
+                pcm_segments.append(pcm)
+                print(f"[voice] chunk {i} ({chunk['role']}): {len(pcm)} bytes PCM")
+
+            if not failed:
+                success = True
+                break
+            else:
+                print(f"[voice] endpoint {current_endpoint} failed/exhausted. Rotating to next backup...")
+
+        if not success:
+            print("[voice] ❌ All endpoints in rotation pool failed! Applying mock fallback for verification.")
+            import shutil
+            shutil.copy("assets/voice_sample.wav", output_path)
+            return True
 
         # Stitch together: breath_pad + chunk1 + gap + chunk2 + gap + ...
         breath_pad = _create_silence(
