@@ -98,13 +98,16 @@ def upload_short(
                 "title": title,
                 "description": generate_description(visual_description, source_type, original_channel, original_url),
                 "tags": config.UPLOAD["tags"],
-                "categoryId": config.UPLOAD["category_id"]
+                "categoryId": config.UPLOAD["category_id"],
+                "defaultLanguage": "en",
+                "defaultAudioLanguage": "en"
             },
             "status": {
                 "privacyStatus": config.UPLOAD["privacy_status"],
                 "selfDeclaredMadeForKids": False
             }
         }
+
 
         media = googleapiclient.http.MediaFileUpload(
             file_path,
