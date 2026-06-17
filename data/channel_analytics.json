@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-16T23:23:57.488273Z",
+  "last_updated": "2026-06-17T14:21:30.426785Z",
   "channels": {
     "unknown": {
       "channel_title": "unknown",
@@ -268,10 +268,10 @@
     "Red Arcade": {
       "channel_title": "Red Arcade",
       "production": {
-        "total_sourced": 2,
-        "total_uploaded": 2,
-        "total_rejected": 0,
-        "rejection_rate": 0.0
+        "total_sourced": 7,
+        "total_uploaded": 3,
+        "total_rejected": 4,
+        "rejection_rate": 0.57
       },
       "review_scores": {
         "avg_technical": 0.0,
@@ -307,7 +307,7 @@
       "priority_score": 5.0,
       "confidence": "low",
       "first_sourced": "2026-06-16T00:30:33.447899Z",
-      "last_sourced": "2026-06-16T22:01:19.052318Z"
+      "last_sourced": "2026-06-17T00:12:38.256454Z"
     },
     "Call Me Kevin": {
       "channel_title": "Call Me Kevin",
@@ -396,6 +396,50 @@
       "confidence": "low",
       "first_sourced": "2026-06-16T23:23:49.575456Z",
       "last_sourced": "2026-06-16T23:23:49.575456Z"
+    },
+    "DarkViperAU": {
+      "channel_title": "DarkViperAU",
+      "production": {
+        "total_sourced": 1,
+        "total_uploaded": 0,
+        "total_rejected": 1,
+        "rejection_rate": 1.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-16T23:57:56.293177Z",
+      "last_sourced": "2026-06-16T23:57:56.293177Z"
     }
   }
 }
