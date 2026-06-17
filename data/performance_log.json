@@ -402,6 +402,32 @@
           "comments": 0
         }
       }
+    },
+    {
+      "short_id": "skipped_vague_description",
+      "uploaded_at": "2026-06-17T00:05:13.662049Z",
+      "source_video_id": "WWLIyjkWwFI",
+      "source_channel_title": "Red Arcade",
+      "source_type": "gta",
+      "status": "skipped_vague_description",
+      "notes": "Score: 0. Score: 0 (Actions: [], Objects: [], Physics: [], Directions/Numbers: [], Penalties: [])",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      }
     }
   ]
 }
