@@ -1,10 +1,36 @@
 # pipeline/hook.py — Generate a punchy hook with delivery markup for natural TTS
 import os
 import random
+import re
 from typing import List, Dict, Optional
 
 import groq
 import config
+
+# Stage 3: Generate viral title for high-CTR curiosity gap
+VIRAL_TITLE_PROMPT = """You write viral, high-CTR YouTube Shorts titles for a GTA gaming channel.
+Use a "Curiosity Gap" approach: tease the setups, physical glitches, extreme stunts, or bizarre moments without giving away the final outcome.
+
+Context:
+- Visual Description: {visual_description}
+- Hook Text: {hook_text}
+
+Rules:
+1. Length: 3 to 6 words (under 45 characters).
+2. Curiosity Gap: Tease the action or setup, but NEVER reveal the outcome (e.g., use "Did this just happen?!" instead of "Car lands on helicopter").
+3. Capitalization: CAPITALIZE exactly 1-2 emotional or action words for visual punch (e.g., "This GTA physics is BROKEN", "NO WAY he survived this").
+4. Emojis: Use exactly 1 highly relevant emoji at the end of the text (e.g. 🤯, 💀, 😱, 😳).
+5. Cleanliness: Output ONLY the title text. Do NOT include hashtags, quotes, markdown, or creator channel names.
+"""
+
+FALLBACK_TITLES = [
+    "This was NOT supposed to happen",
+    "Did this actually just HAPPEN?!",
+    "Wait... is this even POSSIBLE?!",
+    "This GTA physics is BROKEN",
+    "NO WAY he survived this",
+    "The luckiest GTA stunt EVER",
+]
 
 # Stage 1: Generate raw hook text with conversational, human feel
 RAW_HOOK_PROMPT = """You write viral YouTube Shorts hooks for a GTA gaming channel.
@@ -217,6 +243,28 @@ def get_hook_with_fallback(
         fallback_hook = random.choice(FALLBACK_HOOKS)
         print(f"[hook] using fallback: {fallback_hook}")
         return fallback_hook
+
+
+def generate_viral_title(video_title: str, visual_description: str, hook_text: str) -> str:
+    """Generate a viral, high-CTR title using Groq."""
+    try:
+        context_str = f"Source Video Title: {video_title}\nVisual Description: {visual_description}\nTTS Hook: {hook_text}"
+        title = _call_groq(VIRAL_TITLE_PROMPT.format(visual_description=visual_description, hook_text=hook_text), context_str)
+        if title:
+            # Clean up the output to make sure there are no quotes or trailing dots
+            title = title.strip().strip('"').strip("'").strip(".")
+            # Strip competitor name/channel reference from title as a precaution
+            blacklist_names = ["prestige clips", "prestige", "red arcade", "hazardous", "whatever57010", "darkviperau", "darkviper", "call me kevin", "kevin"]
+            title_lower = title.lower()
+            for name in blacklist_names:
+                if name in title_lower:
+                    title = re.sub(re.escape(name), "", title, flags=re.IGNORECASE).strip()
+            print(f"[hook] generated viral title: {title}")
+            return title
+        return random.choice(FALLBACK_TITLES)
+    except Exception as e:
+        print(f"[hook] error generating title: {e}")
+        return random.choice(FALLBACK_TITLES)
 
 
 if __name__ == "__main__":

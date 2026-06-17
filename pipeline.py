@@ -277,6 +277,21 @@ def run_pipeline() -> None:
             timestamp_comments=timestamp_comments
         )
 
+        # STEP 7b — GENERATE VIRAL TITLE (using visual description + hook context)
+        raw_title = hook.generate_viral_title(
+            video_title=video["title"],
+            visual_description=visual_description,
+            hook_text=hook_text
+        )
+        if video.get("source_type") == "gta6":
+            title = f"{raw_title} #GTA6 #Shorts"
+        else:
+            title = f"{raw_title} #GTA5 #Shorts"
+
+        if len(title) > 100:
+            title = title[:97] + "..."
+        print(f"[pipeline] final viral title: {title}")
+
         # STEP 8 — VOICE
         hook_audio = f"/tmp/hook_{video['video_id']}.wav"
         if not voice.generate_voice(hook_text, hook_audio):
@@ -313,7 +328,9 @@ def run_pipeline() -> None:
         else:
             short_id = uploader.upload_short(
                 file_path=short_path,
-                video_title=video["title"],
+                title=title,
+                visual_description=visual_description,
+                source_type=video["source_type"],
                 original_channel=video["channel_title"],
                 original_url=video["url"]
             )
@@ -328,6 +345,7 @@ def run_pipeline() -> None:
         log = load_performance_log()
         entry = {
             "short_id": short_id,
+            "title": title,
             "uploaded_at": datetime.utcnow().isoformat() + "Z",
             "source_video_id": video["video_id"],
             "source_channel_title": video.get("channel_title", ""),

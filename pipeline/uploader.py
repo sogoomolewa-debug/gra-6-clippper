@@ -52,13 +52,26 @@ def generate_title(video_title: str) -> str:
         return "GTA 6 Amazing Moment #GTA6 #Shorts"
 
 
-def generate_description(original_channel: str, original_url: str) -> str:
-    """Generate description with creator credit."""
+def generate_description(
+    visual_description: str,
+    source_type: str,
+    original_channel: str,
+    original_url: str
+) -> str:
+    """Generate description with visual SEO hook, creator credit, and engagement CTA."""
     try:
+        # Determine hashtags based on game version
+        if source_type == "gta6":
+            tags = "#GTA6 #GTAVI #GrandTheftAuto #Gaming #Shorts"
+        else:
+            tags = "#GTA5 #GTAV #GrandTheftAuto #Gaming #Shorts"
+
         description = (
-            f"The most rewatched moment from this GTA 6 video.\n\n"
-            f"Original video by {original_channel}: {original_url}\n\n"
-            f"#GTA6 #GTAVI #GrandTheftAuto #Gaming #Shorts"
+            f"{visual_description}\n\n"
+            f"🎥 Original Video: {original_url}\n"
+            f"👤 Sourced from: @{original_channel}\n\n"
+            f"Subscribe to BYNDUO for more epic GTA stunts! What stunt should we try next? 👇\n\n"
+            f"{tags}"
         )
         return description
     except Exception as e:
@@ -66,7 +79,14 @@ def generate_description(original_channel: str, original_url: str) -> str:
         return "#GTA6 #Shorts"
 
 
-def upload_short(file_path: str, video_title: str, original_channel: str, original_url: str) -> str | None:
+def upload_short(
+    file_path: str,
+    title: str,
+    visual_description: str,
+    source_type: str,
+    original_channel: str,
+    original_url: str
+) -> str | None:
     """Upload video to YouTube as a Short."""
     try:
         youtube = get_youtube_client()
@@ -75,8 +95,8 @@ def upload_short(file_path: str, video_title: str, original_channel: str, origin
 
         body = {
             "snippet": {
-                "title": generate_title(video_title),
-                "description": generate_description(original_channel, original_url),
+                "title": title,
+                "description": generate_description(visual_description, source_type, original_channel, original_url),
                 "tags": config.UPLOAD["tags"],
                 "categoryId": config.UPLOAD["category_id"]
             },
