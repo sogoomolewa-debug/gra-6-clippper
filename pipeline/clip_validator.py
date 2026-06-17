@@ -227,16 +227,15 @@ def validate_clip(description: str, timestamp_comments: List[Dict] = None) -> di
         return {"valid": True, "skipped_comment_check": True}
 
     match_result = validate_vs_comments(description, timestamp_comments)
-    # TEMPORARY BYPASS FOR TESTING E2E AUDIO & VIDEO
-    # if not match_result["is_match"] and match_result["confidence"] >= 0.6:
-    #     print(f"[clip_validator] ❌ Rejected: Description mismatch. Confidence: {match_result['confidence']}. Reason: {match_result['reasoning']}")
-    #     return {
-    #         "valid": False,
-    #         "reason": "description_mismatch",
-    #         "detail": f"Confidence: {match_result['confidence']}. Reason: {match_result['reasoning']}"
-    #     }
+    if not match_result["is_match"] and match_result["confidence"] >= 0.6:
+        print(f"[clip_validator] ❌ Rejected: Description mismatch. Confidence: {match_result['confidence']}. Reason: {match_result['reasoning']}")
+        return {
+            "valid": False,
+            "reason": "description_mismatch",
+            "detail": f"Confidence: {match_result['confidence']}. Reason: {match_result['reasoning']}"
+        }
 
-    print("[clip_validator] ✅ Passed validation (Bypass active)")
+    print("[clip_validator] ✅ Passed validation")
     return {"valid": True}
 
 
