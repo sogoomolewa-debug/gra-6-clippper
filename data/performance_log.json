@@ -491,6 +491,32 @@
         }
       },
       "notes": ""
+    },
+    {
+      "short_id": "skipped_non_gameplay",
+      "uploaded_at": "2026-06-18T20:32:49.090696Z",
+      "source_video_id": "vwnGaNxNbdM",
+      "source_channel_title": "DarkViperAU",
+      "source_type": "gta",
+      "status": "skipped_non_gameplay",
+      "notes": "Flagged as non-gameplay by Gemini",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      }
     }
   ]
 }
