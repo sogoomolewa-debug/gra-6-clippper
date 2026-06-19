@@ -343,13 +343,27 @@ def run_pipeline() -> None:
 
         # STEP 11 — LOG
         log = load_performance_log()
+
+        # Calculate source video age
+        from datetime import datetime
+        try:
+            published_at = video.get("published_at", "")
+            published_dt = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+            age_hours = (datetime.utcnow().replace(tzinfo=published_dt.tzinfo) - published_dt).total_seconds() / 3600
+        except Exception:
+            age_hours = 0
+
         entry = {
             "short_id": short_id,
+            "short_url": f"https://youtube.com/shorts/{short_id}",
             "title": title,
             "uploaded_at": datetime.utcnow().isoformat() + "Z",
             "source_video_id": video["video_id"],
+            "source_url": video["url"],
             "source_channel_title": video.get("channel_title", ""),
             "source_type": video["source_type"],
+            "source_video_views": video.get("view_count", 0),
+            "source_video_age_hours": round(age_hours, 1),
             "hook_text": hook_text,
             "hook_style": hook_style,
             "hook_delivery": getattr(config, "CONTENT_MODE", "tts_narrated"),
@@ -358,6 +372,8 @@ def run_pipeline() -> None:
             "peak_position_pct": peak_pct,
             "clip_duration": round(global_end - global_start, 1),
             "visual_description": visual_description,
+            "is_punchy": analysis.get("is_punchy", True),
+            "punchiness_reasoning": analysis.get("punchiness_reasoning", ""),
             "natural_boundaries_used": True,
             "peak_signal": peak_signal,
             "peak_sec": peak_sec,
