@@ -128,14 +128,14 @@ SOURCING = {
         {"name": "Hazardous", "id": "UCgXfEXQBy0r4MywuzNf3iGQ", "priority": 2.0},
         {"name": "whatever57010", "id": "UCoKYYUrm0En0U2wAIkxSh5A", "priority": 2.0},
         {"name": "Prestige Clips", "id": "UCC-uu-OqgYEx52KYQ-nJLRw", "priority": 2.0},
-        {"name": "GTA Series Videos", "id": "UCgC2RKbJI3F2yUUpJo3J1cg", "priority": 2.0},
-        {"name": "GTAMen", "id": "UCCuiUcd09pJB3V4Zw0TP-dw", "priority": 2.0},
-        {"name": "TGG", "id": "UCN3VJSbx7c-ztQz1Ld3RxFw", "priority": 1.8},
+        {"name": "GTA Series Videos", "id": "UCuWcjpKbIDAbZfHoru1toFg", "priority": 2.0},  # Fixed ID
+        {"name": "GTAMen", "id": "UC4zMEl8Qh_nE5nDnp0cxRFQ", "priority": 2.0},  # Fixed ID
+        {"name": "TGG", "id": "UC72PuhDwKtZ5MikpGNhPAtA", "priority": 1.8},  # Fixed ID
 
         # Medium priority - good content but some rejections
         {"name": "Red Arcade", "id": "UCHZZo1h1cI1vg4I9g2RqOUQ", "priority": 1.2},  # 57% rejection rate
-        {"name": "MrBossFTW", "id": "UC1bHr7kYKxdeFfqYqkb_i0Q", "priority": 1.5},
-        {"name": "Digital Car Addict", "id": "UCO9dHC67YHTFFT0UOJAhSGA", "priority": 1.5},
+        {"name": "MrBossFTW", "id": "UC0PMQXAwF6O6aeTpv962miA", "priority": 1.5},  # Fixed ID
+        {"name": "Digital Car Addict", "id": "UCD9qy7cc3bb5rrMjJ9tRTTA", "priority": 1.5},  # Fixed ID
 
         # Low priority - comedy/entertainment (not pure gameplay)
         {"name": "Call Me Kevin", "id": "UCdoPCztTOW7BJUPk2h5ttXA", "priority": 0.5},
