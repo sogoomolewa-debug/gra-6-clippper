@@ -69,8 +69,13 @@ def get_video_duration(video_url: str) -> float:
         return 300.0
 
 
-def find_peak_window(heatmap: List[dict], window_duration: float = 52.0) -> Tuple[float, float]:
-    """Find the window with highest heatmap intensity using sliding window."""
+def find_peak_window(heatmap: List[dict], window_duration: float) -> Tuple[float, float]:
+    """Find the window with highest heatmap intensity using sliding window.
+
+    Args:
+        heatmap: List of heatmap segments with start_time, end_time, value
+        window_duration: Window size in seconds (should match config.CLIP["max_duration_seconds"] - 3)
+    """
     try:
         if not heatmap:
             return (0.0, window_duration)

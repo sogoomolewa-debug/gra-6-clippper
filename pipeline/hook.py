@@ -74,6 +74,23 @@ FALLBACK_HOOKS = [
     "They actually... pulled THIS off",
 ]
 
+# Casual slang patterns for "pure gameplay" mode (matches reference video style)
+CASUAL_SLANG_PATTERNS = [
+    "ngl {action}",
+    "bro really {action}",
+    "no way {action}",
+    "tell me why {action}",
+    "{action} fr fr",
+    "wait {action}",
+]
+
+CASUAL_FALLBACKS = [
+    "ngl this was crazy",
+    "bro really did that",
+    "no way this happened",
+    "wait that actually worked",
+]
+
 
 def _get_style() -> dict:
     """Pick a random hook delivery style to break AI patterns."""
@@ -205,8 +222,12 @@ def get_hook_with_fallback(
     visual_description: str = "",
     transcript_context: str = "",
     timestamp_comments: List[Dict] = []
-) -> str:
-    """Generate a hook with delivery markup. Falls back to pre-written hooks on failure."""
+) -> tuple[str, str]:
+    """Generate a hook with delivery markup. Falls back to pre-written hooks on failure.
+
+    Returns:
+        tuple[str, str]: (hook_text, style_name)
+    """
     try:
         context_str = build_context(video_title, visual_description, transcript_context, timestamp_comments)
         style = _get_style()
@@ -228,7 +249,7 @@ def get_hook_with_fallback(
 
             if validate_hook(marked_hook):
                 print(f"[hook] final: {marked_hook}")
-                return marked_hook
+                return (marked_hook, style['name'])
 
             print(f"[hook] attempt {attempt + 1} failed validation")
             # Try a different style on retry
@@ -237,12 +258,46 @@ def get_hook_with_fallback(
         # Fallback if all attempts fail
         fallback_hook = random.choice(FALLBACK_HOOKS)
         print(f"[hook] using fallback: {fallback_hook}")
-        return fallback_hook
+        return (fallback_hook, "fallback")
     except Exception as e:
         print(f"[hook] error generating hook: {e}")
         fallback_hook = random.choice(FALLBACK_HOOKS)
         print(f"[hook] using fallback: {fallback_hook}")
-        return fallback_hook
+        return (fallback_hook, "fallback")
+
+
+def generate_casual_caption(visual_description: str) -> str:
+    """Generate casual slang caption for pure gameplay mode (no TTS)."""
+    try:
+        action = visual_description.lower()
+
+        # Extract action verb from description
+        if "jump" in action or "leap" in action or "fall" in action:
+            action_verb = "jumped"
+        elif "crash" in action or "hit" in action or "collide" in action:
+            action_verb = "crashed"
+        elif "flip" in action or "spin" in action or "rotate" in action:
+            action_verb = "flipped"
+        elif "explode" in action or "blow" in action:
+            action_verb = "exploded"
+        elif "fly" in action or "flew" in action:
+            action_verb = "flew"
+        elif "land" in action:
+            action_verb = "landed"
+        elif "survive" in action:
+            action_verb = "survived"
+        else:
+            action_verb = "did this"
+
+        # Pick random casual pattern
+        pattern = random.choice(CASUAL_SLANG_PATTERNS)
+        caption = pattern.format(action=action_verb)
+
+        print(f"[hook] casual caption generated: {caption}")
+        return caption
+    except Exception as e:
+        print(f"[hook] casual caption error: {e}")
+        return random.choice(CASUAL_FALLBACKS)
 
 
 def generate_viral_title(video_title: str, visual_description: str, hook_text: str) -> str:

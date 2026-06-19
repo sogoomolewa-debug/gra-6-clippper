@@ -347,11 +347,16 @@ def build_short(
             shutil.rmtree(str(tmp), ignore_errors=True)
             return False
 
-        # Blur backdrop video
-        backdrop_blurred = tmp / "backdrop_blurred.mp4"
-        if not apply_blur(str(backdrop_vertical), str(backdrop_blurred)):
-            shutil.rmtree(str(tmp), ignore_errors=True)
-            return False
+        # Blur backdrop video (optional based on config)
+        if config.CLIP.get("blur_intro_enabled", True):
+            backdrop_blurred = tmp / "backdrop_blurred.mp4"
+            if not apply_blur(str(backdrop_vertical), str(backdrop_blurred)):
+                shutil.rmtree(str(tmp), ignore_errors=True)
+                return False
+        else:
+            # Skip blur - use clear video for instant action hook
+            print("[editor] blur disabled - using instant action hook")
+            backdrop_blurred = backdrop_vertical
 
         # Replace backdrop audio with TTS hook voice
         backdrop_tts = tmp / "backdrop_tts.mp4"

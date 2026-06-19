@@ -270,7 +270,7 @@ def run_pipeline() -> None:
         transcript_context = transcript.get_video_context(video["url"], float(peak_sec))
 
         # STEP 7 — HOOK (visual description is primary source)
-        hook_text = hook.get_hook_with_fallback(
+        hook_text, hook_style = hook.get_hook_with_fallback(
             video_title=video["title"],
             visual_description=visual_description,
             transcript_context=transcript_context,
@@ -351,6 +351,8 @@ def run_pipeline() -> None:
             "source_channel_title": video.get("channel_title", ""),
             "source_type": video["source_type"],
             "hook_text": hook_text,
+            "hook_style": hook_style,
+            "hook_delivery": getattr(config, "CONTENT_MODE", "tts_narrated"),
             "hook_word_count": len(hook_text.split()),
             "peak_start": global_start,
             "peak_position_pct": peak_pct,

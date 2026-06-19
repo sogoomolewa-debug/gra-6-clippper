@@ -1,3 +1,14 @@
+# ARCHIVED DOCUMENT - HISTORICAL REFERENCE ONLY
+
+**⚠️ WARNING:** This document describes the ORIGINAL pipeline design from project inception.
+The actual implementation has diverged significantly. Refer to ARCHITECTURE.md for current design.
+
+**Date archived:** 2026-06-18  
+**Reason:** Architecture has evolved; many described features changed or replaced  
+**Current docs:** See CLAUDE.md and ARCHITECTURE.md
+
+---
+
 # GTA6 Shorts Automation Pipeline — Full Blueprint
 
 **Channel: BYNDUO | Stack: GitHub Actions + YouTube API + Claude API + Qwen3-TTS on Modal + ffmpeg**

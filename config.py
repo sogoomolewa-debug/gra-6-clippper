@@ -39,9 +39,10 @@ QUEUE = {
 }
 
 CLIP = {
-    "max_duration_seconds": 14,
+    "max_duration_seconds": 12,  # Changed from 14 to match reference video
     "min_duration_seconds": 10,
     "hook_duration_seconds": 3,
+    "blur_intro_enabled": True,  # NEW: Set to False for instant-action hooks
     "output_width": 1080,
     "output_height": 1920,
     "font_path": "assets/Oswald-Bold.ttf",
@@ -115,15 +116,31 @@ import os
 YOUTUBE_COOKIES_PATH = os.environ.get("YOUTUBE_COOKIES_PATH", "")
 DRY_RUN = os.environ.get("DRY_RUN", "true").lower() == "true"
 
+# Content Strategy Mode
+# "tts_narrated" = Full TTS voiceover + blur intro (storytelling/drama)
+# "pure_gameplay" = No TTS, instant action, casual captions (authentic/minimalist)
+CONTENT_MODE = os.environ.get("CONTENT_MODE", "tts_narrated")
+
 SOURCING = {
     "mode": "whitelist",
     "whitelist_channels": [
+        # High priority - pure gameplay, proven performers
         {"name": "Hazardous", "id": "UCgXfEXQBy0r4MywuzNf3iGQ", "priority": 2.0},
         {"name": "whatever57010", "id": "UCoKYYUrm0En0U2wAIkxSh5A", "priority": 2.0},
-        {"name": "Red Arcade", "id": "UCHZZo1h1cI1vg4I9g2RqOUQ", "priority": 2.0},
         {"name": "Prestige Clips", "id": "UCC-uu-OqgYEx52KYQ-nJLRw", "priority": 2.0},
-        {"name": "DarkViperAU", "id": "UCV6mNrW8CrmWtcxWfQXy11g", "priority": 0.5},
-        {"name": "Call Me Kevin", "id": "UCdoPCztTOW7BJUPk2h5ttXA", "priority": 0.5}
+        {"name": "GTA Series Videos", "id": "UCgC2RKbJI3F2yUUpJo3J1cg", "priority": 2.0},
+        {"name": "GTAMen", "id": "UCCuiUcd09pJB3V4Zw0TP-dw", "priority": 2.0},
+        {"name": "TGG", "id": "UCN3VJSbx7c-ztQz1Ld3RxFw", "priority": 1.8},
+
+        # Medium priority - good content but some rejections
+        {"name": "Red Arcade", "id": "UCHZZo1h1cI1vg4I9g2RqOUQ", "priority": 1.2},  # 57% rejection rate
+        {"name": "MrBossFTW", "id": "UC1bHr7kYKxdeFfqYqkb_i0Q", "priority": 1.5},
+        {"name": "Digital Car Addict", "id": "UCO9dHC67YHTFFT0UOJAhSGA", "priority": 1.5},
+
+        # Low priority - comedy/entertainment (not pure gameplay)
+        {"name": "Call Me Kevin", "id": "UCdoPCztTOW7BJUPk2h5ttXA", "priority": 0.5},
+
+        # REMOVED: DarkViperAU (100% rejection - commentary only, no gameplay)
     ],
     "max_age_hours": 168,
     "min_views": 20000,
