@@ -80,6 +80,17 @@ def collect_audio_metrics(path: Path) -> dict[str, Any]:
         "null",
         "-",
     ])
+    ebur = run([
+        "ffmpeg",
+        "-hide_banner",
+        "-i",
+        str(path),
+        "-af",
+        "ebur128=framelog=verbose",
+        "-f",
+        "null",
+        "-",
+    ])
 
     silence_events: list[dict[str, float | str]] = []
     current_start: float | None = None
@@ -108,9 +119,19 @@ def collect_audio_metrics(path: Path) -> dict[str, Any]:
         elif "max_volume:" in line:
             max_volume = line.split("max_volume:", 1)[1].strip()
 
+    integrated_loudness = None
+    loudness_range = None
+    for line in ebur.stderr.splitlines():
+        if "I:" in line and "LUFS" in line:
+            integrated_loudness = line.split("I:", 1)[1].strip()
+        elif "LRA:" in line and "LU" in line:
+            loudness_range = line.split("LRA:", 1)[1].strip()
+
     return {
         "mean_volume": mean_volume,
         "max_volume": max_volume,
+        "integrated_loudness": integrated_loudness,
+        "loudness_range": loudness_range,
         "silence_events": silence_events,
         "silence_event_count": len(silence_events),
     }
@@ -208,6 +229,8 @@ def build_report(data: dict[str, Any]) -> str:
         "## Audio",
         f"- Mean volume: {audio['mean_volume'] or 'unknown'}",
         f"- Max volume: {audio['max_volume'] or 'unknown'}",
+        f"- Integrated Loudness (LUFS): {audio.get('integrated_loudness') or 'unknown'}",
+        f"- Loudness Range (LRA): {audio.get('loudness_range') or 'unknown'}",
         f"- Silence events: {audio['silence_event_count']}",
         "",
         "## Speech",
