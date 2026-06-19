@@ -124,23 +124,17 @@ CONTENT_MODE = os.environ.get("CONTENT_MODE", "tts_narrated")
 SOURCING = {
     "mode": "whitelist",
     "whitelist_channels": [
-        # High priority - pure gameplay, proven performers
-        {"name": "Hazardous", "id": "UCgXfEXQBy0r4MywuzNf3iGQ", "priority": 2.0},
-        {"name": "whatever57010", "id": "UCoKYYUrm0En0U2wAIkxSh5A", "priority": 2.0},
-        {"name": "Prestige Clips", "id": "UCC-uu-OqgYEx52KYQ-nJLRw", "priority": 2.0},
-        {"name": "GTA Series Videos", "id": "UCuWcjpKbIDAbZfHoru1toFg", "priority": 2.0},  # Fixed ID
-        {"name": "GTAMen", "id": "UC4zMEl8Qh_nE5nDnp0cxRFQ", "priority": 2.0},  # Fixed ID
-        {"name": "TGG", "id": "UC72PuhDwKtZ5MikpGNhPAtA", "priority": 1.8},  # Fixed ID
-
-        # Medium priority - good content but some rejections
-        {"name": "Red Arcade", "id": "UCHZZo1h1cI1vg4I9g2RqOUQ", "priority": 1.2},  # 57% rejection rate
-        {"name": "MrBossFTW", "id": "UC0PMQXAwF6O6aeTpv962miA", "priority": 1.5},  # Fixed ID
-        {"name": "Digital Car Addict", "id": "UCD9qy7cc3bb5rrMjJ9tRTTA", "priority": 1.5},  # Fixed ID
-
-        # Low priority - comedy/entertainment (not pure gameplay)
-        {"name": "Call Me Kevin", "id": "UCdoPCztTOW7BJUPk2h5ttXA", "priority": 0.5},
-
-        # REMOVED: DarkViperAU (100% rejection - commentary only, no gameplay)
+        # All channels start equal priority - let performance data guide future adjustments
+        {"name": "Hazardous", "id": "UCgXfEXQBy0r4MywuzNf3iGQ", "priority": 1.0},
+        {"name": "whatever57010", "id": "UCoKYYUrm0En0U2wAIkxSh5A", "priority": 1.0},
+        {"name": "Prestige Clips", "id": "UCC-uu-OqgYEx52KYQ-nJLRw", "priority": 1.0},
+        {"name": "GTA Series Videos", "id": "UCuWcjpKbIDAbZfHoru1toFg", "priority": 1.0},
+        {"name": "GTAMen", "id": "UC4zMEl8Qh_nE5nDnp0cxRFQ", "priority": 1.0},
+        {"name": "TGG", "id": "UC72PuhDwKtZ5MikpGNhPAtA", "priority": 1.0},
+        {"name": "Red Arcade", "id": "UCHZZo1h1cI1vg4I9g2RqOUQ", "priority": 1.0},
+        {"name": "MrBossFTW", "id": "UC0PMQXAwF6O6aeTpv962miA", "priority": 1.0},
+        {"name": "Digital Car Addict", "id": "UCD9qy7cc3bb5rrMjJ9tRTTA", "priority": 1.0},
+        {"name": "Call Me Kevin", "id": "UCdoPCztTOW7BJUPk2h5ttXA", "priority": 1.0},
     ],
     "max_age_hours": 168,
     "min_views": 20000,
