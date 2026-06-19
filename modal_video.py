@@ -54,11 +54,8 @@ def analyze_clip(request: dict) -> dict:
     }
     """
     import torch
-    import tempfile
-    import pathlib
     import re
     import shutil
-    import base64
     from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
     from qwen_vl_utils import process_vision_info
 

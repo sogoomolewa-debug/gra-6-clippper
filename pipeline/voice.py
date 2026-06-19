@@ -53,11 +53,11 @@ def get_chunk_speed(role: str) -> float:
     """Get TTS speed for a chunk based on its role."""
     try:
         if role == "suspense":
-            return config.TTS.get("speed_suspense", 0.85)
+            return config.get_tts_value("speed_suspense", config.TTS.get("speed_suspense", 0.85))
         elif role == "reveal":
-            return config.TTS.get("speed_reveal", 1.08)
+            return config.get_tts_value("speed_reveal", config.TTS.get("speed_reveal", 1.08))
         else:
-            return config.TTS.get("speed_default", 0.95)
+            return config.get_tts_value("speed_default", config.TTS.get("speed_default", 0.95))
     except Exception as e:
         print(f"[voice] speed lookup error: {e}")
         return 1.0
@@ -292,11 +292,11 @@ def generate_voice(text: str, output_path: str) -> bool:
 
         # Stitch together: breath_pad + chunk1 + gap + chunk2 + gap + ...
         breath_pad = _create_silence(
-            config.TTS.get("breath_pad_ms", 200),
+            config.get_tts_value("breath_pad_ms", config.TTS.get("breath_pad_ms", 200)),
             sample_rate, num_channels, bits_per_sample
         )
         chunk_gap = _create_silence(
-            config.TTS.get("chunk_gap_ms", 280),
+            config.get_tts_value("chunk_gap_ms", config.TTS.get("chunk_gap_ms", 280)),
             sample_rate, num_channels, bits_per_sample
         )
 

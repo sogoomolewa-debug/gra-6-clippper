@@ -60,11 +60,7 @@ def generate_description(
 ) -> str:
     """Generate description with visual SEO hook, creator credit, and engagement CTA."""
     try:
-        # Determine hashtags based on game version
-        if source_type == "gta6":
-            tags = "#GTA6 #GTAVI #GrandTheftAuto #Gaming #Shorts"
-        else:
-            tags = "#GTA5 #GTAV #GrandTheftAuto #Gaming #Shorts"
+        tags = config.get_hashtags(source_type)
 
         description = (
             f"{visual_description}\n\n"
@@ -97,7 +93,7 @@ def upload_short(
             "snippet": {
                 "title": title,
                 "description": generate_description(visual_description, source_type, original_channel, original_url),
-                "tags": config.UPLOAD["tags"],
+                "tags": config.get_upload_tags(),
                 "categoryId": config.UPLOAD["category_id"],
                 "defaultLanguage": "en",
                 "defaultAudioLanguage": "en"

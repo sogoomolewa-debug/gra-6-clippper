@@ -33,10 +33,10 @@ FALLBACK_TITLES = [
 ]
 
 # Stage 1: Generate raw hook text with conversational, human feel
-RAW_HOOK_PROMPT = """You write viral YouTube Shorts hooks for a GTA gaming channel.
+RAW_HOOK_PROMPT = """You write viral YouTube Shorts hooks for a gaming Shorts channel.
 
 Rules:
-- Exactly 1 sentence, maximum 12 words
+- Exactly 1 sentence, maximum {max_words} words
 - Write like a REAL PERSON reacting — not a marketing copywriter
 - Use conversational fragments, not polished sentences
 - Be SPECIFIC to what actually happened — use the visual description as your primary source
@@ -47,6 +47,24 @@ Rules:
 {style_instruction}
 
 Example of this style: "{style_example}"
+"""
+
+CASUAL_RAW_HOOK_PROMPT = """You write short, casual creator-style captions for gaming Shorts.
+
+Rules:
+- Exactly 1 sentence fragment, 5 to {max_words} words
+- Sound like a person reacting mid-clip, not an announcer
+- Use a setup phrase that can be captioned one word at a time
+- Use lowercase unless one word truly needs emphasis
+- Be specific to the visual moment, but do not spoil the outcome
+- No emojis, no hashtags, no quotes
+- Output ONLY the hook text
+
+Reference tone examples:
+- see there's always a bigger fish
+- never trust the quiet gta player
+- sometimes the road fights back
+- bro picked the wrong ramp today
 """
 
 # Stage 2: Add delivery markup for TTS naturalness
@@ -168,10 +186,18 @@ def _call_groq(system_prompt: str, user_prompt: str, max_tokens: int = 60) -> Op
 def generate_raw_hook(context_str: str, style: dict) -> Optional[str]:
     """Stage 1: Generate a raw conversational hook."""
     try:
-        system = RAW_HOOK_PROMPT.format(
-            style_instruction=style["instruction"],
-            style_example=style["example"]
-        )
+        profile = config.get_content_profile()
+        hook_cfg = profile.get("hook", {})
+        max_words = int(hook_cfg.get("max_words", 12))
+        prompt_family = hook_cfg.get("prompt_family", "dramatic")
+        if prompt_family in {"casual", "reference_casual"}:
+            system = CASUAL_RAW_HOOK_PROMPT.format(max_words=max_words)
+        else:
+            system = RAW_HOOK_PROMPT.format(
+                max_words=max_words,
+                style_instruction=style["instruction"],
+                style_example=style["example"]
+            )
         raw = _call_groq(system, context_str + "\n\nWrite the hook.")
         if raw:
             print(f"[hook] stage 1 raw ({style['name']}): {raw}")
@@ -204,8 +230,10 @@ def validate_hook(hook: str) -> bool:
         clean = hook.replace("...", " ").replace("—", " ").strip()
         words = clean.split()
         word_count = len(words)
-        if word_count < 3 or word_count > 18:
-            print(f"[hook] validation failed: word count is {word_count} (must be 3-18)")
+        max_words = int(config.get_content_profile().get("hook", {}).get("max_words", 18))
+        upper_limit = max(12, max_words + 3)
+        if word_count < 3 or word_count > upper_limit:
+            print(f"[hook] validation failed: word count is {word_count} (must be 3-{upper_limit})")
             return False
         # Don't allow question marks (they weaken hooks)
         if hook.strip().endswith("?"):

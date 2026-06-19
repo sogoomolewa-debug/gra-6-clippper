@@ -326,13 +326,13 @@ def run_e2e_test() -> None:
 
     # 3. Generate hook dynamically via Groq
     print("\n[test] 2. Generating hook dynamically via Groq...")
-    hook_text = hook.get_hook_with_fallback(
+    hook_text, hook_style = hook.get_hook_with_fallback(
         video_title="GTA 6 Money Glitch Gameplay",
         visual_description=description_text,
         transcript_context="",
         timestamp_comments=[{"text": comment_context, "like_count": 100}]
     )
-    print(f"[test] Generated hook: {hook_text}")
+    print(f"[test] Generated hook ({hook_style}): {hook_text}")
 
     # 4. Generate actual voice hook (or fallback to silent wav on failure)
     print("\n[test] 3. Generating voice hook...")

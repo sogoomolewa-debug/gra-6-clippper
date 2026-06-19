@@ -169,7 +169,7 @@ def run_pipeline() -> None:
                                       get_best_comment_timestamp, get_timestamp_comments,
                                       get_video_duration, get_heatmap_data, find_peak_window,
                                       get_fallback_timestamps, download_audio_only, audio_energy_peak)
-        import pathlib, config as cfg
+        import config as cfg
 
         duration = get_video_duration(video["url"])
         window = float(cfg.CLIP["max_duration_seconds"]) - 3.0
@@ -283,10 +283,8 @@ def run_pipeline() -> None:
             visual_description=visual_description,
             hook_text=hook_text
         )
-        if video.get("source_type") == "gta6":
-            title = f"{raw_title} #GTA6 #Shorts"
-        else:
-            title = f"{raw_title} #GTA5 #Shorts"
+        source_type = video.get("source_type", "general")
+        title = f"{raw_title} {config.get_hashtags(source_type)}"
 
         if len(title) > 100:
             title = title[:97] + "..."
@@ -345,7 +343,6 @@ def run_pipeline() -> None:
         log = load_performance_log()
 
         # Calculate source video age
-        from datetime import datetime
         try:
             published_at = video.get("published_at", "")
             published_dt = datetime.fromisoformat(published_at.replace("Z", "+00:00"))

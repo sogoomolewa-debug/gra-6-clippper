@@ -7,12 +7,13 @@ import sys
 from typing import List, Dict, Tuple, Optional
 
 import config
+from pipeline import ytdlp
 
 
 def get_heatmap_data(video_url: str) -> Optional[List[dict]]:
     """Get heatmap data from yt-dlp for a video."""
     try:
-        cmd = ["yt-dlp", "--dump-json", "--no-download"]
+        cmd = ytdlp.command() + ["--dump-json", "--no-download"]
         if config.YOUTUBE_COOKIES_PATH and pathlib.Path(config.YOUTUBE_COOKIES_PATH).exists():
             cmd.extend(["--cookies", config.YOUTUBE_COOKIES_PATH])
         import shutil
@@ -45,7 +46,7 @@ def get_heatmap_data(video_url: str) -> Optional[List[dict]]:
 def get_video_duration(video_url: str) -> float:
     """Get video duration via yt-dlp."""
     try:
-        cmd = ["yt-dlp", "--dump-json", "--no-download"]
+        cmd = ytdlp.command() + ["--dump-json", "--no-download"]
         if config.YOUTUBE_COOKIES_PATH and pathlib.Path(config.YOUTUBE_COOKIES_PATH).exists():
             cmd.extend(["--cookies", config.YOUTUBE_COOKIES_PATH])
         import shutil
@@ -247,8 +248,7 @@ def get_timestamp_comments(comments: List[dict], peak_sec: int) -> List[dict]:
 def download_audio_only(video_url: str, output_path: str) -> bool:
     """Download audio-only from YouTube using yt-dlp."""
     try:
-        cmd = [
-            "yt-dlp",
+        cmd = ytdlp.command() + [
             "-f", "bestaudio[ext=m4a]/bestaudio/best[height<=360]",
             "-x",
             "--audio-format", "mp3",

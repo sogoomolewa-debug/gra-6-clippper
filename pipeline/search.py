@@ -185,7 +185,6 @@ def is_eligible(video: dict, tier: dict) -> bool:
 def score_video(video: dict) -> float:
     """Score a video based on views, recency, and engagement, and apply channel priority boost."""
     try:
-        from datetime import datetime
         published_at = video.get("published_at", "")
         # Remove Z and tzinfo for local-agnostic comparison matching the new score_video signature
         published_dt = datetime.fromisoformat(published_at.replace("Z", ""))

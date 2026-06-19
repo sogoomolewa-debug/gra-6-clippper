@@ -13,6 +13,7 @@ import tempfile
 import shutil
 
 import config
+from pipeline import ytdlp
 
 
 def run_ffmpeg(cmd: list[str], step_name: str) -> bool:
@@ -61,8 +62,7 @@ def download_clip(
 ) -> bool:
     """Download a specific segment of a YouTube video."""
     try:
-        cmd = [
-            "yt-dlp",
+        cmd = ytdlp.command() + [
             "--download-sections", f"*{start_time:.2f}-{end_time:.2f}",
             "-f", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080]",
             "--merge-output-format", "mp4",
@@ -217,18 +217,21 @@ def burn_caption(
         font_path = config.CLIP.get("font_path", "assets/Oswald-Bold.ttf")
         font_path_abs = str(pathlib.Path(font_path).absolute())
         
-        fontsize = config.CLIP.get("font_size_hook", 90)
+        fontsize = int(config.get_profile_value("font_size_hook", config.CLIP.get("font_size_hook", 90)))
         outline_w = config.CLIP.get("caption_outline_width", 6)
         outline_color = config.CLIP.get("caption_outline_color", "black")
         shadow_x = config.CLIP.get("caption_shadow_x", 3)
         shadow_y = config.CLIP.get("caption_shadow_y", 3)
         shadow_color = config.CLIP.get("caption_shadow_color", "black")
-        hook_caps = config.CLIP.get("hook_caps", True)
+        hook_caps = bool(config.get_profile_value("hook_caps", config.CLIP.get("hook_caps", True)))
         
         if hook_caps:
             text = text.upper()
             
-        wrapped_text = wrap_text_by_chars(text, max_chars=18)
+        wrapped_text = wrap_text_by_chars(
+            text,
+            max_chars=int(config.get_profile_value("caption_max_chars", 18)),
+        )
         
         # Escape special characters for ffmpeg drawtext
         escaped = wrapped_text.replace("'", "\\'").replace(":", "\\:")
@@ -257,6 +260,69 @@ def burn_caption(
     except Exception as e:
         print(f"[editor] burn_caption error: {e}")
         return False
+
+
+def burn_word_by_word_caption(
+    input_path: str,
+    text: str,
+    output_path: str
+) -> bool:
+    """Burn one prominent hook word at a time across the intro."""
+    try:
+        words = [w.strip() for w in prepare_caption_words(text) if w.strip()]
+        if not words:
+            return burn_caption(input_path, text, output_path)
+
+        duration = max(get_audio_duration(input_path), 0.1)
+        slot = duration / len(words)
+        font_path = config.CLIP.get("font_path", "assets/Oswald-Bold.ttf")
+        font_path_abs = str(pathlib.Path(font_path).absolute())
+        fontsize = int(config.get_profile_value("font_size_hook", config.CLIP.get("font_size_hook", 90)))
+        outline_w = config.CLIP.get("caption_outline_width", 6)
+        outline_color = config.CLIP.get("caption_outline_color", "black")
+        shadow_x = config.CLIP.get("caption_shadow_x", 3)
+        shadow_y = config.CLIP.get("caption_shadow_y", 3)
+        shadow_color = config.CLIP.get("caption_shadow_color", "black")
+
+        filters = []
+        for i, word in enumerate(words):
+            start = i * slot
+            end = duration if i == len(words) - 1 else (i + 1) * slot
+            display = word.upper()
+            escaped = display.replace("'", "\\'").replace(":", "\\:")
+            filters.append(
+                "drawtext="
+                f"text='{escaped}':"
+                f"fontfile='{font_path_abs}':"
+                f"fontsize={fontsize}:"
+                "fontcolor=white:"
+                f"borderw={outline_w}:"
+                f"bordercolor={outline_color}:"
+                f"shadowx={shadow_x}:"
+                f"shadowy={shadow_y}:"
+                f"shadowcolor={shadow_color}:"
+                "x=(w-text_w)/2:y=(h-text_h)/2:"
+                f"enable='between(t,{start:.3f},{end:.3f})'"
+            )
+
+        cmd = [
+            "ffmpeg", "-y", "-i", input_path,
+            "-vf", ",".join(filters),
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
+            "-c:a", "copy",
+            output_path
+        ]
+        return run_ffmpeg(cmd, "burn_word_by_word_caption")
+    except Exception as e:
+        print(f"[editor] burn_word_by_word_caption error: {e}")
+        return False
+
+
+def prepare_caption_words(text: str) -> list[str]:
+    """Convert marked-up hook text into display words."""
+    cleaned = text.replace("...", " ").replace("—", " ")
+    cleaned = cleaned.replace("?", "").replace("!", "").replace(",", "")
+    return cleaned.split()
 
 
 def concatenate_clips(
@@ -348,7 +414,8 @@ def build_short(
             return False
 
         # Blur backdrop video (optional based on config)
-        if config.CLIP.get("blur_intro_enabled", True):
+        blur_enabled = bool(config.get_profile_value("blur_intro_enabled", config.CLIP.get("blur_intro_enabled", True)))
+        if blur_enabled:
             backdrop_blurred = tmp / "backdrop_blurred.mp4"
             if not apply_blur(str(backdrop_vertical), str(backdrop_blurred)):
                 shutil.rmtree(str(tmp), ignore_errors=True)
@@ -366,7 +433,12 @@ def build_short(
 
         # Burn captions onto backdrop
         hook_final = tmp / "hook_final.mp4"
-        if not burn_caption(str(backdrop_tts), hook_text, str(hook_final)):
+        prompt_family = config.get_content_profile().get("hook", {}).get("prompt_family", "dramatic")
+        if prompt_family == "reference_casual":
+            caption_ok = burn_word_by_word_caption(str(backdrop_tts), hook_text, str(hook_final))
+        else:
+            caption_ok = burn_caption(str(backdrop_tts), hook_text, str(hook_final))
+        if not caption_ok:
             shutil.rmtree(str(tmp), ignore_errors=True)
             return False
 

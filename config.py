@@ -119,10 +119,115 @@ DRY_RUN = os.environ.get("DRY_RUN", "true").lower() == "true"
 # Content Strategy Mode
 # "tts_narrated" = Full TTS voiceover + blur intro (storytelling/drama)
 # "pure_gameplay" = No TTS, instant action, casual captions (authentic/minimalist)
-CONTENT_MODE = os.environ.get("CONTENT_MODE", "tts_narrated")
+CONTENT_MODE = os.environ.get("CONTENT_MODE", "reference_inspired")
+
+CONTENT_PROFILES = {
+    "tts_narrated": {
+        "description": "Blurred setup with TTS hook, then clean reveal.",
+        "blur_intro_enabled": True,
+        "hook_caps": True,
+        "font_size_hook": 90,
+        "caption_max_chars": 18,
+        "tts": {
+            "breath_pad_ms": 200,
+            "chunk_gap_ms": 280,
+            "speed_suspense": 0.85,
+            "speed_reveal": 1.08,
+            "speed_default": 0.95,
+        },
+        "hook": {
+            "max_words": 12,
+            "prompt_family": "dramatic",
+        },
+        "hashtags": {
+            "gta6": "#GTA6 #GTAVI #GrandTheftAuto #Gaming #Shorts",
+            "gta5": "#GTA5 #GTAV #GrandTheftAuto #Gaming #Shorts",
+            "gta": "#GTA #GrandTheftAuto #Gaming #Shorts",
+            "general": "#Gaming #Gameplay #Shorts",
+        },
+        "upload_tags": ["GTA6", "GTA VI", "GTA6 Shorts", "Gaming", "GrandTheftAuto"],
+    },
+    "pure_gameplay": {
+        "description": "Fast clear-footage setup with minimal narration feel.",
+        "blur_intro_enabled": False,
+        "hook_caps": False,
+        "font_size_hook": 74,
+        "caption_max_chars": 20,
+        "tts": {
+            "breath_pad_ms": 80,
+            "chunk_gap_ms": 140,
+            "speed_suspense": 1.0,
+            "speed_reveal": 1.12,
+            "speed_default": 1.05,
+        },
+        "hook": {
+            "max_words": 10,
+            "prompt_family": "casual",
+        },
+        "hashtags": {
+            "gta6": "#GTA6 #Gaming #Shorts",
+            "gta5": "#GTA5 #Gaming #Shorts",
+            "gta": "#GTA #Gaming #Shorts",
+            "general": "#Gaming #Gameplay #Shorts",
+        },
+        "upload_tags": ["Gaming", "Gameplay", "Shorts"],
+    },
+    "reference_inspired": {
+        "description": "Measured creator-reference pacing: blurred setup, 5-7 word casual speech, hard GTA reveal.",
+        "blur_intro_enabled": True,
+        "hook_caps": False,
+        "font_size_hook": 78,
+        "caption_max_chars": 18,
+        "tts": {
+            "breath_pad_ms": 100,
+            "chunk_gap_ms": 180,
+            "speed_suspense": 0.95,
+            "speed_reveal": 1.10,
+            "speed_default": 1.03,
+        },
+        "hook": {
+            "max_words": 7,
+            "prompt_family": "reference_casual",
+        },
+        "hashtags": {
+            "gta6": "#GTA6 #Gaming #Shorts",
+            "gta5": "#GTA5 #Gaming #Shorts",
+            "gta": "#GTA #Gaming #Shorts",
+            "general": "#Gaming #Gameplay #Shorts",
+        },
+        "upload_tags": ["GTA6", "GTA VI", "GTA6 Shorts", "Gaming", "GrandTheftAuto"],
+    },
+}
+
+
+def get_content_profile(mode: str | None = None) -> dict:
+    """Return the active content profile, falling back to the narrated default."""
+    selected = mode or CONTENT_MODE
+    return CONTENT_PROFILES.get(selected, CONTENT_PROFILES["tts_narrated"])
+
+
+def get_profile_value(key: str, default=None, mode: str | None = None):
+    """Read a top-level profile override."""
+    return get_content_profile(mode).get(key, default)
+
+
+def get_tts_value(key: str, default=None, mode: str | None = None):
+    """Read a TTS profile override."""
+    return get_content_profile(mode).get("tts", {}).get(key, default)
+
+
+def get_hashtags(source_type: str = "general", mode: str | None = None) -> str:
+    """Return hashtags for a source type under the active content profile."""
+    hashtags = get_content_profile(mode).get("hashtags", {})
+    return hashtags.get(source_type, hashtags.get("general", "#Gaming #Shorts"))
+
+
+def get_upload_tags(mode: str | None = None) -> list[str]:
+    """Return YouTube upload tags for the active content profile."""
+    return get_content_profile(mode).get("upload_tags", UPLOAD["tags"])
 
 SOURCING = {
-    "mode": "whitelist",
+    "mode": os.environ.get("SOURCING_MODE", "whitelist"),
     "whitelist_channels": [
         # All channels start equal priority - let performance data guide future adjustments
         {"name": "Hazardous", "id": "UCgXfEXQBy0r4MywuzNf3iGQ", "priority": 1.0},
@@ -138,4 +243,5 @@ SOURCING = {
     ],
     "max_age_hours": 168,
     "min_views": 20000,
+    "keyword_filter": "gta",
 }

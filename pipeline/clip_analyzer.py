@@ -14,6 +14,7 @@ import re
 import sys
 
 import config
+from pipeline import ytdlp
 
 
 def download_segment(
@@ -24,8 +25,7 @@ def download_segment(
 ) -> bool:
     """Download a video segment around the peak timestamp using yt-dlp."""
     try:
-        cmd = [
-            "yt-dlp",
+        cmd = ytdlp.command() + [
             "--download-sections", f"*{global_start:.2f}-{global_end:.2f}",
             "-f", "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]",
             "--merge-output-format", "mp4",

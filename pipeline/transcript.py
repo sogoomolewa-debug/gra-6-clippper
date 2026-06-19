@@ -10,6 +10,7 @@ import pathlib
 import sys
 
 import config
+from pipeline import ytdlp
 
 
 def download_transcript(video_url: str, output_dir: str) -> str | None:
@@ -18,12 +19,11 @@ def download_transcript(video_url: str, output_dir: str) -> str | None:
         output_template = str(pathlib.Path(output_dir) / "%(id)s.%(ext)s")
 
         # Try English first
-        cmd = ["yt-dlp", "--write-auto-sub", "--skip-download",
-               "--sub-format", "json3", "--sub-lang", "en",
-               "-o", output_template]
+        cmd = ytdlp.command() + ["--write-auto-sub", "--skip-download",
+                                 "--sub-format", "json3", "--sub-lang", "en",
+                                 "-o", output_template]
         if config.YOUTUBE_COOKIES_PATH and pathlib.Path(config.YOUTUBE_COOKIES_PATH).exists():
             cmd.extend(["--cookies", config.YOUTUBE_COOKIES_PATH])
-        import shutil
         node_path = shutil.which("node")
         if node_path:
             cmd.extend(["--js-runtimes", f"node:{node_path}"])
@@ -36,12 +36,11 @@ def download_transcript(video_url: str, output_dir: str) -> str | None:
         # If failed, try en-US
         if result.returncode != 0:
             print(f"[transcript] en failed, trying en-US: {result.stderr.strip()}")
-            cmd = ["yt-dlp", "--write-auto-sub", "--skip-download",
-                   "--sub-format", "json3", "--sub-lang", "en-US",
-                   "-o", output_template]
+            cmd = ytdlp.command() + ["--write-auto-sub", "--skip-download",
+                                     "--sub-format", "json3", "--sub-lang", "en-US",
+                                     "-o", output_template]
             if config.YOUTUBE_COOKIES_PATH and pathlib.Path(config.YOUTUBE_COOKIES_PATH).exists():
                 cmd.extend(["--cookies", config.YOUTUBE_COOKIES_PATH])
-            import shutil
             node_path = shutil.which("node")
             if node_path:
                 cmd.extend(["--js-runtimes", f"node:{node_path}"])
