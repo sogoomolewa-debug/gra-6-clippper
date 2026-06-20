@@ -1,5 +1,25 @@
 {
-  "pending": [],
+  "pending": [
+    {
+      "video_id": "6AW7TN3g0LY",
+      "url": "https://youtube.com/watch?v=6AW7TN3g0LY",
+      "title": "10 Things You Missed From The NEW Vice City Gameplay Footage In GTA 6!",
+      "description": "In today\u2019s Grand Theft Auto 6 video \u2013 10 Things You Missed From The NEW Vice City Gameplay Footage In GTA 6!\n\n\u25baMy Facebook: \nhttps://www.facebook.com/MrBossFTW\n\u25baMy Snapchat:\nhttps://www.snapchat.com/add/MrBossSnaps\n\u25baMy Twitter: \nhttps://twitter.com/#!/mrbossftw\n\u25baMy Instagram:\nhttp://instagram.com/jamesrosshudgins\n\nHope you enjoyed this video! See you guys in the next one! \u270c\ud83c\udffb\n\nBusiness Inquiries: MrBossFTWBusiness@gmail.com",
+      "category_id": "20",
+      "channel_id": "UC0PMQXAwF6O6aeTpv962miA",
+      "channel_title": "MrBossFTW",
+      "channel_url": "https://youtube.com/@MrBossFTW",
+      "view_count": 20145,
+      "like_count": 777,
+      "duration_seconds": 543,
+      "published_at": "2026-06-19T14:00:07Z",
+      "thumbnail_url": "https://i.ytimg.com/vi/6AW7TN3g0LY/hqdefault.jpg",
+      "subscriber_count": 3190000,
+      "score": 10985.2,
+      "source_type": "gta",
+      "queued_at": "2026-06-20T19:41:10.515506Z"
+    }
+  ],
   "processed": [
     {
       "video_id": "VlVs65QgCcw",
@@ -90,6 +110,12 @@
       "short_id": "skipped_non_gameplay",
       "source_type": "gta",
       "uploaded_at": "2026-06-19T22:51:33.374891Z"
+    },
+    {
+      "video_id": "wzFW9XZf6pA",
+      "short_id": "skipped_non_gameplay",
+      "source_type": "gta",
+      "uploaded_at": "2026-06-20T19:42:32.509859Z"
     }
   ]
 }
