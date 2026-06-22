@@ -163,20 +163,44 @@ def run_pipeline() -> None:
 
         queue_manager.save_queue(queue)
 
-        # STEP 4 — POP TOP VIDEO
-        video = queue_manager.pop_top(queue)
-        if video is None:
-            print("[pipeline] queue empty — nothing to process today")
-            return
+        # STEP 4 — PROCESS VIDEOS (retry until one succeeds or queue is empty)
+        MAX_RETRIES = 5  # cap retries to stay within GitHub Actions timeout
+        produced = False
 
-        print(f"\n[pipeline] processing: {video['title']}")
-        print(f"[pipeline] source: {video['source_type']} | score: {video['score']:.0f}")
+        for attempt in range(MAX_RETRIES):
+            video = queue_manager.pop_top(queue)
+            if video is None:
+                print("[pipeline] queue empty — nothing to process")
+                break
 
-        # STEP 3 — FETCH COMMENTS
+            print(f"\n[pipeline] attempt {attempt + 1}/{MAX_RETRIES}: {video['title']}")
+            print(f"[pipeline] source: {video['source_type']} | score: {video['score']:.0f}")
+
+            success = _process_single_video(queue, video, api_key)
+            if success:
+                produced = True
+                break
+            else:
+                print(f"[pipeline] attempt {attempt + 1} failed, trying next video...")
+
+        if not produced:
+            print("[pipeline] ⚠ no video produced this run")
+            commit_data_files()
+
+        print("=" * 60)
+
+    except Exception as e:
+        print(f"[pipeline] fatal error: {e}")
+
+
+def _process_single_video(queue: dict, video: dict, api_key: str) -> bool:
+    """Process a single video through all gates. Returns True if a short was produced."""
+    try:
+        # FETCH COMMENTS
         print("[pipeline] fetching comments")
         comments = search.fetch_comments(video["video_id"], api_key)
 
-        # STEP 4 — FIND PEAK TIMESTAMP FROM COMMENTS
+        # FIND PEAK TIMESTAMP
         from pipeline.heatmap import (extract_and_score_timestamps,
                                       get_best_comment_timestamp, get_timestamp_comments,
                                       get_video_duration, get_heatmap_data, find_peak_window,
@@ -222,12 +246,12 @@ def run_pipeline() -> None:
             peak_signal = "fallback_30"
             print(f"[pipeline] using 30% fallback: {peak_sec}s")
 
-        # Decouple comments from primary signal detection - still extract them for downstream context
+        # Extract comments for downstream context
         if comments and peak_sec:
             timestamp_comments = get_timestamp_comments(comments, peak_sec)
             print(f"[pipeline] extracted {len(timestamp_comments)} timestamp comments around peak {peak_sec}s for context")
 
-        # STEP 5 — CLIP ANALYZER (Qwen2.5-VL watches the segment)
+        # CLIP ANALYZER (Gemini watches the segment)
         print("[pipeline] running visual clip analysis")
         analysis = clip_analyzer.analyze_clip(
             video_url=video["url"],
@@ -236,9 +260,9 @@ def run_pipeline() -> None:
             timestamp_comments=timestamp_comments
         )
 
-        # Check if the video contains actual gameplay
+        # Gate: is_gameplay
         if not analysis.get("is_gameplay", True):
-            print(f"[pipeline] ❌ video {video['video_id']} is not gameplay (flagged by Gemini). Skipping and marking processed.")
+            print(f"[pipeline] ❌ video {video['video_id']} is not gameplay. Skipping.")
             if video.get("source_type") == "candidate":
                 analytics = load_analytics()
                 channel_discovery.process_candidate_result(analytics, video.get("channel_id", ""), video.get("channel_title", ""), False)
@@ -246,13 +270,12 @@ def run_pipeline() -> None:
             log_skip(video, "skipped_non_gameplay", "Flagged as non-gameplay by Gemini")
             queue_manager.mark_processed(queue, video, "skipped_non_gameplay")
             queue_manager.save_queue(queue)
-            commit_data_files()
-            return
+            return False
 
-        # Check if the video is punchy enough for a short clip
+        # Gate: is_punchy
         if not analysis.get("is_punchy", True):
             reason = analysis.get("punchiness_reasoning", "No reason provided")
-            print(f"[pipeline] ❌ video {video['video_id']} is not punchy (flagged by Gemini: {reason}). Skipping and marking processed.")
+            print(f"[pipeline] ❌ video {video['video_id']} is not punchy: {reason}. Skipping.")
             if video.get("source_type") == "candidate":
                 analytics = load_analytics()
                 channel_discovery.process_candidate_result(analytics, video.get("channel_id", ""), video.get("channel_title", ""), False)
@@ -260,8 +283,7 @@ def run_pipeline() -> None:
             log_skip(video, "skipped_not_punchy", f"Flagged as not punchy: {reason}")
             queue_manager.mark_processed(queue, video, "skipped_not_punchy")
             queue_manager.save_queue(queue)
-            commit_data_files()
-            return
+            return False
 
         global_start = analysis["global_start"]
         global_end = analysis["global_end"]
@@ -269,7 +291,7 @@ def run_pipeline() -> None:
         peak_pct = round((peak_sec / max(duration, 1)) * 100, 1)
         print(f"[pipeline] final clip: {global_start:.1f}s → {global_end:.1f}s")
 
-        # STEP 5b — VALIDATE DESCRIPTION (vagueness + comment cross-check)
+        # Gate: clip validation
         validation = clip_validator.validate_clip(
             description=visual_description,
             timestamp_comments=timestamp_comments
@@ -285,12 +307,11 @@ def run_pipeline() -> None:
             log_skip(video, f"skipped_{reason}", detail)
             queue_manager.mark_processed(queue, video, f"skipped_{reason}")
             queue_manager.save_queue(queue)
-            commit_data_files()
-            return
+            return False
         if validation.get("skipped_comment_check"):
             print("[pipeline] ⚠ no timestamp comments — skipped comment cross-validation")
 
-        # STEP 5c — TRACK CANDIDATE CHANNEL RESULT
+        # Track candidate channel success
         if video.get("source_type") == "candidate":
             analytics = load_analytics()
             action = channel_discovery.process_candidate_result(
@@ -302,10 +323,10 @@ def run_pipeline() -> None:
             save_analytics(analytics)
             print(f"[pipeline] candidate channel '{video.get('channel_title')}' result: {action}")
 
-        # STEP 6 — TRANSCRIPT CONTEXT (around peak, may be empty)
+        # TRANSCRIPT CONTEXT
         transcript_context = transcript.get_video_context(video["url"], float(peak_sec))
 
-        # STEP 7 — HOOK (visual description is primary source)
+        # HOOK
         hook_text, hook_style = hook.get_hook_with_fallback(
             video_title=video["title"],
             visual_description=visual_description,
@@ -313,7 +334,7 @@ def run_pipeline() -> None:
             timestamp_comments=timestamp_comments
         )
 
-        # STEP 7b — GENERATE VIRAL TITLE (using visual description + hook context)
+        # VIRAL TITLE
         raw_title = hook.generate_viral_title(
             video_title=video["title"],
             visual_description=visual_description,
@@ -326,16 +347,15 @@ def run_pipeline() -> None:
             title = title[:97] + "..."
         print(f"[pipeline] final viral title: {title}")
 
-        # STEP 8 — VOICE
+        # VOICE
         hook_audio = f"/tmp/hook_{video['video_id']}.wav"
         if not voice.generate_voice(hook_text, hook_audio):
             print("[pipeline] ❌ voice generation failed — requeueing")
             queue_manager.requeue(queue, video)
             queue_manager.save_queue(queue)
-            commit_data_files()
-            return
+            return False
 
-        # STEP 9 — EDIT (now uses global_start and global_end from clip_analyzer)
+        # EDIT
         short_path = f"/tmp/short_{video['video_id']}.mp4"
         if not editor.build_short(
             video_url=video["url"],
@@ -349,10 +369,9 @@ def run_pipeline() -> None:
             print("[pipeline] ❌ video editing failed — requeueing")
             queue_manager.requeue(queue, video)
             queue_manager.save_queue(queue)
-            commit_data_files()
-            return
+            return False
 
-        # STEP 10 — UPLOAD
+        # UPLOAD
         dry_run = getattr(config, "DRY_RUN", True)
         if dry_run:
             print("[pipeline] [DRY RUN] Bypassing upload, saving output to scratch/latest_output.mp4")
@@ -372,13 +391,11 @@ def run_pipeline() -> None:
             print("[pipeline] ❌ upload failed — requeueing")
             queue_manager.requeue(queue, video)
             queue_manager.save_queue(queue)
-            commit_data_files()
-            return
+            return False
 
-        # STEP 11 — LOG
+        # LOG
         log = load_performance_log()
 
-        # Calculate source video age
         try:
             published_at = video.get("published_at", "")
             published_dt = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
@@ -423,26 +440,30 @@ def run_pipeline() -> None:
         append_log_entry(log, entry)
         save_performance_log(log)
 
-        # STEP 12 — MARK PROCESSED + SAVE QUEUE
+        # MARK PROCESSED + SAVE QUEUE
         queue_manager.mark_processed(queue, video, short_id)
         queue_manager.save_queue(queue)
 
-        # STEP 13 — CLEANUP
+        # CLEANUP
         for f in [hook_audio, short_path]:
             try:
                 pathlib.Path(f).unlink()
             except Exception:
                 pass
 
-        # STEP 14 — COMMIT DATA FILES
+        # COMMIT DATA FILES
         commit_data_files()
 
         print(f"\n[pipeline] ✅ complete: https://youtube.com/shorts/{short_id}")
-        print("=" * 60)
+        return True
 
     except Exception as e:
-        print(f"[pipeline] fatal error: {e}")
+        print(f"[pipeline] error processing video {video.get('video_id', '?')}: {e}")
+        queue_manager.mark_processed(queue, video, "error")
+        queue_manager.save_queue(queue)
+        return False
 
 
 if __name__ == "__main__":
     run_pipeline()
+

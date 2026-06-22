@@ -274,7 +274,8 @@ DISCOVERY = {
         "GTA online insane stunts",
     ],
     "max_results_per_query": 5,
-    "min_views": 50000,
+    "min_views": 15000,
+    "max_age_hours": 336,                 # 14 days — wider window than whitelist
     "max_subscriber_count": 5000000,  # skip mega-channels that may DMCA
     "promotion_threshold": 3,         # clips passed before auto-whitelist
     "demotion_threshold": 5,          # clips attempted with 0 passes before blacklist
