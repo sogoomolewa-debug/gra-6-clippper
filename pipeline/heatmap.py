@@ -1,5 +1,6 @@
-# pipeline/heatmap.py — Find the most-rewatched segment timestamp and handle audio peaks / comment scoring
+# pipeline/heatmap.py — Find the most-rewatched segment timestamp and handle comment scoring
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -10,8 +11,11 @@ import config
 from pipeline import ytdlp
 
 
-def get_heatmap_data(video_url: str) -> Optional[List[dict]]:
-    """Get heatmap data from yt-dlp for a video."""
+def get_video_metadata(video_url: str) -> dict:
+    """Get video duration and heatmap data in a single yt-dlp call.
+
+    Returns: {"duration": float, "heatmap": list|None}
+    """
     try:
         cmd = ytdlp.command() + ["--dump-json", "--no-download"]
         if config.YOUTUBE_COOKIES_PATH and pathlib.Path(config.YOUTUBE_COOKIES_PATH).exists():
@@ -27,47 +31,21 @@ def get_heatmap_data(video_url: str) -> Optional[List[dict]]:
         )
         if result.returncode != 0:
             print(f"[heatmap] yt-dlp error: {result.stderr.strip()}")
-            return None
-        data = json.loads(result.stdout)
-        heatmap = data.get("heatmap")
-        if heatmap:
-            print(f"[heatmap] got {len(heatmap)} heatmap segments")
-        else:
-            print("[heatmap] no heatmap data in video metadata")
-        return heatmap
-    except subprocess.TimeoutExpired:
-        print("[heatmap] yt-dlp timed out")
-        return None
-    except Exception as e:
-        print(f"[heatmap] error getting heatmap: {e}")
-        return None
-
-
-def get_video_duration(video_url: str) -> float:
-    """Get video duration via yt-dlp."""
-    try:
-        cmd = ytdlp.command() + ["--dump-json", "--no-download"]
-        if config.YOUTUBE_COOKIES_PATH and pathlib.Path(config.YOUTUBE_COOKIES_PATH).exists():
-            cmd.extend(["--cookies", config.YOUTUBE_COOKIES_PATH])
-        import shutil
-        node_path = shutil.which("node")
-        if node_path:
-            cmd.extend(["--js-runtimes", f"node:{node_path}"])
-        cmd.append(video_url)
-        result = subprocess.run(
-            cmd,
-            capture_output=True, text=True, timeout=60
-        )
-        if result.returncode != 0:
-            print(f"[heatmap] duration fetch error: {result.stderr.strip()}")
-            return 300.0
+            return {"duration": 300.0, "heatmap": None}
         data = json.loads(result.stdout)
         duration = float(data.get("duration", 300))
-        print(f"[heatmap] video duration: {duration:.1f}s")
-        return duration
+        heatmap = data.get("heatmap")
+        if heatmap:
+            print(f"[heatmap] got {len(heatmap)} heatmap segments, duration: {duration:.1f}s")
+        else:
+            print(f"[heatmap] no heatmap data, duration: {duration:.1f}s")
+        return {"duration": duration, "heatmap": heatmap}
+    except subprocess.TimeoutExpired:
+        print("[heatmap] yt-dlp timed out")
+        return {"duration": 300.0, "heatmap": None}
     except Exception as e:
-        print(f"[heatmap] error getting duration: {e}")
-        return 300.0
+        print(f"[heatmap] error getting metadata: {e}")
+        return {"duration": 300.0, "heatmap": None}
 
 
 def find_peak_window(heatmap: List[dict], window_duration: float) -> Tuple[float, float]:
@@ -124,10 +102,78 @@ def find_peak_window(heatmap: List[dict], window_duration: float) -> Tuple[float
         return (0.0, window_duration)
 
 
+def _window_intensity(heatmap: List[dict], window_start: float, window_end: float) -> float:
+    """Calculate total heatmap intensity for a given window."""
+    total = 0.0
+    for seg in heatmap:
+        seg_start = seg.get("start_time", 0)
+        seg_end = seg.get("end_time", 0)
+        seg_value = seg.get("value", 0)
+        overlap_start = max(window_start, seg_start)
+        overlap_end = min(window_end, seg_end)
+        if overlap_end > overlap_start:
+            seg_duration = seg_end - seg_start
+            if seg_duration > 0:
+                overlap_fraction = (overlap_end - overlap_start) / seg_duration
+                total += seg_value * overlap_fraction
+    return total
+
+
+def find_top_peaks(heatmap: List[dict], window_duration: float, n: int = 3) -> List[Tuple[float, float]]:
+    """Find the top N non-overlapping peak windows sorted by intensity.
+
+    Returns list of (start, end) tuples, highest intensity first.
+    """
+    try:
+        if not heatmap:
+            return []
+
+        max_end = max(seg.get("end_time", 0) for seg in heatmap)
+        if max_end <= window_duration:
+            return [(0.0, min(window_duration, max_end))]
+
+        # Collect all windows with their intensities
+        step = 0.5
+        current = 0.0
+        windows = []
+
+        while current + window_duration <= max_end:
+            intensity = _window_intensity(heatmap, current, current + window_duration)
+            windows.append((current, current + window_duration, intensity))
+            current += step
+
+        # Sort by intensity descending
+        windows.sort(key=lambda w: w[2], reverse=True)
+
+        # Pick top N non-overlapping windows
+        peaks = []
+        for start, end, intensity in windows:
+            if len(peaks) >= n:
+                break
+            # Check overlap with already-selected peaks
+            overlaps = False
+            for ps, pe in peaks:
+                if start < pe and end > ps:
+                    overlaps = True
+                    break
+            if not overlaps:
+                peaks.append((start, end))
+
+        print(f"[heatmap] found {len(peaks)} non-overlapping peaks")
+        for i, (s, e) in enumerate(peaks):
+            intensity = _window_intensity(heatmap, s, e)
+            print(f"[heatmap]   peak {i+1}: {s:.1f}s → {e:.1f}s (intensity: {intensity:.2f})")
+        return peaks
+    except Exception as e:
+        print(f"[heatmap] error in find_top_peaks: {e}")
+        return []
+
+
 def get_fallback_timestamps(video_url: str, window_duration: float = 52.0) -> Tuple[float, float]:
     """Fallback: pick a segment at 30% into the video."""
     try:
-        duration = get_video_duration(video_url)
+        metadata = get_video_metadata(video_url)
+        duration = metadata["duration"]
         start = duration * 0.3
         end = min(start + window_duration, duration - 5)
         print(f"[heatmap] fallback timestamps: {start:.1f}s → {end:.1f}s")
@@ -140,7 +186,8 @@ def get_fallback_timestamps(video_url: str, window_duration: float = 52.0) -> Tu
 def get_clip_timestamps(video_url: str) -> Tuple[float, float]:
     """Get the best clip timestamps for a video."""
     try:
-        heatmap = get_heatmap_data(video_url)
+        metadata = get_video_metadata(video_url)
+        heatmap = metadata["heatmap"]
         window = config.CLIP["max_duration_seconds"] - 3
 
         if heatmap and len(heatmap) >= 10:
@@ -149,7 +196,10 @@ def get_clip_timestamps(video_url: str) -> Tuple[float, float]:
             return result
         else:
             print("[heatmap] no heatmap data, using fallback")
-            return get_fallback_timestamps(video_url, window)
+            duration = metadata["duration"]
+            start = duration * 0.3
+            end = min(start + window, duration - 5)
+            return (start, end)
     except Exception as e:
         print(f"[heatmap] error getting clip timestamps: {e}")
         return (90.0, 142.0)
@@ -245,92 +295,127 @@ def get_timestamp_comments(comments: List[dict], peak_sec: int) -> List[dict]:
         return []
 
 
-def download_audio_only(video_url: str, output_path: str) -> bool:
-    """Download audio-only from YouTube using yt-dlp."""
+def analyze_comments_for_moment(comments: List[dict]) -> dict:
+    """Use Groq to analyze comments and extract what viewers found most exciting.
+
+    Called when heatmap and timestamp signals are both absent.
+    Returns: {"moment_description": str, "position_hint": str, "confidence": float}
+    """
     try:
-        cmd = ytdlp.command() + [
-            "-f", "bestaudio[ext=m4a]/bestaudio/best[height<=360]",
-            "-x",
-            "--audio-format", "mp3",
-            "-o", output_path
-        ]
-        if config.YOUTUBE_COOKIES_PATH and pathlib.Path(config.YOUTUBE_COOKIES_PATH).exists():
-            cmd.extend(["--cookies", config.YOUTUBE_COOKIES_PATH])
-        import shutil
-        node_path = shutil.which("node")
-        if node_path:
-            cmd.extend(["--js-runtimes", f"node:{node_path}"])
-        cmd.append(video_url)
-        print(f"[heatmap] downloading audio-only: {video_url}")
-        pathlib.Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
-        if result.returncode != 0:
-            print(f"[heatmap] download_audio_only error: {result.stderr.strip()[:500]}")
-            return False
+        import groq
 
-        out_file = pathlib.Path(output_path)
-        if not out_file.exists():
-            # Check if suffix was added
-            actual_file = out_file.with_name(out_file.name + ".mp3")
-            if actual_file.exists():
-                actual_file.rename(out_file)
-            else:
-                # Find file starting with the same stem
-                parent = out_file.parent
-                candidates = list(parent.glob(out_file.stem + "*"))
-                if candidates:
-                    candidates[0].rename(out_file)
+        api_key = os.environ.get("GROQ_API_KEY", "")
+        if not api_key:
+            print("[heatmap] GROQ_API_KEY not set, skipping comment analysis")
+            return {"moment_description": "", "position_hint": "unknown", "confidence": 0.0}
 
-        if out_file.exists():
-            print(f"[heatmap] audio-only downloaded: {output_path}")
-            return True
-        print(f"[heatmap] error: output file {output_path} not found after download")
-        return False
+        # Format top 30 comments by likes
+        top_comments = sorted(comments, key=lambda c: c.get("like_count", 0), reverse=True)[:30]
+        if not top_comments:
+            return {"moment_description": "", "position_hint": "unknown", "confidence": 0.0}
+
+        formatted = ""
+        for i, c in enumerate(top_comments):
+            text = c.get("text", "").strip().replace("\n", " ")[:150]
+            likes = c.get("like_count", 0)
+            formatted += f"{i+1}. \"{text}\" ({likes} likes)\n"
+
+        system_prompt = (
+            "You analyze YouTube comments from GTA gameplay videos to identify "
+            "what specific moment viewers found most exciting, funny, or memorable."
+        )
+
+        user_prompt = (
+            "Analyze these comments and identify the MOST EXCITING moment viewers are reacting to.\n\n"
+            f"Comments:\n{formatted}\n"
+            "Rules:\n"
+            "- Focus on comments describing physical actions (crashes, stunts, ragdoll, explosions, glitches)\n"
+            "- Ignore generic reactions ('lol', 'bruh', emoji-only, subscriber begging)\n"
+            "- If viewers describe a specific moment, extract WHAT happened\n"
+            "- If viewers hint at WHEN (near the end, early, at the start, around the middle), extract that\n"
+            "- If comments are all generic with no specific moment, set confidence to 0.0\n\n"
+            "Respond ONLY with JSON:\n"
+            "{\n"
+            "  \"moment_description\": \"one sentence describing what viewers found most exciting\",\n"
+            "  \"position_hint\": \"early\" | \"middle\" | \"late\" | \"unknown\",\n"
+            "  \"confidence\": 0.0 to 1.0\n"
+            "}"
+        )
+
+        client = groq.Groq(api_key=api_key)
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            max_tokens=150,
+            temperature=0.3,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ]
+        )
+
+        content = response.choices[0].message.content.strip()
+        result = json.loads(content)
+        print(f"[heatmap] Groq comment analysis: {result}")
+        return {
+            "moment_description": str(result.get("moment_description", "")),
+            "position_hint": str(result.get("position_hint", "unknown")),
+            "confidence": float(result.get("confidence", 0.0))
+        }
     except Exception as e:
-        print(f"[heatmap] error in download_audio_only: {e}")
-        return False
+        print(f"[heatmap] error in analyze_comments_for_moment: {e}")
+        return {"moment_description": "", "position_hint": "unknown", "confidence": 0.0}
 
 
-def audio_energy_peak(audio_path: str, window_duration: float = 52.0) -> Tuple[float, float]:
-    """Find the start and end time of the peak audio energy segment using librosa."""
+def get_position_segments(
+    duration: float,
+    position_hint: str,
+    segment_window: float = 120.0
+) -> List[Tuple[float, float]]:
+    """Return 2-3 segment windows biased toward the position hint.
+
+    Each segment is (start, end) in global video time.
+    """
     try:
-        import librosa
-        import numpy as np
+        if duration <= segment_window:
+            return [(0.0, duration)]
 
-        y, sr = librosa.load(audio_path, sr=8000, mono=True)
-        duration = librosa.get_duration(y=y, sr=sr)
+        if position_hint == "early":
+            # Focus on first 40% of video
+            positions = [0.10, 0.25, 0.40]
+        elif position_hint == "late":
+            # Focus on last 40% of video
+            positions = [0.60, 0.75, 0.90]
+        elif position_hint == "middle":
+            # Focus on middle
+            positions = [0.35, 0.50, 0.65]
+        else:
+            # Unknown — spread evenly
+            positions = [0.25, 0.50, 0.75]
 
-        if duration <= window_duration:
-            return (0.0, duration)
+        segments = []
+        for pct in positions:
+            center = duration * pct
+            start = max(0.0, center - segment_window / 2)
+            end = min(duration, start + segment_window)
+            # Re-adjust start if end got clamped
+            start = max(0.0, end - segment_window)
+            segments.append((round(start, 1), round(end, 1)))
 
-        hop_length = 512
-        rms = librosa.feature.rms(y=y, hop_length=hop_length)[0]
-        times = librosa.frames_to_time(np.arange(len(rms)), sr=sr, hop_length=hop_length)
+        # Deduplicate overlapping segments
+        deduped = [segments[0]]
+        for seg in segments[1:]:
+            prev = deduped[-1]
+            # If more than 50% overlap, skip
+            overlap = max(0, min(prev[1], seg[1]) - max(prev[0], seg[0]))
+            if overlap < segment_window * 0.5:
+                deduped.append(seg)
 
-        dt = times[1] - times[0] if len(times) > 1 else 0.064
-        window_frames = int(window_duration / dt)
-
-        if window_frames >= len(rms):
-            return (0.0, duration)
-
-        sliding_energy = np.convolve(rms, np.ones(window_frames), mode='valid')
-        peak_idx = np.argmax(sliding_energy)
-
-        start_time = float(times[peak_idx])
-        end_time = min(start_time + window_duration, duration)
-
-        print(f"[heatmap] audio peak found: {start_time:.1f}s → {end_time:.1f}s")
-        return (start_time, end_time)
+        print(f"[heatmap] position segments (hint={position_hint}): {deduped}")
+        return deduped
     except Exception as e:
-        print(f"[heatmap] error in audio_energy_peak: {e}")
-        # Fallback to 30%
-        try:
-            import librosa
-            duration = librosa.get_duration(path=audio_path)
-        except Exception:
-            duration = 300.0
-        start = duration * 0.3
-        return (start, min(start + window_duration, duration))
+        print(f"[heatmap] error in get_position_segments: {e}")
+        return [(duration * 0.3, min(duration * 0.3 + segment_window, duration))]
 
 
 if __name__ == "__main__":

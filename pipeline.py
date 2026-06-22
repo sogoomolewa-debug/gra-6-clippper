@@ -194,122 +194,232 @@ def run_pipeline() -> None:
 
 
 def _process_single_video(queue: dict, video: dict, api_key: str) -> bool:
-    """Process a single video through all gates. Returns True if a short was produced."""
+    """Process a single video through the multi-signal cascade. Returns True if a short was produced."""
     try:
+        from pipeline.heatmap import (get_video_metadata, find_top_peaks,
+                                      extract_and_score_timestamps,
+                                      get_best_comment_timestamp, get_timestamp_comments,
+                                      analyze_comments_for_moment, get_position_segments)
+        import config as cfg
+
         # FETCH COMMENTS
         print("[pipeline] fetching comments")
         comments = search.fetch_comments(video["video_id"], api_key)
 
-        # FIND PEAK TIMESTAMP
-        from pipeline.heatmap import (extract_and_score_timestamps,
-                                      get_best_comment_timestamp, get_timestamp_comments,
-                                      get_video_duration, get_heatmap_data, find_peak_window,
-                                      get_fallback_timestamps, download_audio_only, audio_energy_peak)
-        import config as cfg
-
-        duration = get_video_duration(video["url"])
+        # GET METADATA (single yt-dlp call for duration + heatmap)
+        metadata = get_video_metadata(video["url"])
+        duration = metadata["duration"]
+        heatmap_data = metadata["heatmap"]
         window = float(cfg.CLIP["max_duration_seconds"]) - 3.0
-        timestamp_comments = []
-        peak_sec = None
-        peak_signal = "fallback"
+        min_viral = int(cfg.CLIP.get("min_viral_score", 7))
+        max_peaks = int(cfg.CLIP.get("max_peaks_to_try", 3))
 
-        # 1. yt-dlp heatmap as the primary signal
-        heatmap_list = get_heatmap_data(video["url"])
-        if heatmap_list and len(heatmap_list) >= 10:
-            start, _ = find_peak_window(heatmap_list, window)
-            peak_sec = int(start + window / 2)
-            peak_signal = "heatmap"
-            print(f"[pipeline] peak from heatmap: {peak_sec}s")
+        # ── SIGNAL CASCADE ──────────────────────────────────────────
 
-        # 2. Comment signal fallback
-        if not peak_sec and comments:
+        # Signal 1: Heatmap multi-peak
+        if heatmap_data and len(heatmap_data) >= 10:
+            peaks = find_top_peaks(heatmap_data, window, n=max_peaks)
+            if peaks:
+                print(f"[pipeline] trying {len(peaks)} heatmap peaks")
+                result = _try_peaks(queue, video, peaks, window, duration, comments, min_viral)
+                if result:
+                    return _finalize_video(queue, video, result, duration, api_key)
+                # All peaks failed gates — fall through to track failure
+                _track_candidate_failure(video)
+                log_skip(video, "skipped_low_viral", "All heatmap peaks below viral threshold or failed gates")
+                queue_manager.mark_processed(queue, video, "skipped_low_viral")
+                queue_manager.save_queue(queue)
+                return False
+
+        # Signal 2: Comment timestamps (regex — fast, free)
+        if comments:
             clusters = extract_and_score_timestamps(comments, int(duration))
             peak_sec = get_best_comment_timestamp(clusters)
             if peak_sec:
-                peak_signal = "comments"
                 print(f"[pipeline] peak from comment timestamps: {peak_sec}s")
+                timestamp_comments = get_timestamp_comments(comments, peak_sec)
+                result = _try_peak(video, peak_sec, duration, timestamp_comments, min_viral, "comments")
+                if result:
+                    return _finalize_video(queue, video, result, duration, api_key)
+                # Single comment peak failed
+                print("[pipeline] comment timestamp peak failed, trying Groq analysis...")
 
-        # 3. Audio energy fallback
-        if not peak_sec:
-            print("[pipeline] trying audio energy")
-            tmp_audio = f"/tmp/audio_{video['video_id']}.mp3"
-            if download_audio_only(video["url"], tmp_audio):
-                start, _ = audio_energy_peak(tmp_audio, window)
-                peak_sec = int(start + window / 2)
-                peak_signal = "audio_energy"
-                pathlib.Path(tmp_audio).unlink(missing_ok=True)
-                print(f"[pipeline] peak from audio energy: {peak_sec}s")
+        # Signal 3: Groq comment analysis (moment description + position)
+        if comments:
+            print("[pipeline] running Groq comment analysis")
+            moment_info = analyze_comments_for_moment(comments)
+            if moment_info.get("confidence", 0.0) >= 0.3 and moment_info.get("moment_description"):
+                segments = get_position_segments(duration, moment_info["position_hint"])
+                print(f"[pipeline] trying {len(segments)} position segments based on Groq analysis")
+                result = _try_segments(video, segments, duration, comments, moment_info, min_viral)
+                if result:
+                    return _finalize_video(queue, video, result, duration, api_key)
+                # All segments failed
+                _track_candidate_failure(video)
+                log_skip(video, "skipped_low_viral", "All position segments below viral threshold")
+                queue_manager.mark_processed(queue, video, "skipped_low_viral")
+                queue_manager.save_queue(queue)
+                return False
+            else:
+                print(f"[pipeline] Groq confidence too low ({moment_info.get('confidence', 0):.1f}), no actionable moment")
 
-        # 4. 30% fallback
-        if not peak_sec:
-            peak_sec = int(duration * 0.3)
-            peak_signal = "fallback_30"
-            print(f"[pipeline] using 30% fallback: {peak_sec}s")
+        # Signal 4: No viable signal — skip
+        print(f"[pipeline] ⚠ no viable signal for {video['video_id']}, skipping")
+        _track_candidate_failure(video)
+        log_skip(video, "skipped_no_signal", "No heatmap, timestamps, or useful comments")
+        queue_manager.mark_processed(queue, video, "skipped_no_signal")
+        queue_manager.save_queue(queue)
+        return False
 
-        # Extract comments for downstream context
-        if comments and peak_sec:
-            timestamp_comments = get_timestamp_comments(comments, peak_sec)
-            print(f"[pipeline] extracted {len(timestamp_comments)} timestamp comments around peak {peak_sec}s for context")
+    except Exception as e:
+        print(f"[pipeline] error processing video {video.get('video_id', '?')}: {e}")
+        queue_manager.mark_processed(queue, video, "error")
+        queue_manager.save_queue(queue)
+        return False
 
-        # CLIP ANALYZER (Gemini watches the segment)
-        print("[pipeline] running visual clip analysis")
-        analysis = clip_analyzer.analyze_clip(
-            video_url=video["url"],
-            peak_sec_global=float(peak_sec),
-            video_duration=duration,
-            timestamp_comments=timestamp_comments
+
+def _track_candidate_failure(video: dict) -> None:
+    """Track a candidate channel failure if applicable."""
+    if video.get("source_type") == "candidate":
+        analytics = load_analytics()
+        channel_discovery.process_candidate_result(
+            analytics, video.get("channel_id", ""), video.get("channel_title", ""), False
         )
+        save_analytics(analytics)
 
-        # Gate: is_gameplay
-        if not analysis.get("is_gameplay", True):
-            print(f"[pipeline] ❌ video {video['video_id']} is not gameplay. Skipping.")
-            if video.get("source_type") == "candidate":
-                analytics = load_analytics()
-                channel_discovery.process_candidate_result(analytics, video.get("channel_id", ""), video.get("channel_title", ""), False)
-                save_analytics(analytics)
-            log_skip(video, "skipped_non_gameplay", "Flagged as non-gameplay by Gemini")
-            queue_manager.mark_processed(queue, video, "skipped_non_gameplay")
-            queue_manager.save_queue(queue)
-            return False
 
-        # Gate: is_punchy
-        if not analysis.get("is_punchy", True):
-            reason = analysis.get("punchiness_reasoning", "No reason provided")
-            print(f"[pipeline] ❌ video {video['video_id']} is not punchy: {reason}. Skipping.")
-            if video.get("source_type") == "candidate":
-                analytics = load_analytics()
-                channel_discovery.process_candidate_result(analytics, video.get("channel_id", ""), video.get("channel_title", ""), False)
-                save_analytics(analytics)
-            log_skip(video, "skipped_not_punchy", f"Flagged as not punchy: {reason}")
-            queue_manager.mark_processed(queue, video, "skipped_not_punchy")
-            queue_manager.save_queue(queue)
-            return False
+def _try_peak(
+    video: dict,
+    peak_sec: int,
+    duration: float,
+    timestamp_comments: list,
+    min_viral: int,
+    signal_name: str
+) -> dict | None:
+    """Try a single peak timestamp through Gemini analysis + gates.
 
+    Returns the full analysis result dict if it passes all gates and viral threshold,
+    or None if it fails.
+    """
+    print(f"[pipeline] analyzing peak at {peak_sec}s (signal: {signal_name})")
+
+    analysis = clip_analyzer.analyze_clip(
+        video_url=video["url"],
+        peak_sec_global=float(peak_sec),
+        video_duration=duration,
+        timestamp_comments=timestamp_comments
+    )
+
+    # Gate: is_gameplay
+    if not analysis.get("is_gameplay", True):
+        print(f"[pipeline]   ❌ not gameplay")
+        return None
+
+    # Gate: is_punchy
+    if not analysis.get("is_punchy", True):
+        print(f"[pipeline]   ❌ not punchy: {analysis.get('punchiness_reasoning', '')}")
+        return None
+
+    # Gate: viral score
+    viral_score = analysis.get("viral_score", 5)
+    if viral_score < min_viral:
+        print(f"[pipeline]   ❌ viral_score {viral_score} < {min_viral}")
+        return None
+
+    # Gate: clip validation
+    validation = clip_validator.validate_clip(
+        description=analysis.get("description", ""),
+        timestamp_comments=timestamp_comments
+    )
+    if not validation.get("valid", True):
+        reason = validation.get("reason", "unknown")
+        detail = validation.get("detail", "")
+        print(f"[pipeline]   ❌ validation failed ({reason}): {detail}")
+        return None
+
+    if validation.get("skipped_comment_check"):
+        print("[pipeline]   ⚠ no timestamp comments — skipped comment cross-validation")
+
+    print(f"[pipeline]   ✅ passed all gates (viral_score={viral_score})")
+
+    # Attach metadata for downstream use
+    analysis["_peak_sec"] = peak_sec
+    analysis["_peak_signal"] = signal_name
+    analysis["_timestamp_comments"] = timestamp_comments
+    return analysis
+
+
+def _try_peaks(
+    queue: dict,
+    video: dict,
+    peaks: list,
+    window: float,
+    duration: float,
+    comments: list,
+    min_viral: int
+) -> dict | None:
+    """Try multiple heatmap peaks, return the first that passes all gates."""
+    from pipeline.heatmap import get_timestamp_comments
+
+    for i, (peak_start, peak_end) in enumerate(peaks):
+        peak_sec = int(peak_start + window / 2)
+        print(f"[pipeline] heatmap peak {i+1}/{len(peaks)}: {peak_start:.1f}s → {peak_end:.1f}s (center: {peak_sec}s)")
+
+        timestamp_comments = []
+        if comments:
+            timestamp_comments = get_timestamp_comments(comments, peak_sec)
+
+        result = _try_peak(video, peak_sec, duration, timestamp_comments, min_viral, f"heatmap_peak_{i+1}")
+        if result:
+            return result
+
+    return None
+
+
+def _try_segments(
+    video: dict,
+    segments: list,
+    duration: float,
+    comments: list,
+    moment_info: dict,
+    min_viral: int
+) -> dict | None:
+    """Try position-based segments from Groq analysis, return best passing result."""
+    from pipeline.heatmap import get_timestamp_comments
+
+    for i, (seg_start, seg_end) in enumerate(segments):
+        peak_sec = int((seg_start + seg_end) / 2)
+        print(f"[pipeline] position segment {i+1}/{len(segments)}: {seg_start:.1f}s → {seg_end:.1f}s (center: {peak_sec}s)")
+        print(f"[pipeline]   looking for: \"{moment_info.get('moment_description', '')}\"")
+
+        timestamp_comments = []
+        if comments:
+            timestamp_comments = get_timestamp_comments(comments, peak_sec)
+
+        result = _try_peak(video, peak_sec, duration, timestamp_comments, min_viral, f"groq_segment_{i+1}")
+        if result:
+            return result
+
+    return None
+
+
+def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, api_key: str) -> bool:
+    """Take a validated analysis result and run the remaining pipeline steps.
+
+    Handles: candidate tracking, transcript, hook, voice, edit, upload, logging.
+    Returns True on success.
+    """
+    try:
         global_start = analysis["global_start"]
         global_end = analysis["global_end"]
         visual_description = analysis["description"]
+        viral_score = analysis.get("viral_score", 5)
+        peak_sec = analysis.get("_peak_sec", int(global_start))
+        peak_signal = analysis.get("_peak_signal", "unknown")
+        timestamp_comments = analysis.get("_timestamp_comments", [])
         peak_pct = round((peak_sec / max(duration, 1)) * 100, 1)
-        print(f"[pipeline] final clip: {global_start:.1f}s → {global_end:.1f}s")
 
-        # Gate: clip validation
-        validation = clip_validator.validate_clip(
-            description=visual_description,
-            timestamp_comments=timestamp_comments
-        )
-        if not validation.get("valid", True):
-            reason = validation.get("reason", "unknown")
-            detail = validation.get("detail", "")
-            print(f"[pipeline] ❌ clip validation failed ({reason}): {detail}. Skipping.")
-            if video.get("source_type") == "candidate":
-                analytics = load_analytics()
-                channel_discovery.process_candidate_result(analytics, video.get("channel_id", ""), video.get("channel_title", ""), False)
-                save_analytics(analytics)
-            log_skip(video, f"skipped_{reason}", detail)
-            queue_manager.mark_processed(queue, video, f"skipped_{reason}")
-            queue_manager.save_queue(queue)
-            return False
-        if validation.get("skipped_comment_check"):
-            print("[pipeline] ⚠ no timestamp comments — skipped comment cross-validation")
+        print(f"[pipeline] final clip: {global_start:.1f}s → {global_end:.1f}s (viral_score={viral_score})")
 
         # Track candidate channel success
         if video.get("source_type") == "candidate":
@@ -424,6 +534,7 @@ def _process_single_video(queue: dict, video: dict, api_key: str) -> bool:
             "visual_description": visual_description,
             "is_punchy": analysis.get("is_punchy", True),
             "punchiness_reasoning": analysis.get("punchiness_reasoning", ""),
+            "viral_score": viral_score,
             "natural_boundaries_used": True,
             "peak_signal": peak_signal,
             "peak_sec": peak_sec,
@@ -458,8 +569,8 @@ def _process_single_video(queue: dict, video: dict, api_key: str) -> bool:
         return True
 
     except Exception as e:
-        print(f"[pipeline] error processing video {video.get('video_id', '?')}: {e}")
-        queue_manager.mark_processed(queue, video, "error")
+        print(f"[pipeline] error finalizing video {video.get('video_id', '?')}: {e}")
+        queue_manager.requeue(queue, video)
         queue_manager.save_queue(queue)
         return False
 

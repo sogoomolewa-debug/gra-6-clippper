@@ -54,7 +54,9 @@ CLIP = {
     "caption_shadow_y": 3,
     "caption_shadow_color": "black",
     "hook_caps": True,
-    "safe_zone_margin_bottom": 220
+    "safe_zone_margin_bottom": 220,
+    "min_viral_score": 7,          # minimum Gemini viral score (1-10) to proceed
+    "max_peaks_to_try": 3,         # max heatmap peaks to evaluate per video
 }
 
 TTS = {

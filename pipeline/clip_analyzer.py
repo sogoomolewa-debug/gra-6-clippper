@@ -105,6 +105,7 @@ class VideoAnalysis(BaseModel):
     description: str = Field(description="A single sentence describing the visual action at the peak timestamp.")
     natural_start: float = Field(description="The timestamp in seconds where the action peak's setup naturally begins.")
     natural_end: float = Field(description="The timestamp in seconds where the reaction to the action peak naturally ends.")
+    viral_score: int = Field(description="Rate the viral potential of this specific moment from 1 to 10. 1-3: Mundane gameplay (driving normally, walking, menus, inventory). 4-5: Mildly interesting (small crash, basic combat, minor stunt). 6-7: Notable moment (impressive stunt, funny physics, unexpected outcome). 8-10: Exceptional (jaw-dropping physics glitch, perfect stunt landing, chain reaction explosion, hilarious NPC behavior). Only score 8+ if a typical viewer would genuinely want to rewatch or share this moment.")
 
 
 def analyze_with_gemini(
@@ -126,7 +127,10 @@ def analyze_with_gemini(
             f"2. Determine if the moment is 'punchy'. Can this moment be fully understood, enjoyed, and impactful in under 15 seconds? If it requires a long buildup or extended context to make sense (e.g., a 40-second conversation or a long chase), set is_punchy to false. We only want fast, punchy action or immediate comedy.\n"
             f"3. Describe in exactly ONE sentence what visually happens at {peak_sec_local:.0f} seconds. Focus on the physical action, stunt, crash, or character interaction (e.g., car collisions, character physics/ragdoll launches, stunt failures or successes, explosive chain reactions) rather than static scenery. Be specific about the vehicles, characters, and motion involved. Avoid generic descriptions (e.g., do NOT just say 'a player drives a car' or 'gameplay footage showing a scene').\n"
             f"4. Find where the peak action at {peak_sec_local:.0f} seconds naturally begins (setup) and naturally ends (reaction complete). "
-            f"Requirements: window must be 10-14 seconds long — just the core moment, tight and punchy, no buildup, no aftermath. Peak at {peak_sec_local:.0f}s must be inside the window."
+            f"Requirements: window must be 10-14 seconds long — just the core moment, tight and punchy, no buildup, no aftermath. Peak at {peak_sec_local:.0f}s must be inside the window.\n"
+            f"5. Rate the viral potential of this moment on a scale of 1-10. "
+            f"Focus on: Would a casual scroller stop for this? Would they rewatch it? Would they send it to a friend? "
+            f"Only score 8+ for truly jaw-dropping or hilarious moments."
         )
 
         response = None
@@ -157,6 +161,7 @@ def analyze_with_gemini(
             "is_punchy": data.get("is_punchy", True),
             "punchiness_reasoning": data.get("punchiness_reasoning", ""),
             "description": data.get("description", ""),
+            "viral_score": int(data.get("viral_score", 5)),
             "natural_start": float(data.get("natural_start", max(0.0, peak_sec_local - 4.0))),
             "natural_end": float(data.get("natural_end", max(0.0, peak_sec_local - 4.0) + config.CLIP["max_duration_seconds"]))
         }
@@ -167,6 +172,7 @@ def analyze_with_gemini(
             "is_punchy": True,
             "punchiness_reasoning": "fallback error",
             "description": "",
+            "viral_score": 5,
             "natural_start": max(0.0, peak_sec_local - 4.0),
             "natural_end": max(0.0, peak_sec_local - 4.0) + config.CLIP["max_duration_seconds"]
         }
@@ -243,6 +249,7 @@ def analyze_clip(
             "is_punchy": True,
             "punchiness_reasoning": reason,
             "description": "",
+            "viral_score": 5,
             "global_start": fallback_start,
             "global_end": fallback_start + float(config.CLIP["max_duration_seconds"])
         }
@@ -322,6 +329,7 @@ def analyze_clip(
             "is_punchy": result.get("is_punchy", True),
             "punchiness_reasoning": result.get("punchiness_reasoning", ""),
             "description": result.get("description", ""),
+            "viral_score": result.get("viral_score", 5),
             "global_start": global_start,
             "global_end": global_end
         }
@@ -334,6 +342,7 @@ def analyze_clip(
             "is_punchy": True,
             "punchiness_reasoning": "error",
             "description": "",
+            "viral_score": 5,
             "global_start": fallback_start,
             "global_end": fallback_start + float(config.CLIP["max_duration_seconds"])
         }
