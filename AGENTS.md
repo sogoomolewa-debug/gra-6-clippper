@@ -1,3 +1,9 @@
+---
+title: Repository Guidelines
+tags:
+  - obsidian
+---
+
 # Repository Guidelines
 
 ## Project Structure & Module Organization
@@ -39,7 +45,7 @@ Avoid unrelated refactors when changing a stage. Keep configuration in `config.p
 
 ## Testing Guidelines
 
-Use `TESTING.md` as the manual verification checklist. `test_e2e.py` is the primary integration test for video composition, captions, audio, dimensions, and watermark behavior. Add focused tests or scripts when changing shared logic in `pipeline/`, especially scoring, queue mutations, clip boundaries, or editor output. Name tests `test_*.py`.
+Use [[TESTING]] as the manual verification checklist. `test_e2e.py` is the primary integration test for video composition, captions, audio, dimensions, and watermark behavior. Add focused tests or scripts when changing shared logic in `pipeline/`, especially scoring, queue mutations, clip boundaries, or editor output. Name tests `test_*.py`.
 
 ## Commit & Pull Request Guidelines
 

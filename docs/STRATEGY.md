@@ -1,3 +1,10 @@
+---
+title: GTA VI Shorts Channel Strategy (June → November 2026)
+tags:
+  - obsidian
+  - documentation
+---
+
 # GTA VI Shorts Channel Strategy (June → November 2026)
 
 This document outlines the strategic playbook for managing the automated GTA VI Shorts pipeline from pre-release hype through launch window.

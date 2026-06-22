@@ -1,3 +1,10 @@
+---
+title: GTA Shorts Reference Video - Comprehensive Reverse-Engineering Analysis
+tags:
+  - obsidian
+  - documentation
+---
+
 # GTA Shorts Reference Video - Comprehensive Reverse-Engineering Analysis
 
 **Reference Video:** `YTDown_Shorts_Ngl-I-jumped_Media_sr0lXY96Hg4_001_1080p.mp4`  

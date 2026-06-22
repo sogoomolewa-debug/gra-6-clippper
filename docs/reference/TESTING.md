@@ -1,3 +1,9 @@
+---
+title: GTA6 Shorts Pipeline — Manual Testing Protocol
+tags:
+  - obsidian
+---
+
 # GTA6 Shorts Pipeline — Manual Testing Protocol
 
 This guide outlines how to manually verify every stage of the pipeline to ensure a 100% success rate.

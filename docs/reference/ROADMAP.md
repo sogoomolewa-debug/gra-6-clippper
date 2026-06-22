@@ -1,6 +1,12 @@
+---
+title: GTA6 Shorts Pipeline — Architectural Scaling & Future Roadmap
+tags:
+  - obsidian
+---
+
 # GTA6 Shorts Pipeline — Architectural Scaling & Future Roadmap
 
-This document outlines a long-term technical roadmap for scaling the **GTA6 Shorts Pipeline** beyond its current scope. It focuses on engineering enhancements, algorithmic optimizations, and automated feedback loops that are not covered in the existing files (`GEMINI.md`, `PROGRESS.md`, or `TESTING.md`).
+This document outlines a long-term technical roadmap for scaling the **GTA6 Shorts Pipeline** beyond its current scope. It focuses on engineering enhancements, algorithmic optimizations, and automated feedback loops that are not covered in the existing files ([[GEMINI]], [[PROGRESS]], or [[TESTING]]).
 
 ---
 

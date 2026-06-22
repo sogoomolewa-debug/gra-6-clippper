@@ -1,3 +1,9 @@
+---
+title: CLAUDE.md
+tags:
+  - obsidian
+---
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -141,7 +147,7 @@ python3 -m pipeline.uploader
 ### Critical Settings
 - `DRY_RUN`: Set to `false` for live uploads (default: `true`)
 - `SOURCING["mode"]`: `"whitelist"` or `"search"`
-- `CLIP["max_duration_seconds"]`: Currently `14` (YouTube Shorts max: 60)
+- `CLIP["max_duration_seconds"]`: Currently `12` (YouTube Shorts max: 60)
 - `CLIP["min_duration_seconds"]`: `10`
 - `QUEUE["min_size"]`: Activates GTA5 fallback when queue drops below `3`
 - `QUEUE["max_pending"]`: Caps queue at `20` videos to prevent stale backlog
@@ -149,12 +155,16 @@ python3 -m pipeline.uploader
 ### Whitelist Channels
 ```python
 SOURCING["whitelist_channels"] = [
-    {"name": "Hazardous", "id": "UCgXfEXQBy0r4MywuzNf3iGQ", "priority": 2.0},
-    {"name": "whatever57010", "id": "UCoKYYUrm0En0U2wAIkxSh5A", "priority": 2.0},
-    {"name": "Red Arcade", "id": "UCHZZo1h1cI1vg4I9g2RqOUQ", "priority": 2.0},
-    {"name": "Prestige Clips", "id": "UCC-uu-OqgYEx52KYQ-nJLRw", "priority": 2.0},
-    {"name": "DarkViperAU", "id": "UCV6mNrW8CrmWtcxWfQXy11g", "priority": 0.5},
-    {"name": "Call Me Kevin", "id": "UCdoPCztTOW7BJUPk2h5ttXA", "priority": 0.5}
+    {"name": "Hazardous", "id": "UCgXfEXQBy0r4MywuzNf3iGQ", "priority": 1.0},
+    {"name": "whatever57010", "id": "UCoKYYUrm0En0U2wAIkxSh5A", "priority": 1.0},
+    {"name": "Prestige Clips", "id": "UCC-uu-OqgYEx52KYQ-nJLRw", "priority": 1.0},
+    {"name": "GTA Series Videos", "id": "UCuWcjpKbIDAbZfHoru1toFg", "priority": 1.0},
+    {"name": "GTAMen", "id": "UC4zMEl8Qh_nE5nDnp0cxRFQ", "priority": 1.0},
+    {"name": "TGG", "id": "UC72PuhDwKtZ5MikpGNhPAtA", "priority": 1.0},
+    {"name": "Red Arcade", "id": "UCHZZo1h1cI1vg4I9g2RqOUQ", "priority": 1.0},
+    {"name": "MrBossFTW", "id": "UC0PMQXAwF6O6aeTpv962miA", "priority": 1.0},
+    {"name": "Digital Car Addict", "id": "UCD9qy7cc3bb5rrMjJ9tRTTA", "priority": 1.0},
+    {"name": "Call Me Kevin", "id": "UCdoPCztTOW7BJUPk2h5ttXA", "priority": 1.0},
 ]
 ```
 

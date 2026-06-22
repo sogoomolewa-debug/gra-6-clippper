@@ -1,3 +1,9 @@
+---
+title: YouTube Channel Brand Profile
+tags:
+  - obsidian
+---
+
 # YouTube Channel Brand Profile
 
 Here is the proposed branding package for your GTA Shorts channel.

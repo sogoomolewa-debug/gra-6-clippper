@@ -1,3 +1,9 @@
+---
+title: Viral Optimization Implementation Plan
+tags:
+  - obsidian
+---
+
 # Viral Optimization Implementation Plan
 
 ## Phase 1: Critical (Implement Immediately)

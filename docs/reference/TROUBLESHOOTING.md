@@ -1,3 +1,9 @@
+---
+title: YouTube Bot-Detection & Cookie Invalidation Guide
+tags:
+  - obsidian
+---
+
 # YouTube Bot-Detection & Cookie Invalidation Guide
 
 This document explains why YouTube blocks automated downloads (the `"Sign in to confirm you're not a bot"` error), how session cookies are rotated, and the mitigation strategies to keep the **GTA6 Shorts Pipeline** running reliably in production.
