@@ -229,19 +229,61 @@ def get_upload_tags(mode: str | None = None) -> list[str]:
 SOURCING = {
     "mode": os.environ.get("SOURCING_MODE", "whitelist"),
     "whitelist_channels": [
-        # All channels start equal priority - let performance data guide future adjustments
         {"name": "Hazardous", "id": "UCgXfEXQBy0r4MywuzNf3iGQ", "priority": 1.0},
         {"name": "whatever57010", "id": "UCoKYYUrm0En0U2wAIkxSh5A", "priority": 1.0},
         {"name": "Prestige Clips", "id": "UCC-uu-OqgYEx52KYQ-nJLRw", "priority": 1.0},
-        {"name": "GTA Series Videos", "id": "UCuWcjpKbIDAbZfHoru1toFg", "priority": 1.0},
-        {"name": "GTAMen", "id": "UC4zMEl8Qh_nE5nDnp0cxRFQ", "priority": 1.0},
-        {"name": "TGG", "id": "UC72PuhDwKtZ5MikpGNhPAtA", "priority": 1.0},
         {"name": "Red Arcade", "id": "UCHZZo1h1cI1vg4I9g2RqOUQ", "priority": 1.0},
-        {"name": "MrBossFTW", "id": "UC0PMQXAwF6O6aeTpv962miA", "priority": 1.0},
-        {"name": "Digital Car Addict", "id": "UCD9qy7cc3bb5rrMjJ9tRTTA", "priority": 1.0},
-        {"name": "Call Me Kevin", "id": "UCdoPCztTOW7BJUPk2h5ttXA", "priority": 1.0},
+        # END WHITELIST
     ],
     "max_age_hours": 168,
     "min_views": 20000,
     "keyword_filter": "gta",
 }
+
+# Title blacklist — phrases that indicate non-gameplay content (checked before any API call)
+TITLE_BLACKLIST = [
+    # Analysis / news / opinion
+    "analysis", "explained", "breakdown", "everything we know", "all details",
+    "theory", "theories", "confirmed", "debunked", "rumor", "rumour",
+    "leak", "leaks", "leaked", "news", "update", "updates",
+    "official trailer", "cover art", "box art", "announcement",
+    # Reaction / talk shows
+    "reaction", "reacts", "react", "rant", "essay", "podcast",
+    "review", "opinion", "thoughts on", "let's talk", "real talk",
+    "face reveal", "q&a", "interview",
+    # Listicle / compilation
+    "top 10", "top 5", "top 20", "top 15", "top 50", "top 100",
+    "things you didn't know", "things you missed",
+    "hidden details", "easter egg", "easter eggs",
+    # Non-gameplay formats
+    "stream highlight", "vlog", "rambles", "drama",
+    "speculation", "comparison", "vs real life",
+    "map size", "map comparison", "graphics comparison",
+    # Wrong game / franchise
+    "fortnite", "minecraft", "roblox", "call of duty", "cod",
+    "red dead", "rdr", "cyberpunk", "saints row",
+]
+
+# Channel discovery — auto-grow the whitelist by testing candidate channels
+DISCOVERY = {
+    "trigger_queue_size": 2,          # run discovery when queue drops below this
+    "queries": [
+        "GTA 6 gameplay stunts",
+        "GTA V ragdoll physics",
+        "GTA 5 funny moments gameplay",
+        "GTA online insane stunts",
+    ],
+    "max_results_per_query": 5,
+    "min_views": 50000,
+    "max_subscriber_count": 5000000,  # skip mega-channels that may DMCA
+    "promotion_threshold": 3,         # clips passed before auto-whitelist
+    "demotion_threshold": 5,          # clips attempted with 0 passes before blacklist
+}
+
+# Permanent channel blacklist — confirmed wrong-content or problematic channels
+CHANNEL_BLACKLIST = [
+    "MrBossFTW",
+    "TGG",
+    "Digital Car Addict",
+    # END CHANNEL_BLACKLIST
+]

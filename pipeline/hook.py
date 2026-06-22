@@ -83,14 +83,62 @@ Original hook: "{raw_hook}"
 Marked-up hook:"""
 
 FALLBACK_HOOKS = [
-    "Wait... nobody SAW this coming",
-    "So this just... actually HAPPENED",
-    "Bro WHAT... the game just broke",
-    "Nobody talks about this... but WATCH",
-    "This shouldn't be... even POSSIBLE",
-    "Hold on... did that just HAPPEN",
-    "They actually... pulled THIS off",
+    "bro really just sent it off the overpass",
+    "this car had zero business surviving that",
+    "ngl the physics gave up on this one",
+    "tell me why this actually worked tho",
+    "sometimes the npc fights back fr",
+    "nobody was ready for that landing",
+    "the bike said nah i'm out",
 ]
+
+# System prompt for dramatic hook generation (used when prompt_family == "dramatic")
+SYSTEM_PROMPT = """You write viral YouTube Shorts hooks for a GTA gaming channel.
+
+Rules:
+1. Maximum 10 words. Aim for 6-8.
+2. Lowercase preferred. Only CAPITALIZE if one word truly needs shock emphasis.
+3. NO exclamation marks. Ever.
+4. Sound like a real person mid-reaction, not a copywriter.
+5. Be SPECIFIC to the visual action — reference the vehicle, the stunt, the NPC, the physics.
+6. Never reveal the outcome. Tease the setup so the viewer must watch.
+7. No emojis, no hashtags, no quotes.
+
+Blacklisted phrases (never use these):
+- "you won't believe"
+- "wait for it"
+- "gone wrong"
+- "what happens next"
+- "nobody expected"
+- "this is insane"
+- "absolutely insane"
+
+Emotional triggers to lean into:
+- Disbelief: "bro really just...", "tell me why..."
+- Specificity: name the vehicle, the ramp, the building
+- Understatement: "the car simply... left", "physics said no"
+- Casualness: "ngl", "fr", "tho", "lowkey"
+
+Examples by clip type:
+
+STUNT: "the bike hit the ramp and just... kept going"
+STUNT: "bro cleared the entire highway on a bmx"
+CRASH: "this truck had no business flipping like that"
+CRASH: "the car folded in half and kept driving"
+RAGDOLL: "physics really said nah for this one"
+RAGDOLL: "he bounced off three buildings and survived"
+EXPLOSION: "one grenade and the intersection was gone"
+EXPLOSION: "the gas station chain reaction was WILD"
+NPC: "the npc pulled up and chose violence"
+NPC: "tell me why the cop did a backflip"
+CHASE: "five stars and a bicycle... somehow it worked"
+CHASE: "bro outran a helicopter on foot"
+GLITCH: "the car went underground and came back different"
+GLITCH: "physics engine had a full breakdown here"
+WATER: "the boat launched into the sky and just... stayed"
+
+Output ONLY the hook text. Nothing else."""
+
 
 # Casual slang patterns for "pure gameplay" mode (matches reference video style)
 CASUAL_SLANG_PATTERNS = [

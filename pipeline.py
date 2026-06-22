@@ -9,7 +9,8 @@ import dotenv
 
 dotenv.load_dotenv()
 
-from pipeline import search, heatmap, transcript, hook, voice, editor, uploader, queue_manager, clip_analyzer, clip_validator
+from pipeline import search, heatmap, transcript, hook, voice, editor, uploader, queue_manager, clip_analyzer, clip_validator, channel_discovery
+from pipeline.channel_tracker import load_analytics, save_analytics
 import config
 
 
@@ -81,7 +82,7 @@ def commit_data_files() -> None:
         commands = [
             ["git", "config", "user.name", "pipeline-bot"],
             ["git", "config", "user.email", "bot@pipeline"],
-            ["git", "add", "data/queue.json", "data/performance_log.json", "data/channel_analytics.json"],
+            ["git", "add", "data/queue.json", "data/performance_log.json", "data/channel_analytics.json", "config.py"],
         ]
         for cmd in commands:
             try:
@@ -148,6 +149,17 @@ def run_pipeline() -> None:
                 gta5_videos = search.get_top_videos(api_key, tier_name="gta5", limit=5)
                 added5 = queue_manager.add_to_queue(queue, gta5_videos, source_type="gta5")
                 print(f"[pipeline] added {added5} new gta5 videos to queue")
+
+        # STEP 3b — DISCOVERY FALLBACK (find new candidate channels)
+        discovery_cfg = getattr(config, "DISCOVERY", {})
+        trigger_size = discovery_cfg.get("trigger_queue_size", 2)
+        if len(queue["pending"]) < trigger_size:
+            print(f"[pipeline] queue still low ({len(queue['pending'])}), running channel discovery")
+            whitelist_ids = [ch["id"] for ch in config.SOURCING.get("whitelist_channels", [])]
+            channel_bl = getattr(config, "CHANNEL_BLACKLIST", [])
+            discovery_videos = search.search_discovery_videos(api_key, whitelist_ids, channel_bl)
+            added_d = queue_manager.add_to_queue(queue, discovery_videos, source_type="candidate")
+            print(f"[pipeline] added {added_d} discovery candidate videos to queue")
 
         queue_manager.save_queue(queue)
 
@@ -227,6 +239,10 @@ def run_pipeline() -> None:
         # Check if the video contains actual gameplay
         if not analysis.get("is_gameplay", True):
             print(f"[pipeline] ❌ video {video['video_id']} is not gameplay (flagged by Gemini). Skipping and marking processed.")
+            if video.get("source_type") == "candidate":
+                analytics = load_analytics()
+                channel_discovery.process_candidate_result(analytics, video.get("channel_id", ""), video.get("channel_title", ""), False)
+                save_analytics(analytics)
             log_skip(video, "skipped_non_gameplay", "Flagged as non-gameplay by Gemini")
             queue_manager.mark_processed(queue, video, "skipped_non_gameplay")
             queue_manager.save_queue(queue)
@@ -237,6 +253,10 @@ def run_pipeline() -> None:
         if not analysis.get("is_punchy", True):
             reason = analysis.get("punchiness_reasoning", "No reason provided")
             print(f"[pipeline] ❌ video {video['video_id']} is not punchy (flagged by Gemini: {reason}). Skipping and marking processed.")
+            if video.get("source_type") == "candidate":
+                analytics = load_analytics()
+                channel_discovery.process_candidate_result(analytics, video.get("channel_id", ""), video.get("channel_title", ""), False)
+                save_analytics(analytics)
             log_skip(video, "skipped_not_punchy", f"Flagged as not punchy: {reason}")
             queue_manager.mark_processed(queue, video, "skipped_not_punchy")
             queue_manager.save_queue(queue)
@@ -258,6 +278,10 @@ def run_pipeline() -> None:
             reason = validation.get("reason", "unknown")
             detail = validation.get("detail", "")
             print(f"[pipeline] ❌ clip validation failed ({reason}): {detail}. Skipping.")
+            if video.get("source_type") == "candidate":
+                analytics = load_analytics()
+                channel_discovery.process_candidate_result(analytics, video.get("channel_id", ""), video.get("channel_title", ""), False)
+                save_analytics(analytics)
             log_skip(video, f"skipped_{reason}", detail)
             queue_manager.mark_processed(queue, video, f"skipped_{reason}")
             queue_manager.save_queue(queue)
@@ -265,6 +289,18 @@ def run_pipeline() -> None:
             return
         if validation.get("skipped_comment_check"):
             print("[pipeline] ⚠ no timestamp comments — skipped comment cross-validation")
+
+        # STEP 5c — TRACK CANDIDATE CHANNEL RESULT
+        if video.get("source_type") == "candidate":
+            analytics = load_analytics()
+            action = channel_discovery.process_candidate_result(
+                analytics,
+                channel_id=video.get("channel_id", ""),
+                channel_title=video.get("channel_title", ""),
+                passed_all_gates=True
+            )
+            save_analytics(analytics)
+            print(f"[pipeline] candidate channel '{video.get('channel_title')}' result: {action}")
 
         # STEP 6 — TRANSCRIPT CONTEXT (around peak, may be empty)
         transcript_context = transcript.get_video_context(video["url"], float(peak_sec))

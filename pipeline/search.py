@@ -9,6 +9,22 @@ import config
 from pipeline.channel_tracker import get_channel_priority
 
 
+def passes_title_blacklist(title: str, description: str = "") -> bool:
+    """Return True if the title/description is clean (no blacklisted phrases).
+    This is Gate 1 — runs before any download or API call to save quota."""
+    try:
+        text_lower = (title + " " + description).lower()
+        for phrase in config.TITLE_BLACKLIST:
+            if phrase in text_lower:
+                print(f"[search] title blacklist hit: '{phrase}' in '{title[:60]}'")
+                return False
+        return True
+    except Exception as e:
+        print(f"[search] title blacklist error: {e}")
+        return True  # fail-open to avoid blocking good content
+
+
+
 
 def build_youtube(api_key: str):
     """Build YouTube Data API v3 client."""
@@ -130,6 +146,11 @@ def get_video_details(youtube, video_ids: list[str]) -> list[dict]:
 def is_eligible(video: dict, tier: dict) -> bool:
     """Check if video meets all eligibility criteria for the given tier."""
     try:
+        # Gate 1: Title blacklist (free, no API cost)
+        if not passes_title_blacklist(video.get("title", ""), video.get("description", "")):
+            print(f"[search] blocked video {video.get('video_id')} by title blacklist")
+            return False
+
         # Block Rockstar Games official channels to avoid copying original source directly
         ch_title = video.get("channel_title", "").lower()
         if "rockstar games" in ch_title or "rockstargames" in ch_title:
@@ -237,6 +258,11 @@ def get_top_videos(api_key: str, tier_name: str, limit: int = 5) -> list[dict]:
                         title = snippet.get("title", "")
                         description = snippet.get("description", "")
                         
+                        # Pre-API Title Blacklist Check (free gate)
+                        if not passes_title_blacklist(title, description):
+                            print(f"[search] pre-API blacklisted '{title}' from channel {ch['name']}")
+                            continue
+
                         # Pre-API Positive Keyword Check
                         text_lower = (title + " " + description).lower()
                         gta_keywords = ["gta", "grand theft auto", "los santos", "vice city", "liberty city", "san andreas", "grove street", "niko bellic", "bellic", "trevor", "michael", "franklin", "lester", "rockstar"]
@@ -308,6 +334,94 @@ def get_top_videos(api_key: str, tier_name: str, limit: int = 5) -> list[dict]:
         return top
     except Exception as e:
         print(f"[search] error in get_top_videos: {e}")
+        return []
+
+
+def search_discovery_videos(api_key: str, current_whitelist_ids: list[str], channel_blacklist: list[str]) -> list[dict]:
+    """Search for candidate videos from channels not yet in the whitelist or blacklist.
+    Returns video dicts with source_type='candidate' for pipeline tracking."""
+    try:
+        youtube = build_youtube(api_key)
+        if youtube is None:
+            return []
+
+        discovery_cfg = getattr(config, "DISCOVERY", {})
+        queries = discovery_cfg.get("queries", [])
+        max_per_query = discovery_cfg.get("max_results_per_query", 5)
+        min_views = discovery_cfg.get("min_views", 50000)
+
+        # Build set of known channel IDs for fast lookup
+        known_ids = set(current_whitelist_ids)
+
+        # Normalise blacklist names to lowercase for comparison
+        bl_lower = {name.lower() for name in channel_blacklist}
+
+        candidate_ids = []
+        seen_videos = set()
+
+        for query in queries:
+            try:
+                print(f"[search] discovery query: {query}")
+                response = youtube.search().list(
+                    part="snippet",
+                    type="video",
+                    q=query,
+                    videoDuration="medium",
+                    order="viewCount",
+                    maxResults=max_per_query
+                ).execute()
+                for item in response.get("items", []):
+                    vid = item["id"].get("videoId")
+                    snippet = item.get("snippet", {})
+                    channel_id = snippet.get("channelId", "")
+                    channel_title = snippet.get("channelTitle", "")
+                    title = snippet.get("title", "")
+                    description = snippet.get("description", "")
+
+                    if not vid or vid in seen_videos:
+                        continue
+                    # Skip known whitelist channels
+                    if channel_id in known_ids:
+                        continue
+                    # Skip blacklisted channels
+                    if channel_title.lower() in bl_lower:
+                        print(f"[search] discovery skipped blacklisted channel: {channel_title}")
+                        continue
+                    # Apply title blacklist
+                    if not passes_title_blacklist(title, description):
+                        continue
+
+                    seen_videos.add(vid)
+                    candidate_ids.append(vid)
+            except Exception as e:
+                print(f"[search] discovery query error '{query}': {e}")
+                continue
+
+        if not candidate_ids:
+            print("[search] discovery found no candidate videos")
+            return []
+
+        # Fetch full details
+        details = get_video_details(youtube, candidate_ids)
+
+        # Filter: minimum views, apply title blacklist again on full data
+        candidates = []
+        for v in details:
+            if v["view_count"] < min_views:
+                continue
+            if v.get("channel_id") in known_ids:
+                continue
+            if v.get("channel_title", "").lower() in bl_lower:
+                continue
+            v["source_type"] = "candidate"
+            v["score"] = score_video(v)
+            candidates.append(v)
+
+        candidates.sort(key=lambda x: x["score"], reverse=True)
+        print(f"[search] discovery found {len(candidates)} candidate videos")
+        return candidates
+    except Exception as e:
+        print(f"[search] discovery error: {e}")
         return []
 
 
