@@ -647,6 +647,79 @@
           "comments": 0
         }
       }
+    },
+    {
+      "short_id": "skipped_no_signal",
+      "uploaded_at": "2026-06-23T23:44:07.266972Z",
+      "source_video_id": "ILfODTnis4c",
+      "source_channel_title": "MrBossFTW",
+      "source_type": "gta",
+      "status": "skipped_no_signal",
+      "notes": "No heatmap, timestamps, or useful comments",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      }
+    },
+    {
+      "short_id": "dryrun_eP-kRHEcViM",
+      "short_url": "https://youtube.com/shorts/dryrun_eP-kRHEcViM",
+      "title": "NO Scope Fail \ud83d\udc80 #GTA #Gaming #Shorts",
+      "uploaded_at": "2026-06-23T23:50:57.039977Z",
+      "source_video_id": "eP-kRHEcViM",
+      "source_url": "https://youtube.com/watch?v=eP-kRHEcViM",
+      "source_channel_title": "Red Arcade",
+      "source_type": "gta",
+      "source_video_views": 20201,
+      "source_video_age_hours": 100.8,
+      "hook_text": "oh no he didn't even SEE",
+      "hook_style": "deadpan",
+      "hook_delivery": "reference_inspired",
+      "hook_word_count": 6,
+      "peak_start": 82.0,
+      "peak_position_pct": 9.9,
+      "clip_duration": 10.0,
+      "visual_description": "A player attempts to flank an enemy behind a market stall, misses a shot, gets instantly eliminated, and exclaims frustration as the screen cuts to color bars.",
+      "is_punchy": true,
+      "punchiness_reasoning": "The player's frustrated reaction to a quick elimination is instantly relatable and understood.",
+      "viral_score": 7,
+      "natural_boundaries_used": true,
+      "peak_signal": "groq_segment_1",
+      "peak_sec": 91,
+      "global_start": 82.0,
+      "global_end": 92.0,
+      "status": "uploaded",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      },
+      "notes": ""
     }
   ]
 }
