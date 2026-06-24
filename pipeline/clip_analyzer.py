@@ -99,7 +99,7 @@ def upload_to_gemini(video_path: str) -> object | None:
 
 
 class VideoAnalysis(BaseModel):
-    is_gameplay: bool = Field(description="True if the video segment shows actual direct game graphics/gameplay. False if it is a talking head, reaction video (facecam dominant with minimal gameplay), commentary slides, or news/fandom rant.")
+    is_gameplay: bool = Field(description="True if the video segment shows actual direct game graphics specifically from a Grand Theft Auto game (GTA V, GTA Online, GTA 6). False if it is a talking head, reaction video, or gameplay from any other game like Fortnite or Minecraft.")
     is_punchy: bool = Field(description="True if this moment can be fully understood, enjoyed, and impactful in under 15 seconds. False if it requires a long buildup or extended context to make sense (e.g., a 40-second conversation or a long chase).")
     punchiness_reasoning: str = Field(description="One sentence explaining why this clip is or is not punchy.")
     description: str = Field(description="A single sentence describing the visual action at the peak timestamp.")
@@ -123,7 +123,7 @@ def analyze_with_gemini(
             f"This is a clip from a video related to Grand Theft Auto. "
             f"A viewer left this comment about what happens at {peak_sec_local:.0f} seconds: '{comment_context}'. "
             f"Perform the following analysis tasks:\n"
-            f"1. Determine if this clip shows actual, direct in-game gameplay graphics of a GTA game being played. If it is a talking head, news/speculation slides, podcast, commentary show, or reaction video with minimal gameplay, set is_gameplay to false.\n"
+            f"1. Determine if this clip shows actual, direct in-game gameplay graphics specifically from a Grand Theft Auto game (GTA V, GTA Online, GTA 6). If it is a talking head, news/speculation slides, podcast, commentary show, reaction video, OR gameplay from any other game (like Fortnite, Minecraft, Call of Duty), set is_gameplay to false.\n"
             f"2. Determine if the moment is 'punchy'. Can this moment be fully understood, enjoyed, and impactful in under 15 seconds? If it requires a long buildup or extended context to make sense (e.g., a 40-second conversation or a long chase), set is_punchy to false. We only want fast, punchy action or immediate comedy.\n"
             f"3. Describe in exactly ONE sentence what visually happens at {peak_sec_local:.0f} seconds. Focus on the physical action, stunt, crash, or character interaction (e.g., car collisions, character physics/ragdoll launches, stunt failures or successes, explosive chain reactions) rather than static scenery. Be specific about the vehicles, characters, and motion involved. Avoid generic descriptions (e.g., do NOT just say 'a player drives a car' or 'gameplay footage showing a scene').\n"
             f"4. Find where the peak action at {peak_sec_local:.0f} seconds naturally begins (setup) and naturally ends (reaction complete). "

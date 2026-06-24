@@ -54,6 +54,19 @@ def get_audio_duration(audio_path: str) -> float:
         return float(config.CLIP["hook_duration_seconds"])
 
 
+def _write_textfile(text: str) -> str:
+    """Write text to a temp file for ffmpeg textfile= usage.
+
+    Using textfile= instead of inline text= eliminates ALL ffmpeg
+    drawtext escaping issues (apostrophes, colons, semicolons,
+    brackets, backslashes, etc.).
+    """
+    fd, path = tempfile.mkstemp(suffix=".txt")
+    with os.fdopen(fd, "w") as f:
+        f.write(text)
+    return path
+
+
 def download_clip(
     video_url: str,
     start_time: float,
@@ -102,16 +115,18 @@ def crop_to_vertical(input_path: str, output_path: str, original_channel: str = 
     Works for landscape (1920x1080), portrait (1080x1920), square, any resolution.
     """
     filter_chain = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920"
+    text_file = None
     if original_channel:
-        escaped_channel = original_channel.replace("'", "\\'").replace(":", "\\:")
         font_path = config.CLIP.get("font_path", "assets/Oswald-Bold.ttf")
         font_path_abs = str(pathlib.Path(font_path).absolute())
         
-        watermark_text = f"CLIP: @{escaped_channel}" if not escaped_channel.startswith("@") else f"CLIP: {escaped_channel}"
+        watermark_text = f"CLIP: @{original_channel}" if not original_channel.startswith("@") else f"CLIP: {original_channel}"
         watermark_text = watermark_text.upper()
         
+        text_file = _write_textfile(watermark_text)
+        escaped_path = text_file.replace(":", "\\:")
         drawtext_watermark = (
-            f",drawtext=text='{watermark_text}':"
+            f",drawtext=textfile='{escaped_path}':"
             f"fontfile='{font_path_abs}':"
             f"fontsize=40:"
             f"fontcolor=white@0.6:"
@@ -129,7 +144,10 @@ def crop_to_vertical(input_path: str, output_path: str, original_channel: str = 
         "-movflags", "+faststart",
         output_path
     ]
-    return run_ffmpeg(cmd, "crop_to_vertical")
+    result = run_ffmpeg(cmd, "crop_to_vertical")
+    if text_file:
+        pathlib.Path(text_file).unlink(missing_ok=True)
+    return result
 
 
 def trim_clip(
@@ -233,11 +251,12 @@ def burn_caption(
             max_chars=int(config.get_profile_value("caption_max_chars", 18)),
         )
         
-        # Escape special characters for ffmpeg drawtext
-        escaped = wrapped_text.replace("'", "\\'").replace(":", "\\:")
+        # Write text to temp file — eliminates all ffmpeg escaping issues
+        text_file = _write_textfile(wrapped_text)
+        escaped_path = text_file.replace(":", "\\:")
         
         drawtext = (
-            f"drawtext=text='{escaped}':"
+            f"drawtext=textfile='{escaped_path}':"
             f"fontfile='{font_path_abs}':"
             f"fontsize={fontsize}:"
             f"fontcolor=white:"
@@ -256,7 +275,9 @@ def burn_caption(
             "-c:a", "copy",
             output_path
         ]
-        return run_ffmpeg(cmd, "burn_caption")
+        result = run_ffmpeg(cmd, "burn_caption")
+        pathlib.Path(text_file).unlink(missing_ok=True)
+        return result
     except Exception as e:
         print(f"[editor] burn_caption error: {e}")
         return False
@@ -285,14 +306,18 @@ def burn_word_by_word_caption(
         shadow_color = config.CLIP.get("caption_shadow_color", "black")
 
         filters = []
+        text_files = []
         for i, word in enumerate(words):
             start = i * slot
             end = duration if i == len(words) - 1 else (i + 1) * slot
             display = word.upper()
-            escaped = display.replace("'", "\\'").replace(":", "\\:")
+            # Write each word to a temp file — immune to all special chars
+            text_file = _write_textfile(display)
+            text_files.append(text_file)
+            escaped_path = text_file.replace(":", "\\:")
             filters.append(
                 "drawtext="
-                f"text='{escaped}':"
+                f"textfile='{escaped_path}':"
                 f"fontfile='{font_path_abs}':"
                 f"fontsize={fontsize}:"
                 "fontcolor=white:"
@@ -312,7 +337,10 @@ def burn_word_by_word_caption(
             "-c:a", "copy",
             output_path
         ]
-        return run_ffmpeg(cmd, "burn_word_by_word_caption")
+        result = run_ffmpeg(cmd, "burn_word_by_word_caption")
+        for tf in text_files:
+            pathlib.Path(tf).unlink(missing_ok=True)
+        return result
     except Exception as e:
         print(f"[editor] burn_word_by_word_caption error: {e}")
         return False
