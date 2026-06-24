@@ -767,6 +767,53 @@
         }
       },
       "notes": ""
+    },
+    {
+      "short_id": "TvW4bWeMLnI",
+      "short_url": "https://youtube.com/shorts/TvW4bWeMLnI",
+      "title": "Franklin JUMPS into POOL \ud83d\udc80 #Gaming #Gameplay #Shorts",
+      "uploaded_at": "2026-06-24T20:31:06.255713Z",
+      "source_video_id": "hbdA-khfjKo",
+      "source_url": "https://youtube.com/watch?v=hbdA-khfjKo",
+      "source_channel_title": "Fernanfloo",
+      "source_type": "candidate",
+      "source_video_views": 124484178,
+      "source_video_age_hours": 109775.3,
+      "hook_text": "oh no not the POOL lady...",
+      "hook_style": "shocked",
+      "hook_delivery": "reference_inspired",
+      "hook_word_count": 6,
+      "peak_start": 188.5,
+      "peak_position_pct": 49.1,
+      "clip_duration": 11.0,
+      "visual_description": "Franklin jumps from a rooftop into a pool, landing directly on an unsuspecting NPC woman and killing her, followed by his dog Chop jumping in.",
+      "is_punchy": true,
+      "punchiness_reasoning": "The moment is a quick, unexpected, and comical action of the player character jumping on an NPC from a roof.",
+      "viral_score": 8,
+      "natural_boundaries_used": true,
+      "peak_signal": "heatmap_peak_1",
+      "peak_sec": 193,
+      "global_start": 188.5,
+      "global_end": 199.5,
+      "status": "uploaded",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      },
+      "notes": ""
     }
   ]
 }

@@ -1,25 +1,6 @@
 {
   "pending": [
     {
-      "video_id": "hbdA-khfjKo",
-      "url": "https://youtube.com/watch?v=hbdA-khfjKo",
-      "title": "GTA V | Momentos Divertidos #3 (Funny Moments) (GTA 5)",
-      "description": "Encuentras tus juegos PC y mucho m\u00e1s al mejor precio :) \u2192 https://days2play.com/\n\nSUSCRIBETE (No temas es GRATIS !!) \u2192 http://goo.gl/lfsQnc\nfacebook \u2192 https://www.facebook.com/FERNANFL00\nTwittah \u2192 https://twitter.com/Fernanfloo\n\nM\u00fasica: \"Who likes to party\" - Kevin Macleod (incompetech.com)",
-      "category_id": "20",
-      "channel_id": "UCV4xOVpbcV8SdueDCOxLXtQ",
-      "channel_title": "Fernanfloo",
-      "channel_url": "https://youtube.com/@Fernanfloo",
-      "view_count": 124484178,
-      "like_count": 1619070,
-      "duration_seconds": 393,
-      "published_at": "2013-12-15T21:10:08Z",
-      "thumbnail_url": "https://i.ytimg.com/vi/hbdA-khfjKo/hqdefault.jpg",
-      "subscriber_count": 50400000,
-      "source_type": "candidate",
-      "score": 54773753.7,
-      "queued_at": "2026-06-24T00:14:39.077046Z"
-    },
-    {
       "video_id": "yOvtMNuU9gg",
       "url": "https://youtube.com/watch?v=yOvtMNuU9gg",
       "title": "AWESOME GTA 5 STUNTS & FAILS (Funny Moments Compilation)",
@@ -317,6 +298,12 @@
       "short_id": "dryrun_hK6A_ebUKrM",
       "source_type": "candidate",
       "uploaded_at": "2026-06-24T00:21:13.850673Z"
+    },
+    {
+      "video_id": "hbdA-khfjKo",
+      "short_id": "TvW4bWeMLnI",
+      "source_type": "candidate",
+      "uploaded_at": "2026-06-24T20:31:06.256861Z"
     }
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-24T00:18:53.013791Z",
+  "last_updated": "2026-06-24T20:28:37.061561Z",
   "candidates": {
     "UCIPPMRA040LQr5QPyJEbmXA": {
       "channel_title": "MrBeast Gaming",
@@ -8,6 +8,14 @@
       "clips_rejected": 0,
       "first_seen": "2026-06-24T00:18:53.013701Z",
       "last_seen": "2026-06-24T00:18:53.013718Z"
+    },
+    "UCV4xOVpbcV8SdueDCOxLXtQ": {
+      "channel_title": "Fernanfloo",
+      "clips_attempted": 1,
+      "clips_passed": 1,
+      "clips_rejected": 0,
+      "first_seen": "2026-06-24T20:28:37.061512Z",
+      "last_seen": "2026-06-24T20:28:37.061522Z"
     }
   },
   "channels": {
