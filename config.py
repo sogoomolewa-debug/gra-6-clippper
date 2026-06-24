@@ -121,7 +121,15 @@ DRY_RUN = os.environ.get("DRY_RUN", "true").lower() == "true"
 # Content Strategy Mode
 # "tts_narrated" = Full TTS voiceover + blur intro (storytelling/drama)
 # "pure_gameplay" = No TTS, instant action, casual captions (authentic/minimalist)
+# "reference_inspired" = Measured pacing, blur intro, casual 5-7 word hooks
 CONTENT_MODE = os.environ.get("CONTENT_MODE", "reference_inspired")
+
+# Content Mode Rotation — cycles through modes to collect comparison data
+# Set CONTENT_MODE_ROTATION=true in .env or GitHub Secrets to enable
+CONTENT_MODE_ROTATION = os.environ.get("CONTENT_MODE_ROTATION", "true").lower() == "true"
+MODE_ROTATION_ORDER = ["reference_inspired", "tts_narrated", "pure_gameplay"]
+MODE_ROTATION_BATCH_SIZE = 3  # post N videos in each mode before switching
+
 
 CONTENT_PROFILES = {
     "tts_narrated": {

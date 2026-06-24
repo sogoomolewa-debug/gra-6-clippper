@@ -126,6 +126,22 @@ def run_pipeline() -> None:
         print(f"[pipeline] starting run: {datetime.utcnow().isoformat()}Z")
         print("=" * 60)
 
+        # CONTENT MODE ROTATION — cycle through modes to A/B test
+        if config.CONTENT_MODE_ROTATION:
+            log = load_performance_log()
+            uploaded_count = sum(
+                1 for s in log.get("shorts", [])
+                if s.get("status") == "uploaded" and not s.get("short_id", "").startswith("dryrun_")
+            )
+            rotation = config.MODE_ROTATION_ORDER
+            batch = config.MODE_ROTATION_BATCH_SIZE
+            mode_index = (uploaded_count // batch) % len(rotation)
+            selected_mode = rotation[mode_index]
+            config.CONTENT_MODE = selected_mode
+            print(f"[pipeline] mode rotation: {selected_mode} (upload #{uploaded_count + 1}, batch {batch})")
+        else:
+            print(f"[pipeline] content mode: {config.CONTENT_MODE} (rotation disabled)")
+
         # STEP 1 — LOAD QUEUE
         queue = queue_manager.load_queue()
         print(queue_manager.get_status(queue))
@@ -546,7 +562,9 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
                 "72h": {"views": 0, "likes": 0, "comments": 0},
                 "7d": {"views": 0, "likes": 0, "comments": 0}
             },
-            "notes": ""
+            "notes": "",
+            "repost_count": 0,
+            "repost_video_path": ""
         }
         append_log_entry(log, entry)
         save_performance_log(log)
@@ -555,10 +573,28 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
         queue_manager.mark_processed(queue, video, short_id)
         queue_manager.save_queue(queue)
 
-        # CLEANUP
-        for f in [hook_audio, short_path]:
+        # CLEANUP — preserve rendered video for potential repost, delete temp audio
+        try:
+            pathlib.Path(hook_audio).unlink()
+        except Exception:
+            pass
+
+        # Move rendered video to scratch/ for repost monitor
+        if not dry_run:
+            preserved_path = f"scratch/repost_{video['video_id']}.mp4"
             try:
-                pathlib.Path(f).unlink()
+                import shutil
+                pathlib.Path("scratch").mkdir(parents=True, exist_ok=True)
+                shutil.move(short_path, preserved_path)
+                # Update the log entry with the preserved path
+                entry["repost_video_path"] = preserved_path
+                save_performance_log(log)
+                print(f"[pipeline] preserved video for repost: {preserved_path}")
+            except Exception as e:
+                print(f"[pipeline] warning: could not preserve video: {e}")
+        else:
+            try:
+                pathlib.Path(short_path).unlink()
             except Exception:
                 pass
 

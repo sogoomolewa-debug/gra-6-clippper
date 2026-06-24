@@ -47,5 +47,6 @@ jobs:
           REF_TEXT: ${{ secrets.REF_TEXT }}
           DRY_RUN: "false"
           YOUTUBE_COOKIES_PATH: ${{ github.workspace }}/www.youtube.com_cookies.txt
+          CONTENT_MODE_ROTATION: "true"
         run: python pipeline.py
 
