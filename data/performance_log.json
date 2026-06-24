@@ -720,6 +720,53 @@
         }
       },
       "notes": ""
+    },
+    {
+      "short_id": "dryrun_hK6A_ebUKrM",
+      "short_url": "https://youtube.com/shorts/dryrun_hK6A_ebUKrM",
+      "title": "CRAZY Mid Air Save \ud83e\udd2f #Gaming #Gameplay #Shorts",
+      "uploaded_at": "2026-06-24T00:21:13.846887Z",
+      "source_video_id": "hK6A_ebUKrM",
+      "source_url": "https://youtube.com/watch?v=hK6A_ebUKrM",
+      "source_channel_title": "MrBeast Gaming",
+      "source_type": "candidate",
+      "source_video_views": 133819361,
+      "source_video_age_hours": 44116.9,
+      "hook_text": "he still made it SOMEHOW",
+      "hook_style": "shocked",
+      "hook_delivery": "reference_inspired",
+      "hook_word_count": 5,
+      "peak_start": 429.0,
+      "peak_position_pct": 77.8,
+      "clip_duration": 12.0,
+      "visual_description": "A yellow stunt car that was previously upside down in mid-air successfully lands on its wheels on a colorful ramp, then the achieved distance is displayed on screen.",
+      "is_punchy": true,
+      "punchiness_reasoning": "The clip features a concise and exciting sequence of a car flipping and successfully landing a difficult stunt, with immediate visual feedback of the distance achieved and clear player reactions.",
+      "viral_score": 7,
+      "natural_boundaries_used": true,
+      "peak_signal": "heatmap_peak_2",
+      "peak_sec": 437,
+      "global_start": 429.0,
+      "global_end": 441.0,
+      "status": "uploaded",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      },
+      "notes": ""
     }
   ]
 }
