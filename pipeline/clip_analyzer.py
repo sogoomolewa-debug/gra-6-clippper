@@ -250,6 +250,7 @@ def analyze_clip(
             "punchiness_reasoning": reason,
             "description": "",
             "viral_score": 5,
+            "download_failed": "download" in reason.lower(),
             "global_start": fallback_start,
             "global_end": fallback_start + float(config.CLIP["max_duration_seconds"])
         }

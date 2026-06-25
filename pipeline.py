@@ -239,6 +239,12 @@ def _process_single_video(queue: dict, video: dict, api_key: str) -> bool:
                 print(f"[pipeline] trying {len(peaks)} heatmap peaks")
                 result = _try_peaks(queue, video, peaks, window, duration, comments, min_viral)
                 if result:
+                    if result.get("_skip_video_download_failed"):
+                        _track_candidate_failure(video)
+                        log_skip(video, "skipped_download_failed", "Video download failed (likely expired cookies)")
+                        queue_manager.mark_processed(queue, video, "skipped_download_failed")
+                        queue_manager.save_queue(queue)
+                        return False
                     return _finalize_video(queue, video, result, duration, api_key)
                 # All peaks failed gates — fall through to track failure
                 _track_candidate_failure(video)
@@ -256,6 +262,12 @@ def _process_single_video(queue: dict, video: dict, api_key: str) -> bool:
                 timestamp_comments = get_timestamp_comments(comments, peak_sec)
                 result = _try_peak(video, peak_sec, duration, timestamp_comments, min_viral, "comments")
                 if result:
+                    if result.get("_skip_video_download_failed"):
+                        _track_candidate_failure(video)
+                        log_skip(video, "skipped_download_failed", "Video download failed (likely expired cookies)")
+                        queue_manager.mark_processed(queue, video, "skipped_download_failed")
+                        queue_manager.save_queue(queue)
+                        return False
                     return _finalize_video(queue, video, result, duration, api_key)
                 # Single comment peak failed
                 print("[pipeline] comment timestamp peak failed, trying Groq analysis...")
@@ -269,6 +281,12 @@ def _process_single_video(queue: dict, video: dict, api_key: str) -> bool:
                 print(f"[pipeline] trying {len(segments)} position segments based on Groq analysis")
                 result = _try_segments(video, segments, duration, comments, moment_info, min_viral)
                 if result:
+                    if result.get("_skip_video_download_failed"):
+                        _track_candidate_failure(video)
+                        log_skip(video, "skipped_download_failed", "Video download failed (likely expired cookies)")
+                        queue_manager.mark_processed(queue, video, "skipped_download_failed")
+                        queue_manager.save_queue(queue)
+                        return False
                     return _finalize_video(queue, video, result, duration, api_key)
                 # All segments failed
                 _track_candidate_failure(video)
@@ -335,6 +353,11 @@ def _try_peak(
     if not analysis.get("is_punchy", True):
         print(f"[pipeline]   ❌ not punchy: {analysis.get('punchiness_reasoning', '')}")
         return None
+
+    # Check if the download itself failed (e.g. 403 cookie expiry)
+    if analysis.get("download_failed"):
+        print(f"[pipeline]   ❌ download failed (likely expired cookies) — skipping entire video")
+        return {"_skip_video_download_failed": True}
 
     # Gate: viral score
     viral_score = analysis.get("viral_score", 5)

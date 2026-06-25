@@ -143,7 +143,7 @@ def get_video_details(youtube, video_ids: list[str]) -> list[dict]:
         return []
 
 
-def is_eligible(video: dict, tier: dict) -> bool:
+def is_eligible(video: dict, tier: dict, source_type: str = "whitelist") -> bool:
     """Check if video meets all eligibility criteria for the given tier."""
     try:
         # Gate 1: Title blacklist (free, no API cost)
@@ -177,6 +177,15 @@ def is_eligible(video: dict, tier: dict) -> bool:
         if not has_gta:
             print(f"[search] blocked video {video.get('video_id')} due to missing GTA keywords in title/description")
             return False
+
+        # For discovery candidates, require GTA keywords in the TITLE specifically
+        # (not just description — many non-GTA games stuff GTA keywords in descriptions for SEO)
+        if source_type == "candidate":
+            title_lower = video.get("title", "").lower()
+            has_gta_in_title = any(kw in title_lower for kw in gta_keywords)
+            if not has_gta_in_title:
+                print(f"[search] blocked discovery video {video.get('video_id')} — GTA keyword only in description, not title")
+                return False
 
         published_at = video.get("published_at", "")
         # Remove 'Z' for fromisoformat and ensure it's UTC
@@ -404,14 +413,21 @@ def search_discovery_videos(api_key: str, current_whitelist_ids: list[str], chan
         # Fetch full details
         details = get_video_details(youtube, candidate_ids)
 
+        # Build a dummy tier for discovery eligibility
+        discovery_tier = {
+            "max_age_hours": discovery_cfg.get("max_age_hours", 336),
+            "min_views": min_views,
+            "min_channel_subscribers": 0
+        }
+
         # Filter: minimum views, apply title blacklist again on full data
         candidates = []
         for v in details:
-            if v["view_count"] < min_views:
-                continue
             if v.get("channel_id") in known_ids:
                 continue
             if v.get("channel_title", "").lower() in bl_lower:
+                continue
+            if not is_eligible(v, discovery_tier, source_type="candidate"):
                 continue
             v["source_type"] = "candidate"
             v["score"] = score_video(v)
