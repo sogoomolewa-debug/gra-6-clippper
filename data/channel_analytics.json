@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-25T20:53:47.626805Z",
+  "last_updated": "2026-06-25T22:28:26.439982Z",
   "candidates": {
     "UCIPPMRA040LQr5QPyJEbmXA": {
       "channel_title": "MrBeast Gaming",
@@ -35,11 +35,11 @@
     },
     "UCk2V--5EfnsXZNFBGEv-rGw": {
       "channel_title": "RedLancer",
-      "clips_attempted": 1,
+      "clips_attempted": 2,
       "clips_passed": 0,
-      "clips_rejected": 1,
+      "clips_rejected": 2,
       "first_seen": "2026-06-25T20:53:28.217379Z",
-      "last_seen": "2026-06-25T20:53:28.217391Z"
+      "last_seen": "2026-06-25T22:28:26.439905Z"
     },
     "UCGu9-9FqQtXAitxkOnHzz6Q": {
       "channel_title": "King Games",
@@ -48,6 +48,30 @@
       "clips_rejected": 1,
       "first_seen": "2026-06-25T20:53:32.938854Z",
       "last_seen": "2026-06-25T20:53:32.938865Z"
+    },
+    "UCKqH_9mk1waLgBiL2vT5b9g": {
+      "channel_title": "VanossGaming",
+      "clips_attempted": 1,
+      "clips_passed": 0,
+      "clips_rejected": 1,
+      "first_seen": "2026-06-25T22:28:07.213171Z",
+      "last_seen": "2026-06-25T22:28:07.213193Z"
+    },
+    "UC2ORs0TPEkxISKfKkQbIJqg": {
+      "channel_title": "LoudMouthZander",
+      "clips_attempted": 1,
+      "clips_passed": 0,
+      "clips_rejected": 1,
+      "first_seen": "2026-06-25T22:28:13.663048Z",
+      "last_seen": "2026-06-25T22:28:13.663063Z"
+    },
+    "UCG67Fgo8Sxm4G4TMIFjXhjQ": {
+      "channel_title": "ProGamingStudio \u30c4",
+      "clips_attempted": 1,
+      "clips_passed": 0,
+      "clips_rejected": 1,
+      "first_seen": "2026-06-25T22:28:19.700110Z",
+      "last_seen": "2026-06-25T22:28:19.700129Z"
     }
   },
   "channels": {

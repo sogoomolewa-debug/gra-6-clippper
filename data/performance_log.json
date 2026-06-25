@@ -816,13 +816,13 @@
       "notes": ""
     },
     {
-      "short_id": "skipped_low_viral",
-      "uploaded_at": "2026-06-25T20:52:58.950858Z",
-      "source_video_id": "yOvtMNuU9gg",
-      "source_channel_title": "RedKeyMon",
+      "short_id": "skipped_download_failed",
+      "uploaded_at": "2026-06-25T22:28:07.219276Z",
+      "source_video_id": "POmH7dDMDEc",
+      "source_channel_title": "VanossGaming",
       "source_type": "candidate",
-      "status": "skipped_low_viral",
-      "notes": "All heatmap peaks below viral threshold or failed gates",
+      "status": "skipped_download_failed",
+      "notes": "Video download failed (likely expired cookies)",
       "snapshots": {
         "24h": {
           "views": 0,
@@ -842,13 +842,13 @@
       }
     },
     {
-      "short_id": "skipped_low_viral",
-      "uploaded_at": "2026-06-25T20:53:13.499012Z",
-      "source_video_id": "bMcAOwvPOWY",
-      "source_channel_title": "Gaming Media",
+      "short_id": "skipped_download_failed",
+      "uploaded_at": "2026-06-25T22:28:13.664121Z",
+      "source_video_id": "sLjDOkEqlGo",
+      "source_channel_title": "LoudMouthZander",
       "source_type": "candidate",
-      "status": "skipped_low_viral",
-      "notes": "All heatmap peaks below viral threshold or failed gates",
+      "status": "skipped_download_failed",
+      "notes": "Video download failed (likely expired cookies)",
       "snapshots": {
         "24h": {
           "views": 0,
@@ -868,65 +868,39 @@
       }
     },
     {
-      "short_id": "skipped_low_viral",
-      "uploaded_at": "2026-06-25T20:53:28.218323Z",
-      "source_video_id": "aFCvi9OJipg",
+      "short_id": "skipped_download_failed",
+      "uploaded_at": "2026-06-25T22:28:19.702980Z",
+      "source_video_id": "p9k837ThXvk",
+      "source_channel_title": "ProGamingStudio \u30c4",
+      "source_type": "candidate",
+      "status": "skipped_download_failed",
+      "notes": "Video download failed (likely expired cookies)",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      }
+    },
+    {
+      "short_id": "skipped_download_failed",
+      "uploaded_at": "2026-06-25T22:28:26.442214Z",
+      "source_video_id": "t7G6mdGWyJs",
       "source_channel_title": "RedLancer",
       "source_type": "candidate",
-      "status": "skipped_low_viral",
-      "notes": "All heatmap peaks below viral threshold or failed gates",
-      "snapshots": {
-        "24h": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        },
-        "72h": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        },
-        "7d": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        }
-      }
-    },
-    {
-      "short_id": "skipped_no_signal",
-      "uploaded_at": "2026-06-25T20:53:32.939883Z",
-      "source_video_id": "Qym4cfrI6RA",
-      "source_channel_title": "King Games",
-      "source_type": "candidate",
-      "status": "skipped_no_signal",
-      "notes": "No heatmap, timestamps, or useful comments",
-      "snapshots": {
-        "24h": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        },
-        "72h": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        },
-        "7d": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        }
-      }
-    },
-    {
-      "short_id": "skipped_low_viral",
-      "uploaded_at": "2026-06-25T20:53:47.627750Z",
-      "source_video_id": "MDfWMJsK6qA",
-      "source_channel_title": "MrBeast Gaming",
-      "source_type": "candidate",
-      "status": "skipped_low_viral",
-      "notes": "All heatmap peaks below viral threshold or failed gates",
+      "status": "skipped_download_failed",
+      "notes": "Video download failed (likely expired cookies)",
       "snapshots": {
         "24h": {
           "views": 0,

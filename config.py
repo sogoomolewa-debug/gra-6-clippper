@@ -272,6 +272,11 @@ TITLE_BLACKLIST = [
     # Wrong game / franchise
     "fortnite", "minecraft", "roblox", "call of duty", "cod",
     "red dead", "rdr", "cyberpunk", "saints row",
+    # Non-GTA games / simulators
+    "simulator", "android gameplay", "mobile game", "mobile gameplay",
+    "stunt ramp", "car simulator", "truck simulator", "bus simulator",
+    "real racing", "asphalt", "need for speed", "nfs",
+    "beamng", "beam ng", "euro truck",
 ]
 
 # Channel discovery — auto-grow the whitelist by testing candidate channels
