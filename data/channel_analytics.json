@@ -1,13 +1,13 @@
 {
-  "last_updated": "2026-06-25T22:28:26.439982Z",
+  "last_updated": "2026-06-25T22:31:36.490959Z",
   "candidates": {
     "UCIPPMRA040LQr5QPyJEbmXA": {
       "channel_title": "MrBeast Gaming",
-      "clips_attempted": 2,
+      "clips_attempted": 1,
       "clips_passed": 1,
-      "clips_rejected": 1,
+      "clips_rejected": 0,
       "first_seen": "2026-06-24T00:18:53.013701Z",
-      "last_seen": "2026-06-25T20:53:47.626765Z"
+      "last_seen": "2026-06-24T00:18:53.013718Z"
     },
     "UCV4xOVpbcV8SdueDCOxLXtQ": {
       "channel_title": "Fernanfloo",
@@ -20,58 +20,10 @@
     "UCm1F9GekuQVNf93XU7-i9kw": {
       "channel_title": "RedKeyMon",
       "clips_attempted": 1,
-      "clips_passed": 0,
-      "clips_rejected": 1,
-      "first_seen": "2026-06-25T20:52:58.949908Z",
-      "last_seen": "2026-06-25T20:52:58.949920Z"
-    },
-    "UC3AJJvYTw1ooA-B5HLv0YoA": {
-      "channel_title": "Gaming Media",
-      "clips_attempted": 1,
-      "clips_passed": 0,
-      "clips_rejected": 1,
-      "first_seen": "2026-06-25T20:53:13.497640Z",
-      "last_seen": "2026-06-25T20:53:13.497655Z"
-    },
-    "UCk2V--5EfnsXZNFBGEv-rGw": {
-      "channel_title": "RedLancer",
-      "clips_attempted": 2,
-      "clips_passed": 0,
-      "clips_rejected": 2,
-      "first_seen": "2026-06-25T20:53:28.217379Z",
-      "last_seen": "2026-06-25T22:28:26.439905Z"
-    },
-    "UCGu9-9FqQtXAitxkOnHzz6Q": {
-      "channel_title": "King Games",
-      "clips_attempted": 1,
-      "clips_passed": 0,
-      "clips_rejected": 1,
-      "first_seen": "2026-06-25T20:53:32.938854Z",
-      "last_seen": "2026-06-25T20:53:32.938865Z"
-    },
-    "UCKqH_9mk1waLgBiL2vT5b9g": {
-      "channel_title": "VanossGaming",
-      "clips_attempted": 1,
-      "clips_passed": 0,
-      "clips_rejected": 1,
-      "first_seen": "2026-06-25T22:28:07.213171Z",
-      "last_seen": "2026-06-25T22:28:07.213193Z"
-    },
-    "UC2ORs0TPEkxISKfKkQbIJqg": {
-      "channel_title": "LoudMouthZander",
-      "clips_attempted": 1,
-      "clips_passed": 0,
-      "clips_rejected": 1,
-      "first_seen": "2026-06-25T22:28:13.663048Z",
-      "last_seen": "2026-06-25T22:28:13.663063Z"
-    },
-    "UCG67Fgo8Sxm4G4TMIFjXhjQ": {
-      "channel_title": "ProGamingStudio \u30c4",
-      "clips_attempted": 1,
-      "clips_passed": 0,
-      "clips_rejected": 1,
-      "first_seen": "2026-06-25T22:28:19.700110Z",
-      "last_seen": "2026-06-25T22:28:19.700129Z"
+      "clips_passed": 1,
+      "clips_rejected": 0,
+      "first_seen": "2026-06-25T22:31:36.490880Z",
+      "last_seen": "2026-06-25T22:31:36.490895Z"
     }
   },
   "channels": {

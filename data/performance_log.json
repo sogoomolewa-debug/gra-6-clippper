@@ -816,13 +816,33 @@
       "notes": ""
     },
     {
-      "short_id": "skipped_download_failed",
-      "uploaded_at": "2026-06-25T22:28:07.219276Z",
-      "source_video_id": "POmH7dDMDEc",
-      "source_channel_title": "VanossGaming",
+      "short_id": "AMV5_mZwEL8",
+      "short_url": "https://youtube.com/shorts/AMV5_mZwEL8",
+      "title": "IS HE GONNA MAKE IT? \ud83e\udd2f #Gaming #Gameplay #Shorts",
+      "uploaded_at": "2026-06-25T22:33:47.297017Z",
+      "source_video_id": "yOvtMNuU9gg",
+      "source_url": "https://youtube.com/watch?v=yOvtMNuU9gg",
+      "source_channel_title": "RedKeyMon",
       "source_type": "candidate",
-      "status": "skipped_download_failed",
-      "notes": "Video download failed (likely expired cookies)",
+      "source_video_views": 107808613,
+      "source_video_age_hours": 98114.8,
+      "hook_text": "he's actually gonna make IT...",
+      "hook_style": "deadpan",
+      "hook_delivery": "reference_inspired",
+      "hook_word_count": 5,
+      "peak_start": 0.0,
+      "peak_position_pct": 0.4,
+      "clip_duration": 10.0,
+      "visual_description": "A motorcycle rider launches off a ramp, performs a mid-air rotation, and successfully lands back on the road.",
+      "is_punchy": true,
+      "punchiness_reasoning": "The motorcycle drives up a ramp, executes a stylish jump, and lands cleanly, making it immediately engaging.",
+      "viral_score": 7,
+      "natural_boundaries_used": true,
+      "peak_signal": "heatmap_peak_1",
+      "peak_sec": 4,
+      "global_start": 0.0,
+      "global_end": 10.0,
+      "status": "uploaded",
       "snapshots": {
         "24h": {
           "views": 0,
@@ -839,85 +859,10 @@
           "likes": 0,
           "comments": 0
         }
-      }
-    },
-    {
-      "short_id": "skipped_download_failed",
-      "uploaded_at": "2026-06-25T22:28:13.664121Z",
-      "source_video_id": "sLjDOkEqlGo",
-      "source_channel_title": "LoudMouthZander",
-      "source_type": "candidate",
-      "status": "skipped_download_failed",
-      "notes": "Video download failed (likely expired cookies)",
-      "snapshots": {
-        "24h": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        },
-        "72h": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        },
-        "7d": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        }
-      }
-    },
-    {
-      "short_id": "skipped_download_failed",
-      "uploaded_at": "2026-06-25T22:28:19.702980Z",
-      "source_video_id": "p9k837ThXvk",
-      "source_channel_title": "ProGamingStudio \u30c4",
-      "source_type": "candidate",
-      "status": "skipped_download_failed",
-      "notes": "Video download failed (likely expired cookies)",
-      "snapshots": {
-        "24h": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        },
-        "72h": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        },
-        "7d": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        }
-      }
-    },
-    {
-      "short_id": "skipped_download_failed",
-      "uploaded_at": "2026-06-25T22:28:26.442214Z",
-      "source_video_id": "t7G6mdGWyJs",
-      "source_channel_title": "RedLancer",
-      "source_type": "candidate",
-      "status": "skipped_download_failed",
-      "notes": "Video download failed (likely expired cookies)",
-      "snapshots": {
-        "24h": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        },
-        "72h": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        },
-        "7d": {
-          "views": 0,
-          "likes": 0,
-          "comments": 0
-        }
-      }
+      },
+      "notes": "",
+      "repost_count": 0,
+      "repost_video_path": "scratch/repost_yOvtMNuU9gg.mp4"
     }
   ]
 }
