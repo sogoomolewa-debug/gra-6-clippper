@@ -863,6 +863,55 @@
       "notes": "",
       "repost_count": 0,
       "repost_video_path": "scratch/repost_yOvtMNuU9gg.mp4"
+    },
+    {
+      "short_id": "XbN7IakmE0w",
+      "short_url": "https://youtube.com/shorts/XbN7IakmE0w",
+      "title": "SPIDERMAN Falls OFF \ud83e\udd2f #Gaming #Gameplay #Shorts",
+      "uploaded_at": "2026-06-26T20:29:02.695487Z",
+      "source_video_id": "bMcAOwvPOWY",
+      "source_url": "https://youtube.com/watch?v=bMcAOwvPOWY",
+      "source_channel_title": "Gaming Media",
+      "source_type": "candidate",
+      "source_video_views": 107495020,
+      "source_video_age_hours": 60393.1,
+      "hook_text": "SPIDERMAN just went... off the EDGE",
+      "hook_style": "storyteller",
+      "hook_delivery": "reference_inspired",
+      "hook_word_count": 6,
+      "peak_start": 0.0,
+      "peak_position_pct": 0.7,
+      "clip_duration": 10.0,
+      "visual_description": "At 0:04, Spider-Man falls head-first from a skyscraper, ragdolling and bouncing off the side of the building.",
+      "is_punchy": true,
+      "punchiness_reasoning": "The clip features immediate and comedic physics-based falls and impacts that are easily understood and enjoyed in a short timeframe.",
+      "viral_score": 8,
+      "natural_boundaries_used": true,
+      "peak_signal": "heatmap_peak_1",
+      "peak_sec": 4,
+      "global_start": 0.0,
+      "global_end": 10.0,
+      "status": "uploaded",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      },
+      "notes": "",
+      "repost_count": 0,
+      "repost_video_path": "scratch/repost_bMcAOwvPOWY.mp4"
     }
   ]
 }
