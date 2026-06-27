@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-26T20:26:39.249104Z",
+  "last_updated": "2026-06-27T20:04:24.532582Z",
   "candidates": {
     "UCIPPMRA040LQr5QPyJEbmXA": {
       "channel_title": "MrBeast Gaming",
@@ -32,6 +32,14 @@
       "clips_rejected": 0,
       "first_seen": "2026-06-26T20:26:39.249058Z",
       "last_seen": "2026-06-26T20:26:39.249066Z"
+    },
+    "UCk2V--5EfnsXZNFBGEv-rGw": {
+      "channel_title": "RedLancer",
+      "clips_attempted": 1,
+      "clips_passed": 1,
+      "clips_rejected": 0,
+      "first_seen": "2026-06-27T20:04:24.532534Z",
+      "last_seen": "2026-06-27T20:04:24.532544Z"
     }
   },
   "channels": {

@@ -1,25 +1,6 @@
 {
   "pending": [
     {
-      "video_id": "aFCvi9OJipg",
-      "url": "https://youtube.com/watch?v=aFCvi9OJipg",
-      "title": "GTA 5 Water Ragdolls | SPIDERMAN Jumps/Fails ep.16 (Euphoria physics | Funny Moments)",
-      "description": "Do you like it? Comment down below and let me know!\n\nThanks for watching!\n\nSubscribe for more! \nhttps://www.youtube.com/channel/UCk2V--5EfnsXZNFBGEv-rGw\n\nIf you like the video, please click the like button!\n\nGrand Theft Auto V, Spiderman\n\n#GTA5 #Ragdolls #Fails",
-      "category_id": "20",
-      "channel_id": "UCk2V--5EfnsXZNFBGEv-rGw",
-      "channel_title": "RedLancer",
-      "channel_url": "https://youtube.com/@RedLancer",
-      "view_count": 82556298,
-      "like_count": 280709,
-      "duration_seconds": 627,
-      "published_at": "2019-02-05T06:12:14Z",
-      "thumbnail_url": "https://i.ytimg.com/vi/aFCvi9OJipg/hqdefault.jpg",
-      "subscriber_count": 6230000,
-      "source_type": "candidate",
-      "score": 36324958.1,
-      "queued_at": "2026-06-24T00:14:39.077066Z"
-    },
-    {
       "video_id": "Qym4cfrI6RA",
       "url": "https://youtube.com/watch?v=Qym4cfrI6RA",
       "title": "Muscle Car Stunts 2020 - Mega Stunt Ramp Simulator - Android GamePlay #3",
@@ -278,6 +259,12 @@
       "short_id": "XbN7IakmE0w",
       "source_type": "candidate",
       "uploaded_at": "2026-06-26T20:29:02.696856Z"
+    },
+    {
+      "video_id": "aFCvi9OJipg",
+      "short_id": "fzKT1rus544",
+      "source_type": "candidate",
+      "uploaded_at": "2026-06-27T20:06:45.111683Z"
     }
   ]
 }

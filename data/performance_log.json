@@ -912,6 +912,55 @@
       "notes": "",
       "repost_count": 0,
       "repost_video_path": "scratch/repost_bMcAOwvPOWY.mp4"
+    },
+    {
+      "short_id": "fzKT1rus544",
+      "short_url": "https://youtube.com/shorts/fzKT1rus544",
+      "title": "Guy pushes MONSTER truck \ud83e\udd2f #Gaming #Gameplay #Shorts",
+      "uploaded_at": "2026-06-27T20:06:45.110399Z",
+      "source_video_id": "aFCvi9OJipg",
+      "source_url": "https://youtube.com/watch?v=aFCvi9OJipg",
+      "source_channel_title": "RedLancer",
+      "source_type": "candidate",
+      "source_video_views": 82556298,
+      "source_video_age_hours": 64789.9,
+      "hook_text": "Guy just pushed a MONSTER truck off a building...",
+      "hook_style": "deadpan",
+      "hook_delivery": "tts_narrated",
+      "hook_word_count": 9,
+      "peak_start": 0.0,
+      "peak_position_pct": 0.6,
+      "clip_duration": 10.0,
+      "visual_description": "Spider-Man pushes a large blue monster truck off the roof of a building, sending it crashing down and exploding on the street below.",
+      "is_punchy": true,
+      "punchiness_reasoning": "The action of Spider-Man pushing a monster truck off a roof leading to its explosive destruction is immediate and visually impactful.",
+      "viral_score": 9,
+      "natural_boundaries_used": true,
+      "peak_signal": "heatmap_peak_1",
+      "peak_sec": 4,
+      "global_start": 0.0,
+      "global_end": 10.0,
+      "status": "uploaded",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      },
+      "notes": "",
+      "repost_count": 0,
+      "repost_video_path": "scratch/repost_aFCvi9OJipg.mp4"
     }
   ]
 }
