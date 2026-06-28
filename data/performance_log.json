@@ -961,6 +961,91 @@
       "notes": "",
       "repost_count": 0,
       "repost_video_path": "scratch/repost_aFCvi9OJipg.mp4"
+    },
+    {
+      "short_id": "skipped_no_signal",
+      "uploaded_at": "2026-06-28T20:06:02.176399Z",
+      "source_video_id": "Qym4cfrI6RA",
+      "source_channel_title": "King Games",
+      "source_type": "candidate",
+      "status": "skipped_no_signal",
+      "notes": "No heatmap, timestamps, or useful comments",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      }
+    },
+    {
+      "short_id": "kGAKg6kGuUs",
+      "short_url": "https://youtube.com/shorts/kGAKg6kGuUs",
+      "title": "CAR Just LAUNCHED \ud83e\udd2f #Gaming #Gameplay #Shorts",
+      "uploaded_at": "2026-06-28T20:10:15.206455Z",
+      "source_video_id": "MDfWMJsK6qA",
+      "source_url": "https://youtube.com/watch?v=MDfWMJsK6qA",
+      "source_channel_title": "MrBeast Gaming",
+      "source_type": "candidate",
+      "source_video_views": 75657526,
+      "source_video_age_hours": 51002.2,
+      "hook_text": "What just launched off that LAUNCH ramp...",
+      "hook_style": "hype",
+      "hook_delivery": "tts_narrated",
+      "hook_word_count": 7,
+      "peak_start": 2.0,
+      "peak_position_pct": 0.6,
+      "clip_duration": 10.0,
+      "visual_description": "A white sports car is dramatically launched from a yellow ramp and spins wildly out of control as it attempts to land on a purple half-pipe track.",
+      "is_punchy": true,
+      "punchiness_reasoning": "The car's sudden and dramatic loss of control after hitting a ramp provides immediate visual impact and humor.",
+      "viral_score": 7,
+      "natural_boundaries_used": true,
+      "peak_signal": "heatmap_peak_1",
+      "peak_sec": 4,
+      "global_start": 2.0,
+      "global_end": 12.0,
+      "status": "uploaded",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      },
+      "notes": "",
+      "repost_count": 0,
+      "repost_video_path": "scratch/repost_MDfWMJsK6qA.mp4",
+      "viral_potential_score": 10.0,
+      "viral_potential_verdict": "approve",
+      "viral_matched_triggers": [
+        "absurdity",
+        "humor",
+        "surprise",
+        "impossibility",
+        "awe"
+      ],
+      "moment_type": "stunt_fail"
     }
   ]
 }
