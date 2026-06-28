@@ -6,6 +6,7 @@ from typing import List, Dict, Optional
 
 import groq
 import config
+from pipeline import rag
 
 # Stage 3: Generate viral title for high-CTR curiosity gap
 VIRAL_TITLE_PROMPT = """You write viral, high-CTR YouTube Shorts titles for a GTA gaming channel.
@@ -196,6 +197,15 @@ def build_context(
                 "What viewers said about this moment:\n" +
                 "\n".join(f"- {l}" for l in lines)
             )
+
+        # RAG context — retrieve similar HecticSG hooks
+        similar = rag.retrieve_similar_hooks(
+            visual_description=visual_description,
+            timestamp_comments=timestamp_comments
+        )
+        if similar:
+            rag_context = rag.format_rag_context(similar)
+            parts.append(rag_context)
 
         context_str = "\n\n".join(parts)
         return context_str

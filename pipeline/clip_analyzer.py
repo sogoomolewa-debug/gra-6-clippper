@@ -106,6 +106,7 @@ class VideoAnalysis(BaseModel):
     natural_start: float = Field(description="The timestamp in seconds where the action peak's setup naturally begins.")
     natural_end: float = Field(description="The timestamp in seconds where the reaction to the action peak naturally ends.")
     viral_score: int = Field(description="Rate the viral potential of this specific moment from 1 to 10. 1-3: Mundane gameplay (driving normally, walking, menus, inventory). 4-5: Mildly interesting (small crash, basic combat, minor stunt). 6-7: Notable moment (impressive stunt, funny physics, unexpected outcome). 8-10: Exceptional (jaw-dropping physics glitch, perfect stunt landing, chain reaction explosion, hilarious NPC behavior). Only score 8+ if a typical viewer would genuinely want to rewatch or share this moment.")
+    moment_type: str = Field(description="The type of moment in this clip. Choose the single most accurate: ragdoll, impossible_survival, physics_glitch, npc_behavior, stunt_success, stunt_fail, collision, impossible_height, speed_impact, chain_reaction, character_interaction, environmental_reaction, ordinary_interaction, mundane_gameplay, other. Use 'ordinary_interaction' for common expected gameplay actions (e.g. character kicking an object, normal vehicle collision). Use 'mundane_gameplay' for content with no surprising physics or outcome.")
 
 
 def analyze_with_gemini(
@@ -130,7 +131,15 @@ def analyze_with_gemini(
             f"Requirements: window must be 10-14 seconds long — just the core moment, tight and punchy, no buildup, no aftermath. Peak at {peak_sec_local:.0f}s must be inside the window.\n"
             f"5. Rate the viral potential of this moment on a scale of 1-10. "
             f"Focus on: Would a casual scroller stop for this? Would they rewatch it? Would they send it to a friend? "
-            f"Only score 8+ for truly jaw-dropping or hilarious moments."
+            f"Only score 8+ for truly jaw-dropping or hilarious moments.\n"
+            f"6. Classify the moment type using one of these exact values: "
+            f"ragdoll, impossible_survival, physics_glitch, npc_behavior, "
+            f"stunt_success, stunt_fail, collision, impossible_height, "
+            f"speed_impact, chain_reaction, character_interaction, "
+            f"environmental_reaction, ordinary_interaction, mundane_gameplay, other. "
+            f"Be honest — if this is a character doing something expected "
+            f"(kicking an object, falling from a predictable height, normal combat) "
+            f"use ordinary_interaction or mundane_gameplay."
         )
 
         response = None
@@ -162,6 +171,7 @@ def analyze_with_gemini(
             "punchiness_reasoning": data.get("punchiness_reasoning", ""),
             "description": data.get("description", ""),
             "viral_score": int(data.get("viral_score", 5)),
+            "moment_type": data.get("moment_type", "other"),
             "natural_start": float(data.get("natural_start", max(0.0, peak_sec_local - 4.0))),
             "natural_end": float(data.get("natural_end", max(0.0, peak_sec_local - 4.0) + config.CLIP["max_duration_seconds"]))
         }
@@ -173,6 +183,7 @@ def analyze_with_gemini(
             "punchiness_reasoning": "fallback error",
             "description": "",
             "viral_score": 5,
+            "moment_type": "other",
             "natural_start": max(0.0, peak_sec_local - 4.0),
             "natural_end": max(0.0, peak_sec_local - 4.0) + config.CLIP["max_duration_seconds"]
         }
@@ -250,6 +261,7 @@ def analyze_clip(
             "punchiness_reasoning": reason,
             "description": "",
             "viral_score": 5,
+            "moment_type": "other",
             "download_failed": "download" in reason.lower(),
             "global_start": fallback_start,
             "global_end": fallback_start + float(config.CLIP["max_duration_seconds"])
@@ -331,6 +343,7 @@ def analyze_clip(
             "punchiness_reasoning": result.get("punchiness_reasoning", ""),
             "description": result.get("description", ""),
             "viral_score": result.get("viral_score", 5),
+            "moment_type": result.get("moment_type", "other"),
             "global_start": global_start,
             "global_end": global_end
         }
@@ -344,6 +357,7 @@ def analyze_clip(
             "punchiness_reasoning": "error",
             "description": "",
             "viral_score": 5,
+            "moment_type": "other",
             "global_start": fallback_start,
             "global_end": fallback_start + float(config.CLIP["max_duration_seconds"])
         }

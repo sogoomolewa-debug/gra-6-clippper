@@ -15,3 +15,6 @@ groq
 google-genai
 yt-dlp-ejs
 pydantic
+openai-whisper
+sentence-transformers
+scipy

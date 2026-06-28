@@ -9,7 +9,7 @@ import dotenv
 
 dotenv.load_dotenv()
 
-from pipeline import search, heatmap, transcript, hook, voice, editor, uploader, queue_manager, clip_analyzer, clip_validator, channel_discovery
+from pipeline import search, heatmap, transcript, hook, voice, editor, uploader, queue_manager, clip_analyzer, clip_validator, channel_discovery, rag
 from pipeline.channel_tracker import load_analytics, save_analytics
 import config
 
@@ -379,12 +379,32 @@ def _try_peak(
     if validation.get("skipped_comment_check"):
         print("[pipeline]   ⚠ no timestamp comments — skipped comment cross-validation")
 
-    print(f"[pipeline]   ✅ passed all gates (viral_score={viral_score})")
+    # Gate: RAG viral potential filter
+    print("[pipeline]   scoring viral potential via RAG…")
+    viral_check = rag.score_viral_potential(
+        visual_description=analysis.get("description", ""),
+        timestamp_comments=timestamp_comments,
+        moment_type=analysis.get("moment_type", "")
+    )
+    viral_verdict = viral_check["verdict"]
+    viral_score_rag = viral_check["score"]
+
+    if viral_verdict == "reject":
+        print(f"[pipeline]   ❌ rejected by viral filter — {viral_check['reason']}")
+        if viral_check.get("rejection_detail"):
+            print(f"[pipeline]   detail: {viral_check['rejection_detail']}")
+        return None
+
+    if viral_verdict == "uncertain":
+        print(f"[pipeline]   ⚠️ uncertain viral potential — proceeding with caution")
+
+    print(f"[pipeline]   ✅ passed all gates (viral_score={viral_score}, rag_viral={viral_score_rag}/10)")
 
     # Attach metadata for downstream use
     analysis["_peak_sec"] = peak_sec
     analysis["_peak_signal"] = signal_name
     analysis["_timestamp_comments"] = timestamp_comments
+    analysis["_viral_check"] = viral_check
     return analysis
 
 
@@ -587,7 +607,11 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
             },
             "notes": "",
             "repost_count": 0,
-            "repost_video_path": ""
+            "repost_video_path": "",
+            "viral_potential_score": analysis.get("_viral_check", {}).get("score", 0),
+            "viral_potential_verdict": analysis.get("_viral_check", {}).get("verdict", "unknown"),
+            "viral_matched_triggers": analysis.get("_viral_check", {}).get("matched_triggers", []),
+            "moment_type": analysis.get("moment_type", "")
         }
         append_log_entry(log, entry)
         save_performance_log(log)
