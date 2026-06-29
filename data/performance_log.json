@@ -1150,6 +1150,32 @@
           "comments": 0
         }
       }
+    },
+    {
+      "short_id": "skipped_no_heatmap",
+      "uploaded_at": "2026-06-29T01:38:00.203139Z",
+      "source_video_id": "fzKT1rus544",
+      "source_channel_title": "Test Channel",
+      "source_type": "gta5",
+      "status": "skipped_no_heatmap",
+      "notes": "video has no YouTube heatmap data (insufficient views or too new)",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      }
     }
   ]
 }
