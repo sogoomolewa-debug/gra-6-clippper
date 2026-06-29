@@ -39,9 +39,10 @@ QUEUE = {
 }
 
 CLIP = {
-    "max_duration_seconds": 12,  # Changed from 14 to match reference video
-    "min_duration_seconds": 10,
+    "max_duration_seconds": 10,  # Tightened from 12 — less dead time, more loops
+    "min_duration_seconds": 8,
     "hook_duration_seconds": 3,
+    "max_hook_audio_seconds": 2.5,   # hard ceiling — ffmpeg atempo if TTS exceeds this
     "blur_intro_enabled": True,  # NEW: Set to False for instant-action hooks
     "output_width": 1080,
     "output_height": 1920,
@@ -55,7 +56,7 @@ CLIP = {
     "caption_shadow_color": "black",
     "hook_caps": True,
     "safe_zone_margin_bottom": 220,
-    "min_viral_score": 7,          # minimum Gemini viral score (1-10) to proceed
+    "min_viral_score": 8,          # raised from 7 — only exceptional clips get published
     "max_peaks_to_try": 3,         # max heatmap peaks to evaluate per video
 }
 
@@ -122,13 +123,7 @@ DRY_RUN = os.environ.get("DRY_RUN", "true").lower() == "true"
 # "tts_narrated" = Full TTS voiceover + blur intro (storytelling/drama)
 # "pure_gameplay" = No TTS, instant action, casual captions (authentic/minimalist)
 # "reference_inspired" = Measured pacing, blur intro, casual 5-7 word hooks
-CONTENT_MODE = os.environ.get("CONTENT_MODE", "reference_inspired")
-
-# Content Mode Rotation — cycles through modes to collect comparison data
-# Set CONTENT_MODE_ROTATION=true in .env or GitHub Secrets to enable
-CONTENT_MODE_ROTATION = os.environ.get("CONTENT_MODE_ROTATION", "true").lower() == "true"
-MODE_ROTATION_ORDER = ["reference_inspired", "tts_narrated", "pure_gameplay"]
-MODE_ROTATION_BATCH_SIZE = 3  # post N videos in each mode before switching
+CONTENT_MODE = "reference_inspired"
 
 
 CONTENT_PROFILES = {
@@ -191,12 +186,12 @@ CONTENT_PROFILES = {
         "tts": {
             "breath_pad_ms": 100,
             "chunk_gap_ms": 180,
-            "speed_suspense": 0.95,
-            "speed_reveal": 1.10,
-            "speed_default": 1.03,
+            "speed_suspense": 1.0,
+            "speed_reveal": 1.25,
+            "speed_default": 1.15,
         },
         "hook": {
-            "max_words": 7,
+            "max_words": 5,
             "prompt_family": "reference_casual",
         },
         "hashtags": {
