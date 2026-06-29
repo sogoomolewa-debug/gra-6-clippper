@@ -1176,6 +1176,62 @@
           "comments": 0
         }
       }
+    },
+    {
+      "short_id": "dryrun_t7G6mdGWyJs",
+      "short_url": "https://youtube.com/shorts/dryrun_t7G6mdGWyJs",
+      "title": "Spiderman SWINGS Chaos \ud83e\udd2f #GTA5 #Gaming #Shorts",
+      "uploaded_at": "2026-06-29T01:44:08.057542Z",
+      "source_video_id": "t7G6mdGWyJs",
+      "source_url": "https://www.youtube.com/watch?v=t7G6mdGWyJs",
+      "source_channel_title": "Test Channel",
+      "source_type": "gta5",
+      "source_video_views": 0,
+      "source_video_age_hours": 4297.7,
+      "hook_text": "what just got swung",
+      "hook_style": "deadpan",
+      "hook_delivery": "reference_inspired",
+      "hook_word_count": 4,
+      "peak_start": 0.0,
+      "peak_position_pct": 1.0,
+      "clip_duration": 8.0,
+      "visual_description": "A Spider-Man character swings a golf club, causing an NPC to fall off a cliff into the river below.",
+      "is_punchy": true,
+      "punchiness_reasoning": "The unexpected golf club swing and the NPC's immediate comedic fall make this moment quickly enjoyable.",
+      "viral_score": 8,
+      "natural_boundaries_used": true,
+      "peak_signal": "heatmap_peak_1",
+      "peak_sec": 3,
+      "global_start": 0.0,
+      "global_end": 8.0,
+      "status": "uploaded",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      },
+      "notes": "",
+      "repost_count": 0,
+      "repost_video_path": "",
+      "viral_potential_score": 6.0,
+      "viral_potential_verdict": "uncertain",
+      "viral_matched_triggers": [
+        "absurdity",
+        "humor"
+      ],
+      "moment_type": "ragdoll"
     }
   ]
 }

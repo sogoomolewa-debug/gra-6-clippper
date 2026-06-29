@@ -1,5 +1,16 @@
 {
-  "pending": [],
+  "pending": [
+    {
+      "video_id": "sLjDOkEqlGo",
+      "url": "https://www.youtube.com/watch?v=sLjDOkEqlGo",
+      "title": "GTA 5 Hulk Vs Spiderman Ragdolls",
+      "channel_id": "test",
+      "channel_title": "Test Channel",
+      "published_at": "2026-01-01T00:00:00Z",
+      "source_type": "gta5",
+      "score": 99999998
+    }
+  ],
   "processed": [
     {
       "video_id": "VlVs65QgCcw",
@@ -126,6 +137,12 @@
       "short_id": "skipped_no_heatmap",
       "source_type": "gta5",
       "uploaded_at": "2026-06-29T01:38:00.209393Z"
+    },
+    {
+      "video_id": "t7G6mdGWyJs",
+      "short_id": "dryrun_t7G6mdGWyJs",
+      "source_type": "gta5",
+      "uploaded_at": "2026-06-29T01:44:08.067297Z"
     }
   ]
 }
