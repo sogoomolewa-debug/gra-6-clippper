@@ -1124,6 +1124,32 @@
           "comments": 0
         }
       }
+    },
+    {
+      "short_id": "skipped_download_failed",
+      "uploaded_at": "2026-06-29T01:27:46.081558Z",
+      "source_video_id": "t7G6mdGWyJs",
+      "source_channel_title": "RedLancer",
+      "source_type": "candidate",
+      "status": "skipped_download_failed",
+      "notes": "Video download failed (likely expired cookies)",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      }
     }
   ]
 }

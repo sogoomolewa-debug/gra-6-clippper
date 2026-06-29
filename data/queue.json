@@ -1,25 +1,5 @@
 {
-  "pending": [
-    {
-      "video_id": "t7G6mdGWyJs",
-      "url": "https://youtube.com/watch?v=t7G6mdGWyJs",
-      "title": "GTA 5 Water Ragdolls | SPIDERMAN Jumps/Fails Ep.27 (Euphoria physics | Funny Moments)",
-      "description": "Welcome to another episode of water ragdoll! As usual, I'm making people falling into pools even if they aren't willing to!\n\nThanks for watching!\n\nSubscribe for more! \nhttps://www.youtube.com/channel/UCk2V--5EfnsXZNFBGEv-rGw\n\nIf you like the video, please click the like button!\n\nGrand Theft Auto V, Spiderman\n\n#GTA5 #Ragdolls #Fails",
-      "category_id": "20",
-      "channel_id": "UCk2V--5EfnsXZNFBGEv-rGw",
-      "channel_title": "RedLancer",
-      "channel_url": "https://youtube.com/@RedLancer",
-      "view_count": 62787411,
-      "like_count": 157421,
-      "duration_seconds": 312,
-      "published_at": "2019-03-29T06:14:44Z",
-      "thumbnail_url": "https://i.ytimg.com/vi/t7G6mdGWyJs/hqdefault.jpg",
-      "subscriber_count": 6230000,
-      "source_type": "candidate",
-      "score": 27626598.7,
-      "queued_at": "2026-06-24T00:14:39.077116Z"
-    }
-  ],
+  "pending": [],
   "processed": [
     {
       "video_id": "VlVs65QgCcw",
@@ -200,6 +180,12 @@
       "short_id": "skipped_download_failed",
       "source_type": "candidate",
       "uploaded_at": "2026-06-29T01:27:36.549522Z"
+    },
+    {
+      "video_id": "t7G6mdGWyJs",
+      "short_id": "skipped_download_failed",
+      "source_type": "candidate",
+      "uploaded_at": "2026-06-29T01:27:46.090203Z"
     }
   ]
 }
