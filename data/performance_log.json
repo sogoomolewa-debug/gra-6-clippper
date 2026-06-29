@@ -1232,6 +1232,32 @@
         "humor"
       ],
       "moment_type": "ragdoll"
+    },
+    {
+      "short_id": "skipped_rag_rejected",
+      "uploaded_at": "2026-06-29T20:53:54.970007Z",
+      "source_video_id": "sLjDOkEqlGo",
+      "source_channel_title": "Test Channel",
+      "source_type": "gta5",
+      "status": "skipped_rag_rejected",
+      "notes": "RAG rejected: score=3.0, triggers=['absurdity', 'humor']",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      }
     }
   ]
 }
