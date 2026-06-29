@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-29T01:27:17.241713Z",
+  "last_updated": "2026-06-29T01:27:27.958068Z",
   "candidates": {
     "UCIPPMRA040LQr5QPyJEbmXA": {
       "channel_title": "MrBeast Gaming",
@@ -56,6 +56,14 @@
       "clips_rejected": 1,
       "first_seen": "2026-06-29T01:27:17.241584Z",
       "last_seen": "2026-06-29T01:27:17.241610Z"
+    },
+    "UC2ORs0TPEkxISKfKkQbIJqg": {
+      "channel_title": "LoudMouthZander",
+      "clips_attempted": 1,
+      "clips_passed": 0,
+      "clips_rejected": 1,
+      "first_seen": "2026-06-29T01:27:27.957951Z",
+      "last_seen": "2026-06-29T01:27:27.957971Z"
     }
   },
   "channels": {
