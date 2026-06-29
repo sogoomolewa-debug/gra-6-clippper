@@ -1,0 +1,220 @@
+{
+  "generated_at": "2026-06-29T00:00:12.082567Z",
+  "total_analyzed": 10,
+  "analytics_api_used": false,
+  "findings": {
+    "by_signal": {
+      "comments": {
+        "count": 3,
+        "avg_views": 0,
+        "avg_retention": null
+      },
+      "groq_segment_1": {
+        "count": 1,
+        "avg_views": 0,
+        "avg_retention": null
+      },
+      "heatmap_peak_2": {
+        "count": 1,
+        "avg_views": 0,
+        "avg_retention": null
+      },
+      "heatmap_peak_1": {
+        "count": 5,
+        "avg_views": 767,
+        "avg_retention": null
+      }
+    },
+    "by_moment_type": {
+      "unknown": {
+        "count": 9,
+        "avg_views": 401,
+        "avg_retention": null
+      },
+      "stunt_fail": {
+        "count": 1,
+        "avg_views": 228,
+        "avg_retention": null
+      }
+    },
+    "by_format": {
+      "tts_narrated": {
+        "count": 5,
+        "avg_views": 133,
+        "avg_retention": null
+      },
+      "reference_inspired": {
+        "count": 5,
+        "avg_views": 634,
+        "avg_retention": null
+      }
+    },
+    "by_rag_score": {
+      "no_rag_score": {
+        "count": 9,
+        "avg_views": 401
+      },
+      "8.0 - 10.0": {
+        "count": 1,
+        "avg_views": 228
+      }
+    },
+    "by_hook_word_count": {
+      "10+ words (too long)": {
+        "count": 2,
+        "avg_views": 0
+      },
+      "8-9 words": {
+        "count": 2,
+        "avg_views": 218
+      },
+      "6-7 words": {
+        "count": 4,
+        "avg_views": 676
+      },
+      "1-5 words": {
+        "count": 2,
+        "avg_views": 348
+      }
+    },
+    "best_shorts": [
+      {
+        "short_id": "XbN7IakmE0w",
+        "views": 2471,
+        "retention_pct": null,
+        "signal": "heatmap_peak_1",
+        "moment_type": null,
+        "hook_text": "SPIDERMAN just went... off the EDGE",
+        "format": "reference_inspired"
+      },
+      {
+        "short_id": "AMV5_mZwEL8",
+        "views": 695,
+        "retention_pct": null,
+        "signal": "heatmap_peak_1",
+        "moment_type": null,
+        "hook_text": "he's actually gonna make IT...",
+        "format": "reference_inspired"
+      },
+      {
+        "short_id": "fzKT1rus544",
+        "views": 436,
+        "retention_pct": null,
+        "signal": "heatmap_peak_1",
+        "moment_type": null,
+        "hook_text": "Guy just pushed a MONSTER truck off a building...",
+        "format": "tts_narrated"
+      },
+      {
+        "short_id": "kGAKg6kGuUs",
+        "views": 228,
+        "retention_pct": null,
+        "signal": "heatmap_peak_1",
+        "moment_type": "stunt_fail",
+        "hook_text": "What just launched off that LAUNCH ramp...",
+        "format": "tts_narrated"
+      },
+      {
+        "short_id": "TvW4bWeMLnI",
+        "views": 6,
+        "retention_pct": null,
+        "signal": "heatmap_peak_1",
+        "moment_type": null,
+        "hook_text": "oh no not the POOL lady...",
+        "format": "reference_inspired"
+      },
+      {
+        "short_id": "FbUICzVkgtQ",
+        "views": 0,
+        "retention_pct": null,
+        "signal": "comments",
+        "moment_type": null,
+        "hook_text": "Guy just yelled HALF Life... in the middle of a heist",
+        "format": "tts_narrated"
+      },
+      {
+        "short_id": "dryrun_WWLIyjkWwFI",
+        "views": 0,
+        "retention_pct": null,
+        "signal": "comments",
+        "moment_type": null,
+        "hook_text": "Guy just threw himself in front of an SUV on PURPOSE...",
+        "format": "tts_narrated"
+      },
+      {
+        "short_id": "dryrun_WWLIyjkWwFI",
+        "views": 0,
+        "retention_pct": null,
+        "signal": "comments",
+        "moment_type": null,
+        "hook_text": "Dude he just slammed into that SUV on PURPOSE...",
+        "format": "tts_narrated"
+      },
+      {
+        "short_id": "dryrun_eP-kRHEcViM",
+        "views": 0,
+        "retention_pct": null,
+        "signal": "groq_segment_1",
+        "moment_type": null,
+        "hook_text": "oh no he didn't even SEE",
+        "format": "reference_inspired"
+      },
+      {
+        "short_id": "dryrun_hK6A_ebUKrM",
+        "views": 0,
+        "retention_pct": null,
+        "signal": "heatmap_peak_2",
+        "moment_type": null,
+        "hook_text": "he still made it SOMEHOW",
+        "format": "reference_inspired"
+      }
+    ],
+    "worst_shorts": [
+      {
+        "short_id": "FbUICzVkgtQ",
+        "views": 0,
+        "retention_pct": null,
+        "signal": "comments",
+        "moment_type": null,
+        "hook_text": "Guy just yelled HALF Life... in the middle of a heist",
+        "format": "tts_narrated"
+      },
+      {
+        "short_id": "dryrun_WWLIyjkWwFI",
+        "views": 0,
+        "retention_pct": null,
+        "signal": "comments",
+        "moment_type": null,
+        "hook_text": "Guy just threw himself in front of an SUV on PURPOSE...",
+        "format": "tts_narrated"
+      },
+      {
+        "short_id": "dryrun_WWLIyjkWwFI",
+        "views": 0,
+        "retention_pct": null,
+        "signal": "comments",
+        "moment_type": null,
+        "hook_text": "Dude he just slammed into that SUV on PURPOSE...",
+        "format": "tts_narrated"
+      },
+      {
+        "short_id": "dryrun_eP-kRHEcViM",
+        "views": 0,
+        "retention_pct": null,
+        "signal": "groq_segment_1",
+        "moment_type": null,
+        "hook_text": "oh no he didn't even SEE",
+        "format": "reference_inspired"
+      },
+      {
+        "short_id": "dryrun_hK6A_ebUKrM",
+        "views": 0,
+        "retention_pct": null,
+        "signal": "heatmap_peak_2",
+        "moment_type": null,
+        "hook_text": "he still made it SOMEHOW",
+        "format": "reference_inspired"
+      }
+    ]
+  }
+}

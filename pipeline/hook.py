@@ -68,21 +68,6 @@ Reference tone examples:
 - bro picked the wrong ramp today
 """
 
-# Stage 2: Add delivery markup for TTS naturalness
-MARKUP_PROMPT = """You are a voice director. Take this hook and add delivery markup for text-to-speech.
-
-Rules:
-- Add "..." (three dots) where the speaker should PAUSE for dramatic effect (max 2 pauses)
-- CAPITALIZE exactly 1-2 key words that should be EMPHASIZED
-- Use "—" (em dash) for a sharp dramatic cut (max 1)
-- Keep the original words — only add pauses and change capitalization
-- The result must still be under 15 words
-- Output ONLY the marked-up hook, nothing else
-
-Original hook: "{raw_hook}"
-
-Marked-up hook:"""
-
 FALLBACK_HOOKS = [
     "bro really just sent it off the overpass",
     "this car had zero business surviving that",
@@ -265,35 +250,17 @@ def generate_raw_hook(context_str: str, style: dict) -> Optional[str]:
         return None
 
 
-def add_delivery_markup(raw_hook: str) -> Optional[str]:
-    """Stage 2: Add pauses, emphasis, and tone markers for TTS."""
-    try:
-        system = "You are a voice director who adds delivery markup to text for text-to-speech."
-        user = MARKUP_PROMPT.format(raw_hook=raw_hook)
-        marked = _call_groq(system, user, max_tokens=80)
-        if marked:
-            print(f"[hook] stage 2 markup: {marked}")
-        return marked
-    except Exception as e:
-        print(f"[hook] markup error: {e}")
-        return None
-
-
 def validate_hook(hook: str) -> bool:
-    """Validate if the hook meets length rules (more relaxed for markup)."""
+    """Validate if the hook meets length rules."""
     try:
         if not hook:
             return False
-        # Strip markup for word count
-        clean = hook.replace("...", " ").replace("—", " ").strip()
+        clean = hook.strip()
         words = clean.split()
         word_count = len(words)
-        max_words = int(config.get_content_profile().get("hook", {}).get("max_words", 18))
-        upper_limit = max(12, max_words + 3)
-        if word_count < 3 or word_count > upper_limit:
-            print(f"[hook] validation failed: word count is {word_count} (must be 3-{upper_limit})")
+        if word_count < 3 or word_count > 12:
+            print(f"[hook] validation failed: word count is {word_count}")
             return False
-        # Don't allow question marks (they weaken hooks)
         if hook.strip().endswith("?"):
             print("[hook] validation failed: ends with a question mark")
             return False
@@ -309,47 +276,43 @@ def get_hook_with_fallback(
     transcript_context: str = "",
     timestamp_comments: List[Dict] = []
 ) -> tuple[str, str]:
-    """Generate a hook with delivery markup. Falls back to pre-written hooks on failure.
-
-    Returns:
-        tuple[str, str]: (hook_text, style_name)
-    """
-    try:
-        context_str = build_context(video_title, visual_description, transcript_context, timestamp_comments)
-        style = _get_style()
-        print(f"[hook] using style: {style['name']}")
-
-        for attempt in range(3):
-            print(f"[hook] attempt {attempt + 1}/3")
-
-            # Stage 1: Raw hook
-            raw_hook = generate_raw_hook(context_str, style)
-            if not raw_hook:
+    """Generate a hook. Falls back to pre-written hooks on failure."""
+    context_str = build_context(video_title, visual_description, transcript_context, timestamp_comments)
+    max_attempts = 3
+    
+    for attempt in range(max_attempts):
+        try:
+            print(f"[hook] attempt {attempt + 1}/{max_attempts}")
+            style = _get_style()
+            
+            # Stage 1: Generate Raw Hook
+            hook = generate_raw_hook(context_str, style)
+            if not hook:
                 continue
 
-            # Stage 2: Add delivery markup
-            marked_hook = add_delivery_markup(raw_hook)
-            if not marked_hook:
-                # If markup fails, use the raw hook as-is
-                marked_hook = raw_hook
+            # Validation
+            if validate_hook(hook):
+                words = hook.split()
+                if len(words) > 8:
+                    print(f"[hook] hook too long ({len(words)} words) — truncating")
+                    hook = " ".join(words[:7])
+                print(f"[hook] final: '{hook}' ({len(words)} words)")
+                return hook, style['name']
+            
+            print(f"[hook] invalid hook, retrying... ({attempt+1}/{max_attempts})")
 
-            if validate_hook(marked_hook):
-                print(f"[hook] final: {marked_hook}")
-                return (marked_hook, style['name'])
+        except Exception as e:
+            print(f"[hook] generation attempt {attempt+1} failed: {e}")
 
-            print(f"[hook] attempt {attempt + 1} failed validation")
-            # Try a different style on retry
-            style = _get_style()
-
-        # Fallback if all attempts fail
-        fallback_hook = random.choice(FALLBACK_HOOKS)
-        print(f"[hook] using fallback: {fallback_hook}")
-        return (fallback_hook, "fallback")
-    except Exception as e:
-        print(f"[hook] error generating hook: {e}")
-        fallback_hook = random.choice(FALLBACK_HOOKS)
-        print(f"[hook] using fallback: {fallback_hook}")
-        return (fallback_hook, "fallback")
+    # Fallback if all attempts fail
+    fallback_hook = random.choice(FALLBACK_HOOKS)
+    print(f"[hook] all generation attempts failed, using fallback: '{fallback_hook}'")
+    words = fallback_hook.split()
+    if len(words) > 8:
+        print(f"[hook] fallback hook too long ({len(words)} words) — truncating")
+        fallback_hook = " ".join(words[:7])
+    print(f"[hook] final fallback: '{fallback_hook}' ({len(words)} words)")
+    return fallback_hook, "fallback"
 
 
 def generate_casual_caption(visual_description: str) -> str:

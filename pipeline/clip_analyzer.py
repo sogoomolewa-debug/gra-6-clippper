@@ -107,6 +107,8 @@ class VideoAnalysis(BaseModel):
     natural_end: float = Field(description="The timestamp in seconds where the reaction to the action peak naturally ends.")
     viral_score: int = Field(description="Rate the viral potential of this specific moment from 1 to 10. 1-3: Mundane gameplay (driving normally, walking, menus, inventory). 4-5: Mildly interesting (small crash, basic combat, minor stunt). 6-7: Notable moment (impressive stunt, funny physics, unexpected outcome). 8-10: Exceptional (jaw-dropping physics glitch, perfect stunt landing, chain reaction explosion, hilarious NPC behavior). Only score 8+ if a typical viewer would genuinely want to rewatch or share this moment.")
     moment_type: str = Field(description="The type of moment in this clip. Choose the single most accurate: ragdoll, impossible_survival, physics_glitch, npc_behavior, stunt_success, stunt_fail, collision, impossible_height, speed_impact, chain_reaction, character_interaction, environmental_reaction, ordinary_interaction, mundane_gameplay, other. Use 'ordinary_interaction' for common expected gameplay actions (e.g. character kicking an object, normal vehicle collision). Use 'mundane_gameplay' for content with no surprising physics or outcome.")
+    action_fills_clip: bool = Field(description="True ONLY if exciting visual action (stunts, crashes, physics, comedy) is happening throughout the ENTIRE clip window from natural_start to natural_end with zero dead time. False if the interesting action only occupies a few seconds and the rest is uneventful driving, walking, or static scenery.")
+    loop_worthy: bool = Field(description="True if the clip ends at a moment that would make a viewer want to immediately rewatch — a sudden impact, unexpected outcome, or comedic punchline right at the cut. False if the clip ends during a calm, resolved, or uneventful moment.")
 
 
 def analyze_with_gemini(
@@ -128,7 +130,7 @@ def analyze_with_gemini(
             f"2. Determine if the moment is 'punchy'. Can this moment be fully understood, enjoyed, and impactful in under 15 seconds? If it requires a long buildup or extended context to make sense (e.g., a 40-second conversation or a long chase), set is_punchy to false. We only want fast, punchy action or immediate comedy.\n"
             f"3. Describe in exactly ONE sentence what visually happens at {peak_sec_local:.0f} seconds. Focus on the physical action, stunt, crash, or character interaction (e.g., car collisions, character physics/ragdoll launches, stunt failures or successes, explosive chain reactions) rather than static scenery. Be specific about the vehicles, characters, and motion involved. Avoid generic descriptions (e.g., do NOT just say 'a player drives a car' or 'gameplay footage showing a scene').\n"
             f"4. Find where the peak action at {peak_sec_local:.0f} seconds naturally begins (setup) and naturally ends (reaction complete). "
-            f"Requirements: window must be 10-14 seconds long — just the core moment, tight and punchy, no buildup, no aftermath. Peak at {peak_sec_local:.0f}s must be inside the window.\n"
+            f"Requirements: window must be 8-10 seconds long — just the core moment, tight and punchy, no buildup, no aftermath. Peak at {peak_sec_local:.0f}s must be inside the window.\n"
             f"5. Rate the viral potential of this moment on a scale of 1-10. "
             f"Focus on: Would a casual scroller stop for this? Would they rewatch it? Would they send it to a friend? "
             f"Only score 8+ for truly jaw-dropping or hilarious moments.\n"
@@ -139,7 +141,13 @@ def analyze_with_gemini(
             f"environmental_reaction, ordinary_interaction, mundane_gameplay, other. "
             f"Be honest — if this is a character doing something expected "
             f"(kicking an object, falling from a predictable height, normal combat) "
-            f"use ordinary_interaction or mundane_gameplay."
+            f"use ordinary_interaction or mundane_gameplay.\n"
+            f"7. Action density: Does exciting visual action fill the ENTIRE window from natural_start to natural_end? "
+            f"If the peak action only lasts 3-4 seconds but the window is 10 seconds, the rest is dead time — set action_fills_clip to false. "
+            f"Only set true if every second of the window has something visually engaging happening.\n"
+            f"8. Loop potential: Does the clip end at a moment that triggers an immediate rewatch? "
+            f"The best viral clips end right at the peak of impact, comedy, or surprise — making the viewer's brain want to see it again instantly. "
+            f"If the clip just fades out or ends during a calm moment, set loop_worthy to false."
         )
 
         response = None
@@ -156,10 +164,25 @@ def analyze_with_gemini(
                 )
                 break  # Success!
             except Exception as ex:
-                print(f"[analyzer] Gemini attempt {attempt}/{max_attempts} failed: {ex}")
+                error_str = str(ex)
+                is_503 = "503" in error_str or "UNAVAILABLE" in error_str
+                is_429 = "429" in error_str or "RESOURCE_EXHAUSTED" in error_str
+
                 if attempt == max_attempts:
+                    print(f"[analyzer] all {max_attempts} attempts failed: {ex}")
                     raise ex
-                time.sleep(5)
+
+                if is_503:
+                    wait = 30 * attempt  # 30s, 60s, 90s — server needs real time to recover
+                    print(f"[analyzer] 503 rate limit — waiting {wait}s before retry {attempt+1}")
+                elif is_429:
+                    wait = 60  # Quota exhausted — wait a full minute
+                    print(f"[analyzer] 429 quota exhausted — waiting {wait}s")
+                else:
+                    wait = 5
+                    print(f"[analyzer] attempt {attempt} failed: {ex} — retrying in {wait}s")
+
+                time.sleep(wait)
 
         import json
         data = json.loads(response.text)
@@ -172,6 +195,8 @@ def analyze_with_gemini(
             "description": data.get("description", ""),
             "viral_score": int(data.get("viral_score", 5)),
             "moment_type": data.get("moment_type", "other"),
+            "action_fills_clip": data.get("action_fills_clip", True),
+            "loop_worthy": data.get("loop_worthy", True),
             "natural_start": float(data.get("natural_start", max(0.0, peak_sec_local - 4.0))),
             "natural_end": float(data.get("natural_end", max(0.0, peak_sec_local - 4.0) + config.CLIP["max_duration_seconds"]))
         }
@@ -184,6 +209,8 @@ def analyze_with_gemini(
             "description": "",
             "viral_score": 5,
             "moment_type": "other",
+            "action_fills_clip": True,
+            "loop_worthy": True,
             "natural_start": max(0.0, peak_sec_local - 4.0),
             "natural_end": max(0.0, peak_sec_local - 4.0) + config.CLIP["max_duration_seconds"]
         }

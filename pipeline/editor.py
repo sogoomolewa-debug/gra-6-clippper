@@ -173,7 +173,7 @@ def apply_blur(input_path: str, output_path: str) -> bool:
     """Apply heavy blur to a video clip."""
     cmd = [
         "ffmpeg", "-y", "-i", input_path,
-        "-vf", "gblur=sigma=20:steps=3",
+        "-vf", "gblur=sigma=12:steps=2",
         "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
         "-c:a", "copy",
         output_path
@@ -411,6 +411,25 @@ def build_short(
         tmp = pathlib.Path(tempfile.mkdtemp())
         hook_dur = get_audio_duration(hook_audio)
         print(f"[editor] hook duration: {hook_dur:.2f}s")
+
+        # Hard cap hook audio duration — speed up if too long
+        max_hook = float(config.CLIP.get("max_hook_audio_seconds", 2.5))
+        if hook_dur > max_hook:
+            speedup = hook_dur / max_hook
+            sped_up_audio = str(pathlib.Path(hook_audio).parent / "hook_fast.wav")
+            atempo_cmd = [
+                "ffmpeg", "-y", "-i", hook_audio,
+                "-filter:a", f"atempo={speedup:.3f}",
+                sped_up_audio
+            ]
+            result = subprocess.run(atempo_cmd, capture_output=True, text=True, timeout=30)
+            if result.returncode == 0:
+                import shutil as sh
+                sh.move(sped_up_audio, hook_audio)
+                hook_dur = get_audio_duration(hook_audio)
+                print(f"[editor] hook sped up {speedup:.2f}x → {hook_dur:.2f}s")
+            else:
+                print(f"[editor] hook speedup failed, using original duration")
 
         # ── PART 1: BACKDROP (blurred background for hook speech) ──────────────
 

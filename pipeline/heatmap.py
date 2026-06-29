@@ -119,10 +119,10 @@ def _window_intensity(heatmap: List[dict], window_start: float, window_end: floa
     return total
 
 
-def find_top_peaks(heatmap: List[dict], window_duration: float, n: int = 3) -> List[Tuple[float, float]]:
+def find_top_peaks(heatmap: List[dict], window_duration: float, n: int = 3) -> List[Tuple[float, float, float]]:
     """Find the top N non-overlapping peak windows sorted by intensity.
 
-    Returns list of (start, end) tuples, highest intensity first.
+    Returns list of (start, end, intensity) tuples, highest intensity first.
     """
     try:
         if not heatmap:
@@ -130,7 +130,7 @@ def find_top_peaks(heatmap: List[dict], window_duration: float, n: int = 3) -> L
 
         max_end = max(seg.get("end_time", 0) for seg in heatmap)
         if max_end <= window_duration:
-            return [(0.0, min(window_duration, max_end))]
+            return [(0.0, min(window_duration, max_end), _window_intensity(heatmap, 0.0, min(window_duration, max_end)))]
 
         # Collect all windows with their intensities
         step = 0.5
@@ -152,16 +152,15 @@ def find_top_peaks(heatmap: List[dict], window_duration: float, n: int = 3) -> L
                 break
             # Check overlap with already-selected peaks
             overlaps = False
-            for ps, pe in peaks:
+            for ps, pe, _ in peaks:
                 if start < pe and end > ps:
                     overlaps = True
                     break
             if not overlaps:
-                peaks.append((start, end))
+                peaks.append((start, end, intensity))
 
         print(f"[heatmap] found {len(peaks)} non-overlapping peaks")
-        for i, (s, e) in enumerate(peaks):
-            intensity = _window_intensity(heatmap, s, e)
+        for i, (s, e, intensity) in enumerate(peaks):
             print(f"[heatmap]   peak {i+1}: {s:.1f}s → {e:.1f}s (intensity: {intensity:.2f})")
         return peaks
     except Exception as e:
