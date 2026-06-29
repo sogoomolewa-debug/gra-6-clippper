@@ -1,25 +1,6 @@
 {
   "pending": [
     {
-      "video_id": "p9k837ThXvk",
-      "url": "https://youtube.com/watch?v=p9k837ThXvk",
-      "title": "GTA 5 Funny/Crazy Jump Compilation (GTA V Fails Funny Moments)",
-      "description": "GTA 5 Funny, Crazy Jumps Compilation. Grand Theft Auto V Gameplay Fails Funny Moments. \nThanks for watching.",
-      "category_id": "20",
-      "channel_id": "UCG67Fgo8Sxm4G4TMIFjXhjQ",
-      "channel_title": "ProGamingStudio \u30c4",
-      "channel_url": "https://youtube.com/@ProGamingStudio\u30c4",
-      "view_count": 64099282,
-      "like_count": 784822,
-      "duration_seconds": 649,
-      "published_at": "2019-09-28T16:00:15Z",
-      "thumbnail_url": "https://i.ytimg.com/vi/p9k837ThXvk/hqdefault.jpg",
-      "subscriber_count": 4220000,
-      "source_type": "candidate",
-      "score": 28204357.5,
-      "queued_at": "2026-06-24T00:14:39.077110Z"
-    },
-    {
       "video_id": "t7G6mdGWyJs",
       "url": "https://youtube.com/watch?v=t7G6mdGWyJs",
       "title": "GTA 5 Water Ragdolls | SPIDERMAN Jumps/Fails Ep.27 (Euphoria physics | Funny Moments)",
@@ -213,6 +194,12 @@
       "short_id": "skipped_download_failed",
       "source_type": "candidate",
       "uploaded_at": "2026-06-29T01:27:27.983600Z"
+    },
+    {
+      "video_id": "p9k837ThXvk",
+      "short_id": "skipped_download_failed",
+      "source_type": "candidate",
+      "uploaded_at": "2026-06-29T01:27:36.549522Z"
     }
   ]
 }
