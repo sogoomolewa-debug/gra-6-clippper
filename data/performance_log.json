@@ -1440,6 +1440,65 @@
           "comments": 0
         }
       }
+    },
+    {
+      "short_id": "DxZwaYX6qKQ",
+      "short_url": "https://youtube.com/shorts/DxZwaYX6qKQ",
+      "title": "Crazy JUMP off dirt \ud83e\udd2f #Gaming #Gameplay #Shorts",
+      "uploaded_at": "2026-06-30T02:20:14.331402Z",
+      "source_video_id": "5Qxe47FuoDo",
+      "source_url": "https://youtube.com/watch?v=5Qxe47FuoDo",
+      "source_channel_title": "Hazardous",
+      "source_type": "gta_archive",
+      "source_video_views": 347793,
+      "source_video_age_hours": 5384.3,
+      "hook_text": "off the dirt... ramp",
+      "hook_style": "deadpan",
+      "hook_delivery": "reference_inspired",
+      "hook_word_count": 4,
+      "peak_start": 643.5,
+      "peak_position_pct": 47.4,
+      "clip_duration": 10.0,
+      "visual_description": "A red Mini Cooper-like car successfully launches off a dirt ramp, flies high over a multi-lane highway, and lands cleanly on a grassy area next to a building.",
+      "is_punchy": true,
+      "punchiness_reasoning": "The clip shows a quick and impressive stunt jump and landing that is impactful within a short timeframe.",
+      "viral_score": 8,
+      "natural_boundaries_used": true,
+      "peak_signal": "heatmap_peak_1",
+      "peak_sec": 644,
+      "global_start": 643.5,
+      "global_end": 653.5,
+      "climax_sec": 653.5,
+      "effective_end": 653.5,
+      "status": "uploaded",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      },
+      "notes": "",
+      "repost_count": 0,
+      "repost_video_path": "scratch/repost_5Qxe47FuoDo.mp4",
+      "viral_potential_score": 6.0,
+      "viral_potential_verdict": "uncertain",
+      "viral_matched_triggers": [
+        "absurdity",
+        "surprise",
+        "impossibility"
+      ],
+      "moment_type": "stunt_success"
     }
   ]
 }
