@@ -31,6 +31,7 @@ def passes_title_blacklist(title: str, description: str = "") -> bool:
             "beamng", "beam ng", "euro truck",
             # Generic words — block in title, not description
             "news", "update", "updates",
+            "leak", "leaks", "leaked",
         ]
         for phrase in TITLE_ONLY_BLACKLIST:
             if phrase in title_lower:
@@ -181,6 +182,12 @@ def is_eligible(video: dict, tier: dict, source_type: str = "whitelist") -> bool
         ch_title = video.get("channel_title", "").lower()
         if "rockstar games" in ch_title or "rockstargames" in ch_title:
             print(f"[search] blocked video {video.get('video_id')} from Rockstar Games channel: {video.get('channel_title')}")
+            return False
+
+        # Block blacklisted channels (known non-gameplay or problematic)
+        channel_bl = getattr(config, "CHANNEL_BLACKLIST", [])
+        if video.get("channel_title", "") in channel_bl:
+            print(f"[search] blocked video {video.get('video_id')} from blacklisted channel: {video.get('channel_title')}")
             return False
 
         # Restrict to Gaming Category (ID: 20)

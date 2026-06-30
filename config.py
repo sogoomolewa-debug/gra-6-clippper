@@ -250,9 +250,8 @@ TITLE_BLACKLIST = [
     # Analysis / news / opinion
     "analysis", "explained", "breakdown", "everything we know", "all details",
     "theory", "theories", "confirmed", "debunked", "rumor", "rumour",
-    "leak", "leaks", "leaked",
-    # NOTE: "news", "update", "updates" moved to title-only check in search.py
-    # (too generic — appear in descriptions of valid gameplay videos)
+    # NOTE: "news", "update", "updates", "leak", "leaks", "leaked" moved to title-only
+    # check in search.py (too generic — appear in descriptions of valid gameplay videos)
     "official trailer", "cover art", "box art", "announcement",
     # Reaction / talk shows
     "reaction", "reacts", "react", "rant", "essay", "podcast",

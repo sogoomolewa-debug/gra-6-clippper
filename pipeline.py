@@ -153,12 +153,11 @@ def run_pipeline() -> None:
             added6 = queue_manager.add_to_queue(queue, gta6_videos, source_type="gta6")
             print(f"[pipeline] added {added6} new gta6 videos to queue")
 
-        # Tier 3: GTA5 search (if still low)
-        if len(queue["pending"]) < min_queue:
-            print(f"[pipeline] queue low ({len(queue['pending'])}), sourcing tier 3: gta5 search")
-            gta5_videos = search.get_top_videos(api_key, tier_name="gta5", limit=5)
-            added5 = queue_manager.add_to_queue(queue, gta5_videos, source_type="gta5")
-            print(f"[pipeline] added {added5} new gta5 videos to queue")
+        # Tier 3: GTA5 search (always run — GTA5 has more actual gameplay with heatmaps)
+        print(f"[pipeline] sourcing tier 3: gta5 search")
+        gta5_videos = search.get_top_videos(api_key, tier_name="gta5", limit=5)
+        added5 = queue_manager.add_to_queue(queue, gta5_videos, source_type="gta5")
+        print(f"[pipeline] added {added5} new gta5 videos to queue")
 
         # Tier 4: Discovery (find new candidate channels — last resort)
         discovery_cfg = getattr(config, "DISCOVERY", {})
