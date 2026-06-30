@@ -107,9 +107,8 @@ def mark_processed(queue: dict, video: dict, short_id: str) -> None:
             "uploaded_at": datetime.utcnow().isoformat() + "Z"
         }
         queue["processed"].append(entry)
-        # Trim processed to max 100 items (remove oldest)
-        if len(queue["processed"]) > 100:
-            queue["processed"] = queue["processed"][-100:]
+        # Note: We no longer trim the processed list. We want an infinite history 
+        # so the deep whitelist archive doesn't pull old videos we already processed.
         print(f"[queue] marked processed: {video.get('video_id')} → short {short_id}")
     except Exception as e:
         print(f"[queue] error marking processed: {e}")

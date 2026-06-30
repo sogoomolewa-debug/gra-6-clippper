@@ -285,52 +285,78 @@ def score_video(video: dict) -> float:
         return 0.0
 
 
-def get_top_videos(api_key: str, tier_name: str, limit: int = 5) -> list[dict]:
+def get_top_videos(api_key: str, tier_name: str, limit: int = 5, ignore_ids: set = None) -> list[dict]:
     """Get top eligible videos (either via global search or whitelist channels)."""
+    if ignore_ids is None:
+        ignore_ids = set()
     try:
         youtube = build_youtube(api_key)
         if youtube is None:
             return []
 
-        mode = "whitelist" if tier_name == "whitelist" else "search"
+        mode = "whitelist" if tier_name in ("whitelist", "whitelist_archive") else "search"
         if mode == "whitelist":
-            print("[search] whitelist mode active, sourcing from curated channels")
+            print(f"[search] whitelist mode active (tier={tier_name}), sourcing from curated channels")
             whitelist_channels = config.SOURCING.get("whitelist_channels", [])
             video_ids = []
+            
+            is_archive = (tier_name == "whitelist_archive")
+            max_results_per_page = 50 if is_archive else 5
+            max_pages = 5 if is_archive else 1
+
             for ch in whitelist_channels:
                 try:
                     ch_id = ch["id"]
                     # Replace 'UC' with 'UU' to get the uploads playlist ID
                     playlist_id = "UU" + ch_id[2:]
-                    print(f"[search] fetching latest uploads for channel '{ch['name']}' (playlist: {playlist_id})")
+                    print(f"[search] fetching uploads for channel '{ch['name']}' (playlist: {playlist_id})")
                     
-                    response = youtube.playlistItems().list(
-                        part="snippet,contentDetails",
-                        playlistId=playlist_id,
-                        maxResults=5
-                    ).execute()
+                    page_token = None
+                    pages_fetched = 0
                     
-                    for item in response.get("items", []):
-                        snippet = item.get("snippet", {})
-                        title = snippet.get("title", "")
-                        description = snippet.get("description", "")
+                    while pages_fetched < max_pages:
+                        req = youtube.playlistItems().list(
+                            part="snippet,contentDetails",
+                            playlistId=playlist_id,
+                            maxResults=max_results_per_page,
+                            pageToken=page_token
+                        )
+                        response = req.execute()
+                        pages_fetched += 1
                         
-                        # Pre-API Title Blacklist Check (free gate)
-                        if not passes_title_blacklist(title, description):
-                            print(f"[search] pre-API blacklisted '{title}' from channel {ch['name']}")
-                            continue
+                        found_untouched = False
+                        
+                        for item in response.get("items", []):
+                            snippet = item.get("snippet", {})
+                            title = snippet.get("title", "")
+                            description = snippet.get("description", "")
+                            vid = item["contentDetails"].get("videoId")
+                            
+                            if not vid or vid in video_ids or vid in ignore_ids:
+                                continue
 
-                        # Pre-API Positive Keyword Check
-                        text_lower = (title + " " + description).lower()
-                        gta_keywords = ["gta", "grand theft auto", "los santos", "vice city", "liberty city", "san andreas", "grove street", "niko bellic", "bellic", "trevor", "michael", "franklin", "lester", "rockstar"]
-                        has_gta = any(kw in text_lower for kw in gta_keywords)
-                        if not has_gta:
-                            print(f"[search] pre-API skipped non-GTA video '{title}' from channel {ch['name']}")
-                            continue
+                            # Pre-API Title Blacklist Check (free gate)
+                            if not passes_title_blacklist(title, description):
+                                print(f"[search] pre-API blacklisted '{title}' from channel {ch['name']}")
+                                continue
 
-                        vid = item["contentDetails"].get("videoId")
-                        if vid and vid not in video_ids:
+                            # Pre-API Positive Keyword Check
+                            text_lower = (title + " " + description).lower()
+                            gta_keywords = ["gta", "grand theft auto", "los santos", "vice city", "liberty city", "san andreas", "grove street", "niko bellic", "bellic", "trevor", "michael", "franklin", "lester", "rockstar"]
+                            has_gta = any(kw in text_lower for kw in gta_keywords)
+                            if not has_gta:
+                                print(f"[search] pre-API skipped non-GTA video '{title}' from channel {ch['name']}")
+                                continue
+
                             video_ids.append(vid)
+                            found_untouched = True
+                            
+                        page_token = response.get("nextPageToken")
+                        
+                        # Stop paginating if we found untouched videos on this page, or no more pages
+                        if found_untouched or not page_token:
+                            break
+                            
                 except Exception as e:
                     print(f"[search] error fetching uploads for channel {ch.get('name')}: {e}")
                     continue
@@ -342,8 +368,10 @@ def get_top_videos(api_key: str, tier_name: str, limit: int = 5) -> list[dict]:
             details = get_video_details(youtube, video_ids)
             
             # Relaxed eligibility for whitelist
+            # If archive, max age is basically infinite (e.g., 10 years = 87600 hours)
+            tier_age = 87600 if is_archive else config.SOURCING.get("max_age_hours", 168)
             tier = {
-                "max_age_hours": config.SOURCING.get("max_age_hours", 168),
+                "max_age_hours": tier_age,
                 "min_views": config.SOURCING.get("min_views", 2000),
                 "min_channel_subscribers": 0,
             }

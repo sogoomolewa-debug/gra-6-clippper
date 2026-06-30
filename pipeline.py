@@ -159,11 +159,24 @@ def run_pipeline() -> None:
         added5 = queue_manager.add_to_queue(queue, gta5_videos, source_type="gta5")
         print(f"[pipeline] added {added5} new gta5 videos to queue")
 
-        # Tier 4: Discovery (find new candidate channels — last resort)
+        # Tier 4: Whitelist Archive (Deep Fallback)
+        if len(queue["pending"]) < min_queue:
+            print(f"[pipeline] queue low ({len(queue['pending'])}), sourcing tier 4: whitelist archive")
+            existing_ids = set([v.get("video_id") for v in queue.get("pending", [])] + [v.get("video_id") for v in queue.get("processed", [])])
+            archive_videos = search.get_top_videos(
+                api_key, 
+                tier_name="whitelist_archive", 
+                limit=15,
+                ignore_ids=existing_ids
+            )
+            added_archive = queue_manager.add_to_queue(queue, archive_videos, source_type="gta_archive")
+            print(f"[pipeline] added {added_archive} new archive videos to queue")
+
+        # Tier 5: Discovery (find new candidate channels — last resort)
         discovery_cfg = getattr(config, "DISCOVERY", {})
         trigger_size = discovery_cfg.get("trigger_queue_size", 2)
         if len(queue["pending"]) < trigger_size:
-            print(f"[pipeline] queue still low ({len(queue['pending'])}), sourcing tier 4: discovery")
+            print(f"[pipeline] queue still low ({len(queue['pending'])}), sourcing tier 5: discovery")
             whitelist_ids = [ch["id"] for ch in config.SOURCING.get("whitelist_channels", [])]
             channel_bl = getattr(config, "CHANNEL_BLACKLIST", [])
             discovery_videos = search.search_discovery_videos(api_key, whitelist_ids, channel_bl)
