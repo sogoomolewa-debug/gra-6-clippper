@@ -136,31 +136,35 @@ def run_pipeline() -> None:
         queue = queue_manager.load_queue()
         print(queue_manager.get_status(queue))
 
-        # STEP 2 — SEARCH AND REFILL QUEUE
-        mode = getattr(config, "SOURCING", {}).get("mode", "search")
-        if mode == "whitelist":
-            print("[pipeline] sourcing from whitelist channels")
-            whitelist_videos = search.get_top_videos(api_key, tier_name="whitelist", limit=5)
-            added = queue_manager.add_to_queue(queue, whitelist_videos, source_type="gta")
-            print(f"[pipeline] added {added} new whitelisted videos to queue")
-        else:
-            print("[pipeline] searching tier: gta6")
+        # STEP 2 — SOURCING CASCADE: whitelist → gta6 search → gta5 search → discovery
+        # Each tier only activates if the queue is still low after the previous tier.
+        min_queue = config.QUEUE["min_size"]
+
+        # Tier 1: Whitelist channels (always tried first — trusted quality)
+        print("[pipeline] sourcing tier 1: whitelist channels")
+        whitelist_videos = search.get_top_videos(api_key, tier_name="whitelist", limit=5)
+        added = queue_manager.add_to_queue(queue, whitelist_videos, source_type="gta")
+        print(f"[pipeline] added {added} new whitelisted videos to queue")
+
+        # Tier 2: GTA6 search (if whitelist didn't fill the queue)
+        if len(queue["pending"]) < min_queue:
+            print(f"[pipeline] queue low ({len(queue['pending'])}), sourcing tier 2: gta6 search")
             gta6_videos = search.get_top_videos(api_key, tier_name="gta6", limit=5)
-            added = queue_manager.add_to_queue(queue, gta6_videos, source_type="gta6")
-            print(f"[pipeline] added {added} new gta6 videos to queue")
+            added6 = queue_manager.add_to_queue(queue, gta6_videos, source_type="gta6")
+            print(f"[pipeline] added {added6} new gta6 videos to queue")
 
-            # STEP 3 — FALLBACK TIER IF QUEUE LOW
-            if len(queue["pending"]) < config.QUEUE["min_size"]:
-                print(f"[pipeline] queue low ({len(queue['pending'])}), activating gta5 fallback")
-                gta5_videos = search.get_top_videos(api_key, tier_name="gta5", limit=5)
-                added5 = queue_manager.add_to_queue(queue, gta5_videos, source_type="gta5")
-                print(f"[pipeline] added {added5} new gta5 videos to queue")
+        # Tier 3: GTA5 search (if still low)
+        if len(queue["pending"]) < min_queue:
+            print(f"[pipeline] queue low ({len(queue['pending'])}), sourcing tier 3: gta5 search")
+            gta5_videos = search.get_top_videos(api_key, tier_name="gta5", limit=5)
+            added5 = queue_manager.add_to_queue(queue, gta5_videos, source_type="gta5")
+            print(f"[pipeline] added {added5} new gta5 videos to queue")
 
-        # STEP 3b — DISCOVERY FALLBACK (find new candidate channels)
+        # Tier 4: Discovery (find new candidate channels — last resort)
         discovery_cfg = getattr(config, "DISCOVERY", {})
         trigger_size = discovery_cfg.get("trigger_queue_size", 2)
         if len(queue["pending"]) < trigger_size:
-            print(f"[pipeline] queue still low ({len(queue['pending'])}), running channel discovery")
+            print(f"[pipeline] queue still low ({len(queue['pending'])}), sourcing tier 4: discovery")
             whitelist_ids = [ch["id"] for ch in config.SOURCING.get("whitelist_channels", [])]
             channel_bl = getattr(config, "CHANNEL_BLACKLIST", [])
             discovery_videos = search.search_discovery_videos(api_key, whitelist_ids, channel_bl)
