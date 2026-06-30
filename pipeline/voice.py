@@ -32,6 +32,18 @@ def split_into_chunks(text: str) -> List[dict]:
             return [{"text": text.strip(), "role": "reveal"}]
 
         if len(parts) == 1:
+            # No markers found — auto-split for speed variation.
+            # Treat last 2 words as "reveal" chunk (faster pace),
+            # everything before as "suspense" (slower pace).
+            words = parts[0].split()
+            if len(words) >= 4:
+                suspense_text = " ".join(words[:-2])
+                reveal_text = " ".join(words[-2:])
+                print(f"[voice] auto-split (no markers): suspense='{suspense_text}' | reveal='{reveal_text}'")
+                return [
+                    {"text": suspense_text, "role": "suspense"},
+                    {"text": reveal_text, "role": "reveal"}
+                ]
             return [{"text": parts[0], "role": "reveal"}]
 
         chunks = []

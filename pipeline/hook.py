@@ -58,14 +58,16 @@ Rules:
 - Use a setup phrase that can be captioned one word at a time
 - Use lowercase unless one word truly needs emphasis
 - Be specific to the visual moment, but do not spoil the outcome
+- Include a ... pause before the key reveal word for dramatic delivery
+  (e.g. "bro really just... flew off the overpass")
 - No emojis, no hashtags, no quotes
 - Output ONLY the hook text
 
 Reference tone examples:
-- see there's always a bigger fish
-- never trust the quiet gta player
-- sometimes the road fights back
-- bro picked the wrong ramp today
+- see there's always... a bigger fish
+- never trust the quiet... gta player
+- sometimes the road just... fights back
+- bro picked the wrong... ramp today
 """
 
 FALLBACK_HOOKS = [
