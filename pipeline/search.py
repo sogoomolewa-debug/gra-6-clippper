@@ -213,13 +213,15 @@ def is_eligible(video: dict, tier: dict, source_type: str = "whitelist") -> bool
             print(f"[search] blocked video {video.get('video_id')} due to missing GTA keywords in title/description")
             return False
 
-        # Check for English language
+        # Check for non-English language (only block if confidently foreign)
         try:
             # Only use the title for lang detection since descriptions often have mixed languages/links
             title_text = video.get("title", "")
             if len(title_text) > 10:
                 lang = langdetect.detect(title_text)
-                if lang != 'en':
+                # Only block known foreign languages. Allow 'en' and often-misidentified ones like 'de', 'sv', 'tl', 'sw', 'nl', 'no'
+                blocked_langs = {'ar', 'pt', 'es', 'fr', 'ru', 'hi', 'bn', 'id', 'th', 'ko', 'ja', 'zh-cn', 'zh-tw', 'vi', 'tr', 'pl', 'it'}
+                if lang in blocked_langs:
                     print(f"[search] blocked video {video.get('video_id')} due to non-English language ({lang}): {video.get('title')}")
                     return False
         except Exception as e:
