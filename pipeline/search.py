@@ -11,11 +11,37 @@ from pipeline.channel_tracker import get_channel_priority
 
 def passes_title_blacklist(title: str, description: str = "") -> bool:
     """Return True if the title/description is clean (no blacklisted phrases).
-    This is Gate 1 — runs before any download or API call to save quota."""
+    This is Gate 1 — runs before any download or API call to save quota.
+    
+    Title-only keywords: wrong-game names that often appear in GTA video
+    descriptions for SEO but don't mean the video is wrong-game content.
+    Full-text keywords: content format indicators that are bad regardless."""
     try:
-        text_lower = (title + " " + description).lower()
+        title_lower = title.lower()
+        full_lower = (title + " " + description).lower()
+        
+        # These only block if in the TITLE — they appear in GTA descriptions for SEO
+        TITLE_ONLY_BLACKLIST = [
+            # Wrong-game names — appear in GTA descriptions for SEO
+            "fortnite", "minecraft", "roblox", "call of duty", "cod",
+            "red dead", "rdr", "cyberpunk", "saints row",
+            "simulator", "android gameplay", "mobile game", "mobile gameplay",
+            "car simulator", "truck simulator", "bus simulator",
+            "real racing", "asphalt", "need for speed", "nfs",
+            "beamng", "beam ng", "euro truck",
+            # Generic words — block in title, not description
+            "news", "update", "updates",
+        ]
+        for phrase in TITLE_ONLY_BLACKLIST:
+            if phrase in title_lower:
+                print(f"[search] title blacklist hit: '{phrase}' in title '{title[:60]}'")
+                return False
+        
+        # These block if found ANYWHERE (title or description)
         for phrase in config.TITLE_BLACKLIST:
-            if phrase in text_lower:
+            if phrase in TITLE_ONLY_BLACKLIST:
+                continue  # already checked above against title only
+            if phrase in full_lower:
                 print(f"[search] title blacklist hit: '{phrase}' in '{title[:60]}'")
                 return False
         return True
