@@ -102,12 +102,17 @@ def commit_data_files() -> None:
                 date_str = datetime.utcnow().strftime("%Y-%m-%d")
                 subprocess.run(
                     ["git", "commit", "-m", f"pipeline: {date_str}"],
-                    capture_output=True, text=True, timeout=30
+                    capture_output=True, text=True, check=True
+                )
+                subprocess.run(
+                    ["git", "pull", "--rebase"],
+                    capture_output=True, text=True, check=True
                 )
                 subprocess.run(
                     ["git", "push"],
-                    capture_output=True, text=True, timeout=60
+                    capture_output=True, text=True, check=True
                 )
+                print("[pipeline] data files committed and pushed")
         except Exception:
             pass
 
