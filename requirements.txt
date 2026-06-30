@@ -18,3 +18,4 @@ pydantic
 openai-whisper
 sentence-transformers
 scipy
+langdetect

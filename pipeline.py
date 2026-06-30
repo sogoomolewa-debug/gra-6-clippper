@@ -142,20 +142,20 @@ def run_pipeline() -> None:
 
         # Tier 1: Whitelist channels (always tried first — trusted quality)
         print("[pipeline] sourcing tier 1: whitelist channels")
-        whitelist_videos = search.get_top_videos(api_key, tier_name="whitelist", limit=5)
+        whitelist_videos = search.get_top_videos(api_key, tier_name="whitelist", limit=15)
         added = queue_manager.add_to_queue(queue, whitelist_videos, source_type="gta")
         print(f"[pipeline] added {added} new whitelisted videos to queue")
 
         # Tier 2: GTA6 search (if whitelist didn't fill the queue)
         if len(queue["pending"]) < min_queue:
             print(f"[pipeline] queue low ({len(queue['pending'])}), sourcing tier 2: gta6 search")
-            gta6_videos = search.get_top_videos(api_key, tier_name="gta6", limit=5)
+            gta6_videos = search.get_top_videos(api_key, tier_name="gta6", limit=15)
             added6 = queue_manager.add_to_queue(queue, gta6_videos, source_type="gta6")
             print(f"[pipeline] added {added6} new gta6 videos to queue")
 
         # Tier 3: GTA5 search (always run — GTA5 has more actual gameplay with heatmaps)
         print(f"[pipeline] sourcing tier 3: gta5 search")
-        gta5_videos = search.get_top_videos(api_key, tier_name="gta5", limit=5)
+        gta5_videos = search.get_top_videos(api_key, tier_name="gta5", limit=15)
         added5 = queue_manager.add_to_queue(queue, gta5_videos, source_type="gta5")
         print(f"[pipeline] added {added5} new gta5 videos to queue")
 

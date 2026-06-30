@@ -2,8 +2,10 @@
 
 import os
 from datetime import datetime, timedelta
+import re
 
 import isodate
+import langdetect
 
 import config
 from pipeline.channel_tracker import get_channel_priority
@@ -210,6 +212,19 @@ def is_eligible(video: dict, tier: dict, source_type: str = "whitelist") -> bool
         if not has_gta:
             print(f"[search] blocked video {video.get('video_id')} due to missing GTA keywords in title/description")
             return False
+
+        # Check for English language
+        try:
+            # Only use the title for lang detection since descriptions often have mixed languages/links
+            title_text = video.get("title", "")
+            if len(title_text) > 10:
+                lang = langdetect.detect(title_text)
+                if lang != 'en':
+                    print(f"[search] blocked video {video.get('video_id')} due to non-English language ({lang}): {video.get('title')}")
+                    return False
+        except Exception as e:
+            # If langdetect fails (e.g., emojis only), allow it to pass
+            pass
 
         # For discovery candidates, require GTA keywords in the TITLE specifically
         # (not just description — many non-GTA games stuff GTA keywords in descriptions for SEO)
