@@ -434,9 +434,9 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
 
         # EDIT
         short_path = f"/tmp/short_{video['video_id']}.mp4"
-        # Loop engineering: end 0.3s after climax (mid-chaos) instead of at natural_end
+        # Loop engineering: end 0.5s after climax (mid-chaos) instead of at natural_end
         min_clip = float(config.CLIP.get("min_duration_seconds", 10))
-        effective_end = min(climax_sec + 0.3, global_end)
+        effective_end = min(climax_sec + 0.5, global_end)
         if (effective_end - global_start) < min_clip:
             print(f"[pipeline] climax_sec too early ({climax_sec:.1f}s) — using natural_end instead")
             effective_end = global_end
