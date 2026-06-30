@@ -1258,6 +1258,32 @@
           "comments": 0
         }
       }
+    },
+    {
+      "short_id": "skipped_no_heatmap",
+      "uploaded_at": "2026-06-30T00:57:47.605533Z",
+      "source_video_id": "rM2_nukxBnY",
+      "source_channel_title": "Red Arcade",
+      "source_type": "gta",
+      "status": "skipped_no_heatmap",
+      "notes": "video has no YouTube heatmap data (insufficient views or too new)",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      }
     }
   ]
 }

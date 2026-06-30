@@ -138,6 +138,12 @@
       "short_id": "skipped_rag_rejected",
       "source_type": "gta5",
       "uploaded_at": "2026-06-29T20:53:54.971927Z"
+    },
+    {
+      "video_id": "rM2_nukxBnY",
+      "short_id": "skipped_no_heatmap",
+      "source_type": "gta",
+      "uploaded_at": "2026-06-30T00:57:47.607013Z"
     }
   ]
 }
