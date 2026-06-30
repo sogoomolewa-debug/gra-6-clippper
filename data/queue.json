@@ -1,25 +1,6 @@
 {
   "pending": [
     {
-      "video_id": "kEhGzgL7KME",
-      "url": "https://youtube.com/watch?v=kEhGzgL7KME",
-      "title": "O GR\u00c1FICO DO GTA 6 T\u00c1 UM ABSURDO",
-      "description": "Isso a\u00ed.\n\nContato comercial: contatogigatongames@gmail.com\n\nInstagram: https://www.instagram.com/diegogigaton",
-      "category_id": "20",
-      "channel_id": "UCAjKLSz8h3XJM5CSJWvmoNA",
-      "channel_title": "Gigaton Games",
-      "channel_url": "https://youtube.com/@GigatonGames",
-      "view_count": 30669,
-      "like_count": 5652,
-      "duration_seconds": 849,
-      "published_at": "2026-06-29T21:12:12Z",
-      "thumbnail_url": "https://i.ytimg.com/vi/kEhGzgL7KME/hqdefault.jpg",
-      "subscriber_count": 2870000,
-      "score": 43871.9,
-      "source_type": "gta6",
-      "queued_at": "2026-06-30T01:18:46.829412Z"
-    },
-    {
       "video_id": "C6fd0YtErOE",
       "url": "https://youtube.com/watch?v=C6fd0YtErOE",
       "title": "\u0631\u0648\u0643\u0633\u062a\u0627\u0631 \u0637\u0644\u0639\u0648\u0627 \u0627\u0643\u0628\u0631 \u062d\u0631\u0627\u0645\u064a\u0629.. \u0648\u0627\u0644\u0646\u0627\u0633 \u0628\u062a\u0637\u0628\u0644 !",
@@ -208,6 +189,12 @@
       "short_id": "skipped_no_heatmap",
       "source_type": "gta6",
       "uploaded_at": "2026-06-30T01:18:50.292317Z"
+    },
+    {
+      "video_id": "kEhGzgL7KME",
+      "short_id": "skipped_no_heatmap",
+      "source_type": "gta6",
+      "uploaded_at": "2026-06-30T01:18:54.618622Z"
     }
   ]
 }

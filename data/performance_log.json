@@ -1310,6 +1310,32 @@
           "comments": 0
         }
       }
+    },
+    {
+      "short_id": "skipped_no_heatmap",
+      "uploaded_at": "2026-06-30T01:18:54.617093Z",
+      "source_video_id": "kEhGzgL7KME",
+      "source_channel_title": "Gigaton Games",
+      "source_type": "gta6",
+      "status": "skipped_no_heatmap",
+      "notes": "video has no YouTube heatmap data (insufficient views or too new)",
+      "snapshots": {
+        "24h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "72h": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        },
+        "7d": {
+          "views": 0,
+          "likes": 0,
+          "comments": 0
+        }
+      }
     }
   ]
 }
