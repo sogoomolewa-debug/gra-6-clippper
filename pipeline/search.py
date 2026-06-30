@@ -270,7 +270,7 @@ def get_top_videos(api_key: str, tier_name: str, limit: int = 5) -> list[dict]:
         if youtube is None:
             return []
 
-        mode = getattr(config, "SOURCING", {}).get("mode", "search")
+        mode = "whitelist" if tier_name == "whitelist" else "search"
         if mode == "whitelist":
             print("[search] whitelist mode active, sourcing from curated channels")
             whitelist_channels = config.SOURCING.get("whitelist_channels", [])
