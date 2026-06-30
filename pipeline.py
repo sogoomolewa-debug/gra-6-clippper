@@ -214,19 +214,17 @@ def _process_single_video(queue: dict, video: dict, api_key: str) -> bool:
         duration = metadata["duration"]
         heatmap_data = metadata["heatmap"]
         
-        window = float(cfg.CLIP["max_duration_seconds"]) - 3.0
-        
         if not heatmap_data or len(heatmap_data) < 10:
-            print(f"[pipeline] no heatmap data for {video['video_id']} — falling back to random sampling")
-            from pipeline.heatmap import get_position_segments
-            # Get 3 segments spread across the video
-            raw_peaks = get_position_segments(duration, "unknown", segment_window=window)
-            # Format as (start, end, fake_intensity)
-            peaks = [(s, e, 0.5) for s, e in raw_peaks]
-            print(f"[pipeline] generated {len(peaks)} fallback segments")
-        else:
-            peaks = find_top_peaks(heatmap_data, window_duration=window, n=3)
-            print(f"[pipeline] found {len(peaks)} heatmap peaks")
+            print(f"[pipeline] no heatmap data for {video['video_id']} — skipping")
+            log_skip(video, "skipped_no_heatmap", "video has no YouTube heatmap data (insufficient views or too new)")
+            queue_manager.mark_processed(queue, video, "skipped_no_heatmap")
+            queue_manager.save_queue(queue)
+            commit_data_files()
+            return False
+
+        window = float(cfg.CLIP["max_duration_seconds"]) - 3.0
+        peaks = find_top_peaks(heatmap_data, window_duration=window, n=3)
+        print(f"[pipeline] found {len(peaks)} heatmap peaks")
 
         if not peaks:
             print(f"[pipeline] heatmap produced no valid peaks — skipping")
