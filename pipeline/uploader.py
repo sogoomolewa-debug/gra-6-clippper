@@ -75,6 +75,112 @@ def generate_description(
         return "#GTA6 #Shorts"
 
 
+def generate_engagement_comment(visual_description: str, moment_type: str = "") -> str:
+    """Generate a casual first comment to boost engagement.
+
+    Uses Groq to create a comment that sounds like a viewer reaction,
+    not a creator. Designed to prime rewatching and comment section activity.
+    """
+    try:
+        api_key = os.environ.get("GROQ_API_KEY", "")
+        if not api_key:
+            print("[upload] no GROQ_API_KEY — using fallback comment")
+            return "nah that ending got me 💀"
+
+        import requests
+        prompt = (
+            "Write ONE short casual YouTube comment (under 10 words) about this GTA clip. "
+            "Sound like a real viewer who just watched it, not the creator. "
+            "Use exactly 1 emoji at the end. "
+            "Reference the specific action — don't be generic. "
+            "Goal: make other viewers want to rewatch the clip. "
+            "Do NOT use quotes. Output ONLY the comment text.\n\n"
+            f"Visual description: {visual_description}\n"
+            f"Moment type: {moment_type}"
+        )
+
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": "llama-3.1-8b-instant",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 30,
+                "temperature": 0.9
+            },
+            timeout=15
+        )
+
+        if response.status_code == 200:
+            comment = response.json()["choices"][0]["message"]["content"].strip()
+            comment = comment.strip('"').strip("'")
+            print(f"[upload] engagement comment: {comment}")
+            return comment
+        else:
+            print(f"[upload] comment generation failed: HTTP {response.status_code}")
+            return "nah that ending got me 💀"
+    except Exception as e:
+        print(f"[upload] comment generation error: {e}")
+        return "nah that ending got me 💀"
+
+
+def get_youtube_client_for_comments():
+    """Build YouTube client with comment posting scope (youtube.force-ssl).
+
+    Separate from the upload client to avoid breaking uploads if comment
+    scope isn't authorized. Returns None on any auth failure.
+    """
+    try:
+        oauth_json = os.environ.get("YOUTUBE_OAUTH_JSON", "")
+        if not oauth_json:
+            return None
+
+        data = json.loads(oauth_json)
+        creds = google.oauth2.credentials.Credentials(
+            token=None,
+            refresh_token=data["refresh_token"],
+            token_uri=data["token_uri"],
+            client_id=data["client_id"],
+            client_secret=data["client_secret"],
+            scopes=["https://www.googleapis.com/auth/youtube.force-ssl"]
+        )
+        creds.refresh(google.auth.transport.requests.Request())
+        return googleapiclient.discovery.build("youtube", "v3", credentials=creds)
+    except Exception as e:
+        print(f"[upload] comment auth error: {e}")
+        return None
+
+
+def post_first_comment(video_id: str, comment_text: str) -> bool:
+    """Post a strategic first comment on the uploaded Short.
+
+    Non-fatal — if this fails for any reason (scope, quota, network),
+    the upload is unaffected. Logs the error and returns False.
+    """
+    try:
+        youtube = get_youtube_client_for_comments()
+        if youtube is None:
+            print("[upload] skipping comment — no comment-scoped client")
+            return False
+
+        youtube.commentThreads().insert(
+            part="snippet",
+            body={
+                "snippet": {
+                    "videoId": video_id,
+                    "topLevelComment": {
+                        "snippet": {"textOriginal": comment_text}
+                    }
+                }
+            }
+        ).execute()
+        print(f"[upload] ✅ first comment posted: '{comment_text}'")
+        return True
+    except Exception as e:
+        print(f"[upload] comment post error (non-fatal): {e}")
+        return False
+
+
 def upload_short(
     file_path: str,
     title: str,

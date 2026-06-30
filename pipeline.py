@@ -170,7 +170,7 @@ def run_pipeline() -> None:
         queue_manager.save_queue(queue)
 
         # STEP 4 — PROCESS VIDEOS (retry until one succeeds or queue is empty)
-        MAX_RETRIES = 5  # cap retries to stay within GitHub Actions timeout
+        MAX_RETRIES = 10  # cap retries to stay within GitHub Actions timeout
         produced = False
 
         for attempt in range(MAX_RETRIES):
@@ -307,7 +307,8 @@ def _process_single_video(queue: dict, video: dict, api_key: str) -> bool:
             viral_check = rag.score_viral_potential(
                 visual_description=analysis.get("description", ""),
                 timestamp_comments=[],
-                moment_type=analysis.get("moment_type", "other")
+                moment_type=analysis.get("moment_type", "other"),
+                viral_score_from_gemini=analysis.get("viral_score", 0)
             )
             analysis["_viral_check"] = viral_check
             rag_score = viral_check.get("score", 0)
@@ -377,6 +378,7 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
     try:
         global_start = analysis["global_start"]
         global_end = analysis["global_end"]
+        climax_sec = analysis.get("climax_sec", global_end)
         visual_description = analysis["description"]
         viral_score = analysis.get("viral_score", 5)
         peak_sec = analysis.get("_peak_sec", int(global_start))
@@ -432,10 +434,18 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
 
         # EDIT
         short_path = f"/tmp/short_{video['video_id']}.mp4"
+        # Loop engineering: end 0.3s after climax (mid-chaos) instead of at natural_end
+        min_clip = float(config.CLIP.get("min_duration_seconds", 10))
+        effective_end = min(climax_sec + 0.3, global_end)
+        if (effective_end - global_start) < min_clip:
+            print(f"[pipeline] climax_sec too early ({climax_sec:.1f}s) — using natural_end instead")
+            effective_end = global_end
+        print(f"[pipeline] loop engineering: climax={climax_sec:.1f}s, effective_end={effective_end:.1f}s (was {global_end:.1f}s)")
+
         if not editor.build_short(
             video_url=video["url"],
             global_start=global_start,
-            global_end=global_end,
+            global_end=effective_end,
             hook_audio=hook_audio,
             hook_text=hook_text,
             output_path=short_path,
@@ -467,6 +477,17 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
             queue_manager.requeue(queue, video)
             queue_manager.save_queue(queue)
             return False
+
+        # POST ENGAGEMENT COMMENT (non-fatal — upload is never affected)
+        if not dry_run and short_id:
+            try:
+                comment = uploader.generate_engagement_comment(
+                    visual_description=visual_description,
+                    moment_type=analysis.get("moment_type", "")
+                )
+                uploader.post_first_comment(short_id, comment)
+            except Exception as e:
+                print(f"[pipeline] engagement comment failed (non-fatal): {e}")
 
         # LOG
         log = load_performance_log()
@@ -505,6 +526,8 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
             "peak_sec": peak_sec,
             "global_start": global_start,
             "global_end": global_end,
+            "climax_sec": climax_sec,
+            "effective_end": effective_end,
             "status": "uploaded",
             "snapshots": {
                 "24h": {"views": 0, "likes": 0, "comments": 0},

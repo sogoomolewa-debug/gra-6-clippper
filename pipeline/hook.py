@@ -294,8 +294,8 @@ def get_hook_with_fallback(
             if validate_hook(hook):
                 words = hook.split()
                 if len(words) > 8:
-                    print(f"[hook] hook too long ({len(words)} words) — truncating")
-                    hook = " ".join(words[:7])
+                    print(f"[hook] hook too long ({len(words)} words) — truncating to 8")
+                    hook = " ".join(words[:8])
                 print(f"[hook] final: '{hook}' ({len(words)} words)")
                 return hook, style['name']
             
@@ -309,8 +309,8 @@ def get_hook_with_fallback(
     print(f"[hook] all generation attempts failed, using fallback: '{fallback_hook}'")
     words = fallback_hook.split()
     if len(words) > 8:
-        print(f"[hook] fallback hook too long ({len(words)} words) — truncating")
-        fallback_hook = " ".join(words[:7])
+        print(f"[hook] fallback hook too long ({len(words)} words) — truncating to 8")
+        fallback_hook = " ".join(words[:8])
     print(f"[hook] final fallback: '{fallback_hook}' ({len(words)} words)")
     return fallback_hook, "fallback"
 

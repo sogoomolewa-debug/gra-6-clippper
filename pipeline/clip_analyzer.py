@@ -100,15 +100,54 @@ def upload_to_gemini(video_path: str) -> object | None:
 
 class VideoAnalysis(BaseModel):
     is_gameplay: bool = Field(description="True if the video segment shows actual direct game graphics specifically from a Grand Theft Auto game (GTA V, GTA Online, GTA 6). False if it is a talking head, reaction video, or gameplay from any other game like Fortnite or Minecraft.")
-    is_punchy: bool = Field(description="True if this moment can be fully understood, enjoyed, and impactful in under 15 seconds. False if it requires a long buildup or extended context to make sense (e.g., a 40-second conversation or a long chase).")
+    is_punchy: bool = Field(description="True if this moment can be fully understood, enjoyed, and impactful in under 20 seconds. False if it requires a long buildup or extended context to make sense (e.g., a 40-second conversation or a long chase).")
     punchiness_reasoning: str = Field(description="One sentence explaining why this clip is or is not punchy.")
     description: str = Field(description="A single sentence describing the visual action at the peak timestamp.")
     natural_start: float = Field(description="The timestamp in seconds where the action peak's setup naturally begins.")
     natural_end: float = Field(description="The timestamp in seconds where the reaction to the action peak naturally ends.")
     viral_score: int = Field(description="Rate the viral potential of this specific moment from 1 to 10. 1-3: Mundane gameplay (driving normally, walking, menus, inventory). 4-5: Mildly interesting (small crash, basic combat, minor stunt). 6-7: Notable moment (impressive stunt, funny physics, unexpected outcome). 8-10: Exceptional (jaw-dropping physics glitch, perfect stunt landing, chain reaction explosion, hilarious NPC behavior). Only score 8+ if a typical viewer would genuinely want to rewatch or share this moment.")
-    moment_type: str = Field(description="The type of moment in this clip. Choose the single most accurate: ragdoll, impossible_survival, physics_glitch, npc_behavior, stunt_success, stunt_fail, collision, impossible_height, speed_impact, chain_reaction, character_interaction, environmental_reaction, ordinary_interaction, mundane_gameplay, other. Use 'ordinary_interaction' for common expected gameplay actions (e.g. character kicking an object, normal vehicle collision). Use 'mundane_gameplay' for content with no surprising physics or outcome.")
-    action_fills_clip: bool = Field(description="True ONLY if exciting visual action (stunts, crashes, physics, comedy) is happening throughout the ENTIRE clip window from natural_start to natural_end with zero dead time. False if the interesting action only occupies a few seconds and the rest is uneventful driving, walking, or static scenery.")
-    loop_worthy: bool = Field(description="True if the clip ends at a moment that would make a viewer want to immediately rewatch — a sudden impact, unexpected outcome, or comedic punchline right at the cut. False if the clip ends during a calm, resolved, or uneventful moment.")
+    moment_type: str = Field(
+        description=(
+            "Classify by the VISUAL OUTCOME viewers see — NOT the cause or action. "
+            "Focus on what physically results from the moment, not what triggered it. "
+            "\n\nCLASSIFICATION RULES:"
+            "\n- If a character's body launches, tumbles, or spins from physics: 'ragdoll'"
+            "\n- If someone falls from a great or impossible height: 'impossible_height'"
+            "\n- If vehicle or character physics behave impossibly: 'physics_glitch'"
+            "\n- If a vehicle launches off terrain or ramp: 'stunt_fail' or 'stunt_success'"
+            "\n- If multiple objects chain react: 'chain_reaction'"
+            "\n- If NPC does unexpected autonomous behavior: 'npc_behavior'"
+            "\n- Only use 'character_interaction' when the moment shows NORMAL EXPECTED "
+            "gameplay with NO dramatic physics outcome — e.g. routine combat with no "
+            "ragdoll, NPC dialogue, characters walking. "
+            "\n\nCRITICAL EXAMPLES:"
+            "\n- Hulk punches Spider-Man → Spider-Man ragdolls off skyscraper = 'ragdoll'"
+            "\n- Car hits ramp and spins wildly = 'stunt_fail'"
+            "\n- Character survives fall from impossible height = 'impossible_survival'"
+            "\n- Spider-Man kicks truck, truck does nothing unusual = 'character_interaction'"
+            "\n- NPC spontaneously launches into air = 'npc_behavior'"
+            "\nWhen in doubt between 'character_interaction' and a physics type: "
+            "choose the physics type if any dramatic body movement results."
+        )
+    )
+    action_fills_clip: bool = Field(description="True if the clip window from natural_start to natural_end is engaging throughout. The first 1-3 seconds may show setup/approach (a car approaching a ramp, a character running toward something) — this counts as engaging because it builds anticipation. False ONLY if there are extended dead segments (5+ seconds of uneventful driving, walking, menus, or static scenery with no building tension).")
+    loop_worthy: bool = Field(
+        description=(
+            "True if the clip ends DURING maximum action — mid-ragdoll, mid-explosion, "
+            "mid-collision, mid-freefall. The best loops end at climax_sec, not after resolution. "
+            "Clips that end during calm aftermath are NOT loop-worthy even if the climax was impressive. "
+            "A clip that cuts mid-flight is more loop-worthy than one that shows the landing."
+        )
+    )
+    climax_sec: float = Field(
+        description=(
+            "The exact timestamp (in seconds within this segment) of MAXIMUM visual chaos — "
+            "the single frame where the action is most intense. "
+            "This is the impact frame, the apex of the ragdoll arc, the moment of collision, "
+            "the peak of the explosion — NOT the setup before it and NOT the aftermath/resolution after it. "
+            "Must be between natural_start and natural_end."
+        )
+    )
 
 
 def analyze_with_gemini(
@@ -127,27 +166,35 @@ def analyze_with_gemini(
             f"A viewer left this comment about what happens at {peak_sec_local:.0f} seconds: '{comment_context}'. "
             f"Perform the following analysis tasks:\n"
             f"1. Determine if this clip shows actual, direct in-game gameplay graphics specifically from a Grand Theft Auto game (GTA V, GTA Online, GTA 6). If it is a talking head, news/speculation slides, podcast, commentary show, reaction video, OR gameplay from any other game (like Fortnite, Minecraft, Call of Duty), set is_gameplay to false.\n"
-            f"2. Determine if the moment is 'punchy'. Can this moment be fully understood, enjoyed, and impactful in under 15 seconds? If it requires a long buildup or extended context to make sense (e.g., a 40-second conversation or a long chase), set is_punchy to false. We only want fast, punchy action or immediate comedy.\n"
+            f"2. Determine if the moment is 'punchy'. Can this moment be fully understood, enjoyed, and impactful in under 20 seconds? If it requires a long buildup or extended context to make sense (e.g., a 40-second conversation or a long chase), set is_punchy to false. We only want fast, punchy action or immediate comedy.\n"
             f"3. Describe in exactly ONE sentence what visually happens at {peak_sec_local:.0f} seconds. Focus on the physical action, stunt, crash, or character interaction (e.g., car collisions, character physics/ragdoll launches, stunt failures or successes, explosive chain reactions) rather than static scenery. Be specific about the vehicles, characters, and motion involved. Avoid generic descriptions (e.g., do NOT just say 'a player drives a car' or 'gameplay footage showing a scene').\n"
             f"4. Find where the peak action at {peak_sec_local:.0f} seconds naturally begins (setup) and naturally ends (reaction complete). "
-            f"Requirements: window must be 8-10 seconds long — just the core moment, tight and punchy, no buildup, no aftermath. Peak at {peak_sec_local:.0f}s must be inside the window.\n"
+            f"Requirements: window must be 10-15 seconds long. Include 1-3 seconds of setup/approach BEFORE the action starts — "
+            f"this gives viewers context and builds anticipation. Peak at {peak_sec_local:.0f}s must be inside the window.\n"
             f"5. Rate the viral potential of this moment on a scale of 1-10. "
             f"Focus on: Would a casual scroller stop for this? Would they rewatch it? Would they send it to a friend? "
             f"Only score 8+ for truly jaw-dropping or hilarious moments.\n"
-            f"6. Classify the moment type using one of these exact values: "
-            f"ragdoll, impossible_survival, physics_glitch, npc_behavior, "
-            f"stunt_success, stunt_fail, collision, impossible_height, "
-            f"speed_impact, chain_reaction, character_interaction, "
-            f"environmental_reaction, ordinary_interaction, mundane_gameplay, other. "
-            f"Be honest — if this is a character doing something expected "
-            f"(kicking an object, falling from a predictable height, normal combat) "
-            f"use ordinary_interaction or mundane_gameplay.\n"
+            f"6. Classify the moment_type by its VISUAL OUTCOME not its cause. "
+            f"If the action results in ragdoll physics: use 'ragdoll'. "
+            f"If it results in a character falling from great height: 'impossible_height'. "
+            f"If vehicle physics break: 'physics_glitch'. "
+            f"A punch that launches a character into freefall = 'ragdoll' not 'character_interaction'. "
+            f"Only use 'character_interaction' for mundane expected interactions with no dramatic physics. "
+            f"Available types: ragdoll | impossible_survival | physics_glitch | npc_behavior | "
+            f"stunt_success | stunt_fail | collision | impossible_height | speed_impact | "
+            f"chain_reaction | character_interaction | environmental_reaction | "
+            f"ordinary_interaction | mundane_gameplay | other\n"
             f"7. Action density: Does exciting visual action fill the ENTIRE window from natural_start to natural_end? "
             f"If the peak action only lasts 3-4 seconds but the window is 10 seconds, the rest is dead time — set action_fills_clip to false. "
             f"Only set true if every second of the window has something visually engaging happening.\n"
             f"8. Loop potential: Does the clip end at a moment that triggers an immediate rewatch? "
             f"The best viral clips end right at the peak of impact, comedy, or surprise — making the viewer's brain want to see it again instantly. "
-            f"If the clip just fades out or ends during a calm moment, set loop_worthy to false."
+            f"If the clip just fades out or ends during a calm moment, set loop_worthy to false.\n"
+            f"9. Identify the climax timestamp: the EXACT second within the clip window where "
+            f"the visual chaos peaks — the frame of impact, the apex of the ragdoll, "
+            f"the moment the car leaves the ground. This must be between natural_start and natural_end. "
+            f"This is NOT the same as natural_end — natural_end is where the REACTION completes, "
+            f"climax_sec is where the ACTION peaks."
         )
 
         response = None

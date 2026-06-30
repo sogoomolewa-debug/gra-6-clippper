@@ -39,10 +39,10 @@ QUEUE = {
 }
 
 CLIP = {
-    "max_duration_seconds": 10,  # Tightened from 12 — less dead time, more loops
-    "min_duration_seconds": 8,
+    "max_duration_seconds": 15,  # Raised from 10 — room for setup + climax + mid-chaos cut
+    "min_duration_seconds": 10,  # Raised from 8 — floor matches old ceiling
     "hook_duration_seconds": 3,
-    "max_hook_audio_seconds": 2.5,   # hard ceiling — ffmpeg atempo if TTS exceeds this
+    "max_hook_audio_seconds": 3.0,   # hard ceiling — raised from 2.5 to match RAG data (avg 2.5s, 44% exceed 2.5)
     "blur_intro_enabled": True,  # NEW: Set to False for instant-action hooks
     "output_width": 1080,
     "output_height": 1920,
@@ -191,7 +191,7 @@ CONTENT_PROFILES = {
             "speed_default": 1.15,
         },
         "hook": {
-            "max_words": 5,
+            "max_words": 8,  # Raised from 5 — RAG data shows peak at 8 words (19.5% of proven hooks)
             "prompt_family": "reference_casual",
         },
         "hashtags": {

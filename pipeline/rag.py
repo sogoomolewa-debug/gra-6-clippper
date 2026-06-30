@@ -127,7 +127,8 @@ def score_viral_potential(
     visual_description: str,
     timestamp_comments: list[dict] = [],
     moment_type: str = "",
-    min_similarity_threshold: float = 0.45
+    viral_score_from_gemini: int = 0,
+    min_similarity_threshold: float = 0.28
 ) -> dict:
     """
     Score a GTA clip's viral potential against the HecticSG reference library.
@@ -138,9 +139,11 @@ def score_viral_potential(
     CALIBRATION NOTE: all-MiniLM-L6-v2 produces a baseline similarity of
     ~0.40-0.50 for any pair of gaming-related descriptions regardless of
     viral quality.  The scoring formula accounts for this by:
-      - Using a higher hard threshold (0.45 instead of 0.28)
+      - Using a hard threshold of 0.28 (lowered from 0.45 to accept novel clips)
       - Weighting trigger scores by how much similarity EXCEEDS baseline
-      - Hard-penalising boring moment_type classifications
+      - Penalising only genuinely mundane moment_types; character_interaction
+        penalty is conditional on Gemini's viral score
+      - Allowing Gemini high-confidence scores (8+) to override RAG rejections
 
     Returns:
         {
@@ -195,43 +198,49 @@ def score_viral_potential(
         top_similarity = similar[0]["similarity"]
         avg_similarity = sum(r["similarity"] for r in similar) / len(similar)
 
-        # Hard threshold — all-MiniLM-L6-v2 gives ~0.40 baseline for ANY
-        # gaming text, so we need 0.50+ to indicate a meaningful match
+        # Hard threshold — but Gemini high-confidence overrides it
         if top_similarity < min_similarity_threshold:
-            return {
-                "score": 2.0,
-                "verdict": "reject",
-                "reason": f"moment matches no known viral pattern (best similarity: {top_similarity:.3f})",
-                "top_similarity": top_similarity,
-                "matched_triggers": [],
-                "rejection_detail": (
-                    f"Visual description: '{visual_description[:100]}'. "
-                    f"No HecticSG reference entry matched above {min_similarity_threshold} threshold. "
-                    f"This moment likely has no strong psychological trigger."
-                )
-            }
+            if viral_score_from_gemini >= 8:
+                print(f"[rag] ⚠️ Similarity {top_similarity:.3f} below {min_similarity_threshold} "
+                      f"threshold but Gemini scored {viral_score_from_gemini}/10 — continuing")
+            else:
+                return {
+                    "score": 2.0,
+                    "verdict": "reject",
+                    "reason": f"moment matches no known viral pattern (best similarity: {top_similarity:.3f})",
+                    "top_similarity": top_similarity,
+                    "matched_triggers": [],
+                    "rejection_detail": (
+                        f"Visual description: '{visual_description[:100]}'. "
+                        f"No HecticSG reference entry matched above {min_similarity_threshold} threshold. "
+                        f"This moment likely has no strong psychological trigger."
+                    )
+                }
 
         # --- SIGNAL 2: Moment type penalty ---
-        # Gemini classifies the moment type; boring types get a hard penalty
-        MOMENT_TYPE_MODIFIERS = {
-            # Penalties for boring types
-            "ordinary_interaction": -3.0,
-            "mundane_gameplay": -4.0,
-            "character_interaction": -1.5,
-            # Boosts for exciting types — these are the viral moment types
-            "ragdoll": 2.0,
-            "physics_glitch": 2.0,
-            "impossible_survival": 2.0,
-            "impossible_height": 1.5,
-            "chain_reaction": 1.5,
-            "npc_behavior": 1.0,
-            "stunt_success": 0.5,
-            "stunt_fail": 0.5,
-            "speed_impact": 0.5,
-            "collision": 0.0,
-            "environmental_reaction": 0.0,
+        # ONLY penalise genuinely mundane types.
+        # Do NOT penalise types that describe physics outcomes.
+        MUNDANE_TYPES = {"ordinary_interaction", "mundane_gameplay"}
+        PHYSICS_TYPES = {
+            "ragdoll", "impossible_survival", "physics_glitch",
+            "impossible_height", "chain_reaction", "npc_behavior",
+            "stunt_fail", "stunt_success", "speed_impact", "collision"
         }
-        moment_penalty = MOMENT_TYPE_MODIFIERS.get(moment_type, 0.0)
+
+        moment_penalty = 0.0
+        if moment_type in MUNDANE_TYPES:
+            moment_penalty = -2.0
+            print(f"[rag] moment_type penalty: -2.0 ({moment_type} — mundane)")
+        elif moment_type in PHYSICS_TYPES:
+            moment_penalty = 0.5  # Small boost for confirmed physics moments
+            print(f"[rag] moment_type boost: +0.5 ({moment_type} — physics outcome)")
+        elif moment_type == "character_interaction":
+            # Ambiguous — only penalise if Gemini also scored it low
+            if viral_score_from_gemini < 6:
+                moment_penalty = -1.0
+                print(f"[rag] moment_type penalty: -1.0 (character_interaction + low Gemini score)")
+            else:
+                print(f"[rag] moment_type: no penalty (character_interaction but Gemini={viral_score_from_gemini}/10)")
 
         # --- SIGNAL 3: Psychological trigger quality ---
         # Weight triggers by how much similarity EXCEEDS baseline (0.40)
@@ -332,11 +341,39 @@ def score_viral_potential(
                 f"interactions, mundane physics without impossible outcomes."
             )
 
+        # ── GEMINI HIGH CONFIDENCE OVERRIDE ──────────────────────────
+        # If Gemini watched the actual clip and scored it 8+ viral,
+        # RAG cannot fully reject — maximum downgrade is "uncertain".
+        # Hierarchy: Gemini saw the clip. RAG matches patterns blindly.
+        # A 9/10 Gemini score on a ragdoll freefall should never be blocked
+        # by pattern similarity scores.
+
+        if verdict == "reject" and viral_score_from_gemini >= 8:
+            old_reason = reason
+            verdict = "uncertain"
+            reason = (
+                f"RAG pattern match weak (RAG score: {score:.1f}/10) but "
+                f"Gemini scored this clip {viral_score_from_gemini}/10 viral — "
+                f"proceeding with caution. RAG reason was: {old_reason}"
+            )
+            print(f"[rag] ⚠️ Gemini override: viral_score={viral_score_from_gemini} "
+                  f"prevents RAG reject → downgraded to uncertain")
+
+        # Also apply Gemini boost to uncertain when Gemini is very confident
+        if verdict == "uncertain" and viral_score_from_gemini >= 9:
+            verdict = "approve"
+            reason = (
+                f"Gemini scored {viral_score_from_gemini}/10 — overriding uncertain "
+                f"to approve (RAG score was {score:.1f}/10)"
+            )
+            print(f"[rag] ✅ Gemini 9+/10 upgrades uncertain → approve")
+
+        # ── END OVERRIDE ──────────────────────────────────────────────
+
         print(f"[rag] viral_potential: {score}/10 | verdict: {verdict}")
         print(f"[rag] triggers matched: {matched_triggers[:3]}")
         print(f"[rag] top similarity: {top_similarity:.3f} (excess: {similarity_excess:.3f})")
-        if moment_penalty:
-            print(f"[rag] moment_type penalty: {moment_penalty} ({moment_type})")
+        # moment_type penalty already logged in SIGNAL 2 block above
 
         return {
             "score": score,
