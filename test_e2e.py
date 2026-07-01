@@ -326,21 +326,25 @@ def run_e2e_test() -> None:
 
     # 3. Generate hook dynamically via Groq
     print("\n[test] 2. Generating hook dynamically via Groq...")
-    hook_text, hook_style = hook.get_hook_with_fallback(
+    hook_data = hook.get_hook_with_fallback(
         video_title="GTA 6 Money Glitch Gameplay",
         visual_description=description_text,
         transcript_context="",
         timestamp_comments=[{"text": comment_context, "like_count": 100}]
     )
+    hook_text = hook_data["hook_text"]
+    hook_style = hook_data.get("hook_mode", "contrast")
+    hook_emphasis_word = hook_data.get("emphasis_word", "")
     print(f"[test] Generated hook ({hook_style}): {hook_text}")
 
     # 4. Generate actual voice hook (or fallback to silent wav on failure)
     print("\n[test] 3. Generating voice hook...")
     pathlib.Path(HOOK_AUDIO_PATH).unlink(missing_ok=True)
-    voice_success = voice.generate_voice(hook_text, HOOK_AUDIO_PATH)
+    voice_success, word_timings = voice.generate_voice(hook_text, HOOK_AUDIO_PATH)
     if not voice_success or not pathlib.Path(HOOK_AUDIO_PATH).exists():
         print("[test] ⚠️ Voice generation failed (likely billing/rate limit). Using fallback silent WAV.")
         generate_fallback_silent_wav(HOOK_AUDIO_PATH, duration_sec=3.0)
+        word_timings = []
     else:
         print(f"[test] ✓ Voice generated successfully: {HOOK_AUDIO_PATH}")
 
@@ -354,7 +358,9 @@ def run_e2e_test() -> None:
         hook_text=hook_text,
         output_path=OUTPUT_PATH,
         cached_video_path=CACHED_VIDEO_PATH,
-        original_channel="Hazardous"
+        original_channel="Hazardous",
+        word_timings=word_timings,
+        hook_emphasis_word=hook_emphasis_word
     )
 
     if not success:

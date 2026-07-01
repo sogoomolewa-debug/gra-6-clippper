@@ -425,12 +425,25 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
         transcript_context = transcript.get_video_context(video["url"], float(peak_sec))
 
         # HOOK
-        hook_text, hook_style = hook.get_hook_with_fallback(
+        hook_data = hook.get_hook_with_fallback(
             video_title=video["title"],
             visual_description=visual_description,
             transcript_context=transcript_context,
             timestamp_comments=timestamp_comments
         )
+        hook_text = hook_data.get("hook_text", "")
+        hook_emphasis_word = hook_data.get("emphasis_word", "")
+        hook_mode = hook_data.get("hook_mode", "legacy")
+        
+        # Determine hook_structure_tag for A/B analytics
+        contrast_markers = {"actually", "shouldn't", "no way", "somehow", "barely", 
+                            "survives", "broke", "never", "still", "wouldn't", "nobody"}
+        has_contrast = any(marker in hook_text.lower() for marker in contrast_markers)
+        hook_structure_tag = "contrast" if has_contrast or hook_data.get("contrast_type") in ["implied", "stated"] else "description"
+        
+        # Save to video dict for queue_manager.mark_processed
+        video["hook_structure_tag"] = hook_structure_tag
+        video["hook_mode"] = hook_mode
 
         # VIRAL TITLE
         raw_title = hook.generate_viral_title(
@@ -447,7 +460,8 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
 
         # VOICE
         hook_audio = f"/tmp/hook_{video['video_id']}.wav"
-        if not voice.generate_voice(hook_text, hook_audio):
+        voice_success, word_timings = voice.generate_voice(hook_text, hook_audio)
+        if not voice_success:
             print("[pipeline] ❌ voice generation failed — requeueing")
             queue_manager.requeue(queue, video)
             queue_manager.save_queue(queue)
@@ -470,12 +484,40 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
             hook_audio=hook_audio,
             hook_text=hook_text,
             output_path=short_path,
-            original_channel=video.get("channel_title", "")
+            cached_video_path="",
+            original_channel=video.get("channel_title", ""),
+            word_timings=word_timings,
+            hook_emphasis_word=hook_emphasis_word
         ):
             print("[pipeline] ❌ video editing failed — requeueing")
             queue_manager.requeue(queue, video)
             queue_manager.save_queue(queue)
             return False
+
+        # POST-PROCESSING: CTA & LOOP SEAM
+        cta_caption_used = False
+        loop_edit_technique = "none"
+
+        # CTA Caption
+        # We put it in the last 2 seconds of the total short
+        cta_duration = 2.0
+        total_dur = editor.get_audio_duration(short_path)
+        cta_start = total_dur - cta_duration
+        if cta_start > 0:
+            cta_caption_used = True
+            cta_tmp = short_path.replace(".mp4", "_cta.mp4")
+            if editor.burn_cta_caption(short_path, "subscribe", cta_start, cta_duration, cta_tmp):
+                import shutil
+                shutil.move(cta_tmp, short_path)
+            
+        # Loop Seam
+        enable_loop_seam = config.CLIP.get("enable_loop_seam", False)
+        if enable_loop_seam:
+            loop_edit_technique = "crossfade_seam"
+            seam_tmp = short_path.replace(".mp4", "_seam.mp4")
+            if editor.apply_loop_seam_crossfade(short_path, seam_tmp):
+                import shutil
+                shutil.move(seam_tmp, short_path)
 
         # UPLOAD
         dry_run = getattr(config, "DRY_RUN", True)
@@ -532,9 +574,15 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
             "source_video_views": video.get("view_count", 0),
             "source_video_age_hours": round(age_hours, 1),
             "hook_text": hook_text,
-            "hook_style": hook_style,
+            "hook_style": "structured", # No longer uses the 4 random styles
             "hook_delivery": getattr(config, "CONTENT_MODE", "tts_narrated"),
             "hook_word_count": len(hook_text.split()),
+            "hook_structure_tag": hook_structure_tag,
+            "hook_mode": hook_mode,
+            "hook_quality_score": hook_data.get("quality_score", 0.0),
+            "hook_score_attempts": hook_data.get("score_attempts", 1),
+            "cta_caption_used": cta_caption_used,
+            "loop_edit_technique": loop_edit_technique,
             "peak_start": global_start,
             "peak_position_pct": peak_pct,
             "clip_duration": round(global_end - global_start, 1),

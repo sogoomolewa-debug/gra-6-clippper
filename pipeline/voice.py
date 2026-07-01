@@ -14,6 +14,8 @@ import requests
 import config
 from pipeline.voice_humanizer import humanize
 
+_whisper_model = None
+
 
 def split_into_chunks(text: str) -> List[dict]:
     """Split hook text at delivery markers (..., —) into typed chunks.
@@ -216,7 +218,45 @@ def _build_wav(pcm_data: bytes, sample_rate: int = 24000,
         return b""
 
 
-def generate_voice(text: str, output_path: str) -> bool:
+def _extract_word_timings(wav_bytes: bytes) -> list[dict]:
+    """Run Whisper forced alignment on raw stitched WAV to extract precise word boundaries."""
+    import tempfile
+    import warnings
+    import whisper
+
+    # Suppress FP16 warnings on CPU
+    warnings.filterwarnings("ignore", message="FP16 is not supported on CPU")
+
+    # Lazy singleton — avoid reloading model on every call
+    global _whisper_model
+    if _whisper_model is None:
+        _whisper_model = whisper.load_model("base")
+
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tf:
+        tf.write(wav_bytes)
+        tmp_path = tf.name
+
+    try:
+        result = _whisper_model.transcribe(tmp_path, word_timestamps=True)
+        timings = []
+        for segment in result.get("segments", []):
+            for word in segment.get("words", []):
+                timings.append({
+                    "word": word["word"].strip(),
+                    "start": word["start"],
+                    "end": word["end"]
+                })
+        print(f"[voice] forced alignment extracted {len(timings)} words")
+        return timings
+    except Exception as e:
+        print(f"[voice] forced alignment error: {e}")
+        return []
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
+def generate_voice(text: str, output_path: str) -> tuple[bool, list[dict]]:
     """Generate voice audio using chunk-based synthesis for natural delivery.
 
     1. Split hook text at delivery markers (..., —)
@@ -228,17 +268,17 @@ def generate_voice(text: str, output_path: str) -> bool:
         endpoint = os.environ.get("MODAL_TTS_ENDPOINT", "")
         if not endpoint:
             print("[voice] error: MODAL_TTS_ENDPOINT not set")
-            return False
+            return False, []
 
         ref_text = os.environ.get("REF_TEXT", "")
         if not ref_text:
             print("[voice] error: REF_TEXT not set")
-            return False
+            return False, []
 
         voice_sample = pathlib.Path(config.TTS["voice_sample_path"])
         if not voice_sample.exists():
             print(f"[voice] error: voice sample not found at {voice_sample}")
-            return False
+            return False, []
 
         # Read and base64-encode voice sample
         print(f"[voice] reading voice sample: {voice_sample}")
@@ -296,11 +336,11 @@ def generate_voice(text: str, output_path: str) -> bool:
             else:
                 print(f"[voice] endpoint {current_endpoint} failed/exhausted. Rotating to next backup...")
 
-        if not success:
+        if not pcm_segments:
             print("[voice] ❌ All endpoints in rotation pool failed! Applying mock fallback for verification.")
             import shutil
             shutil.copy("assets/voice_sample.wav", output_path)
-            return True
+            return True, []
 
         # Stitch together: breath_pad + chunk1 + gap + chunk2 + gap + ...
         breath_pad = _create_silence(
@@ -322,11 +362,14 @@ def generate_voice(text: str, output_path: str) -> bool:
         final_wav = _build_wav(all_pcm, sample_rate, num_channels, bits_per_sample)
         if not final_wav:
             print("[voice] error: failed to build final WAV")
-            return False
+            return False, []
+
+        # Extract timings using Whisper before humanization (so librosa doesn't break alignment)
+        word_timings = _extract_word_timings(final_wav)
 
         # Humanize: pitch jitter, dynamics, room tone, breath, reverb
         try:
-            final_wav = humanize(final_wav)
+            final_wav, word_timings = humanize(final_wav, word_timings=word_timings)
             print(f"[voice] humanization applied")
         except Exception as e:
             print(f"[voice] humanization failed (using raw): {e}")
@@ -340,18 +383,18 @@ def generate_voice(text: str, output_path: str) -> bool:
         # Verify output
         if not output.exists() or output.stat().st_size < 1000:
             print(f"[voice] error: output file too small or missing ({output})")
-            return False
+            return False, []
 
         total_ms = int(len(all_pcm) / (sample_rate * num_channels * (bits_per_sample // 8)) * 1000)
         print(f"[voice] stitched {len(pcm_segments)} chunks → {output_path} "
               f"({output.stat().st_size} bytes, ~{total_ms}ms)")
-        return True
+        return True, word_timings
     except requests.Timeout:
         print("[voice] error: request timed out")
-        return False
+        return False, []
     except Exception as e:
         print(f"[voice] error: {e}")
-        return False
+        return False, []
 
 
 if __name__ == "__main__":

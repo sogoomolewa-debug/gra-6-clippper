@@ -248,33 +248,31 @@ def burn_caption(
             
         wrapped_text = wrap_text_by_chars(
             text,
-            max_chars=int(config.get_profile_value("caption_max_chars", 18)),
+            max_chars=int(config.get_profile_value("caption_max_chars", 18))
         )
-        
-        # Write text to temp file — eliminates all ffmpeg escaping issues
         text_file = _write_textfile(wrapped_text)
         escaped_path = text_file.replace(":", "\\:")
         
-        drawtext = (
+        drawtext_filter = (
             f"drawtext=textfile='{escaped_path}':"
             f"fontfile='{font_path_abs}':"
             f"fontsize={fontsize}:"
             f"fontcolor=white:"
             f"borderw={outline_w}:"
             f"bordercolor={outline_color}:"
-            f"shadowx={shadow_x}:"
-            f"shadowy={shadow_y}:"
             f"shadowcolor={shadow_color}:"
-            f"x=(w-text_w)/2:y=(h-text_h)/2:"
-            f"line_spacing=15"
+            f"shadowx={shadow_x}:shadowy={shadow_y}:"
+            f"x=(w-text_w)/2:y=(h-text_h)/2"
         )
+        
         cmd = [
             "ffmpeg", "-y", "-i", input_path,
-            "-vf", drawtext,
+            "-vf", drawtext_filter,
             "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
             "-c:a", "copy",
             output_path
         ]
+        
         result = run_ffmpeg(cmd, "burn_caption")
         pathlib.Path(text_file).unlink(missing_ok=True)
         return result
@@ -282,6 +280,53 @@ def burn_caption(
         print(f"[editor] burn_caption error: {e}")
         return False
 
+
+def burn_karaoke_caption(
+    input_path: str,
+    word_timings: list[dict],
+    emphasis_word: str,
+    output_path: str
+) -> bool:
+    """Burn word-by-word karaoke captions with scaling and coloring using PIL + FFmpeg."""
+    try:
+        from pipeline.karaoke import create_karaoke_concat
+        
+        font_path = config.CLIP.get("font_path", "assets/Oswald-Bold.ttf")
+        font_path_abs = str(pathlib.Path(font_path).absolute())
+        fontsize = int(config.get_profile_value("font_size_hook", config.CLIP.get("font_size_hook", 90)))
+        
+        # Get video duration
+        video_dur = get_audio_duration(input_path)
+        
+        tmp_dir = pathlib.Path(tempfile.mkdtemp())
+        concat_txt = create_karaoke_concat(
+            word_timings,
+            emphasis_word,
+            font_path_abs,
+            fontsize,
+            str(tmp_dir),
+            video_dur
+        )
+        
+        # Overlay the concat video onto the background video
+        cmd = [
+            "ffmpeg", "-y",
+            "-i", input_path,
+            "-f", "concat", "-safe", "0", "-i", concat_txt,
+            "-filter_complex", "[0:v][1:v]overlay=0:0:format=auto,format=yuv420p[v]",
+            "-map", "[v]",
+            "-map", "0:a:0?",
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
+            "-c:a", "copy",
+            output_path
+        ]
+        
+        result = run_ffmpeg(cmd, "burn_karaoke_caption")
+        shutil.rmtree(str(tmp_dir), ignore_errors=True)
+        return result
+    except Exception as e:
+        print(f"[editor] karaoke caption error: {e}")
+        return False
 
 def burn_word_by_word_caption(
     input_path: str,
@@ -353,6 +398,83 @@ def prepare_caption_words(text: str) -> list[str]:
     return cleaned.split()
 
 
+def burn_cta_caption(
+    input_path: str,
+    text: str,
+    start_time: float,
+    duration: float,
+    output_path: str
+) -> bool:
+    """Burn a silent CTA caption at the bottom of the screen."""
+    try:
+        font_path = config.CLIP.get("font_path", "assets/Oswald-Bold.ttf")
+        font_path_abs = str(pathlib.Path(font_path).absolute())
+        fontsize = 75
+
+        display_text = text.upper()
+        text_file = _write_textfile(display_text)
+        escaped_path = text_file.replace(":", "\\\\:")
+
+        cmd = [
+            "ffmpeg", "-y", "-i", input_path,
+            "-vf", (
+                f"drawtext=textfile='{escaped_path}':"
+                f"fontfile='{font_path_abs}':"
+                f"fontsize={fontsize}:"
+                f"fontcolor=white:"
+                f"borderw=4:"
+                f"bordercolor=black:"
+                f"x=(w-text_w)/2:y=(h-text_h)*0.85:"
+                f"enable='between(t,{start_time:.3f},{start_time+duration:.3f})'"
+            ),
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
+            "-c:a", "copy",
+            output_path
+        ]
+        result = run_ffmpeg(cmd, "burn_cta_caption")
+        pathlib.Path(text_file).unlink(missing_ok=True)
+        return result
+    except Exception as e:
+        print(f"[editor] burn_cta_caption error: {e}")
+        return False
+
+
+def apply_loop_seam_crossfade(input_path: str, output_path: str) -> bool:
+    """Cut the tail of the video and crossfade it over the head for a seamless loop."""
+    try:
+        dur = get_audio_duration(input_path)
+        xfade = float(config.CLIP.get("loop_seam_crossfade_duration", 0.2))
+        
+        if dur <= xfade * 2:
+            print("[editor] video too short for loop seam")
+            return False
+            
+        cut_point = dur - xfade
+        
+        filter_complex = (
+            f"[0:v]trim=start={cut_point:.3f}:end={dur:.3f},setpts=PTS-STARTPTS[tail_v]; "
+            f"[0:a]atrim=start={cut_point:.3f}:end={dur:.3f},asetpts=PTS-STARTPTS[tail_a]; "
+            f"[0:v]trim=start=0:end={cut_point:.3f},setpts=PTS-STARTPTS[main_v]; "
+            f"[0:a]atrim=start=0:end={cut_point:.3f},asetpts=PTS-STARTPTS[main_a]; "
+            f"[tail_v][main_v]xfade=transition=fade:duration={xfade:.3f}:offset=0[v]; "
+            f"[tail_a][main_a]acrossfade=d={xfade:.3f}[a]"
+        )
+        
+        cmd = [
+            "ffmpeg", "-y", "-i", input_path,
+            "-filter_complex", filter_complex,
+            "-map", "[v]", "-map", "[a]",
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
+            "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
+            output_path
+        ]
+        return run_ffmpeg(cmd, "apply_loop_seam_crossfade")
+    except Exception as e:
+        print(f"[editor] apply_loop_seam_crossfade error: {e}")
+        return False
+
+
+
 def concatenate_clips(
     clip1_path: str,
     clip2_path: str,
@@ -387,7 +509,9 @@ def build_short(
     hook_text: str,
     output_path: str,
     cached_video_path: str = "", # If set, skip download and use this file
-    original_channel: str = ""   # Original video creator for watermark credit
+    original_channel: str = "",  # Original video creator for watermark credit
+    word_timings: list[dict] = None,
+    hook_emphasis_word: str = ""
 ) -> bool:
     """
     OPTION B — Separate backdrop approach (matches reference creator format).
@@ -480,11 +604,15 @@ def build_short(
 
         # Burn captions onto backdrop
         hook_final = tmp / "hook_final.mp4"
-        prompt_family = config.get_content_profile().get("hook", {}).get("prompt_family", "dramatic")
-        if prompt_family == "reference_casual":
-            caption_ok = burn_word_by_word_caption(str(backdrop_tts), hook_text, str(hook_final))
+        if word_timings:
+            caption_ok = burn_karaoke_caption(str(backdrop_tts), word_timings, hook_emphasis_word, str(hook_final))
         else:
-            caption_ok = burn_caption(str(backdrop_tts), hook_text, str(hook_final))
+            prompt_family = config.get_content_profile().get("hook", {}).get("prompt_family", "dramatic")
+            if prompt_family == "reference_casual":
+                caption_ok = burn_word_by_word_caption(str(backdrop_tts), hook_text, str(hook_final))
+            else:
+                caption_ok = burn_caption(str(backdrop_tts), hook_text, str(hook_final))
+                
         if not caption_ok:
             shutil.rmtree(str(tmp), ignore_errors=True)
             return False

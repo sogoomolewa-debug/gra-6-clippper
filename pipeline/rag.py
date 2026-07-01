@@ -1,3 +1,11 @@
+# NOTE ON FUNCTION OVERLAP:
+# The retrieval function `retrieve_similar_hooks()` is shared between:
+# 1. Phrasing retrieval (hook.py -> format_rag_context())
+# 2. Viral scoring (score_viral_potential() -> internally calls retrieval)
+# Modifying phrasing context formatting does NOT risk re-breaking the 
+# moment_type override bug, because the Gemini override logic lives safely 
+# inside score_viral_potential() operating on raw retrieval scores.
+
 import json
 import numpy
 import pathlib
@@ -411,7 +419,18 @@ def format_rag_context(similar_entries: list[dict]) -> str:
 
     context_parts = [
         "REFERENCE HOOKS FROM SIMILAR VIRAL MOMENTS:",
-        "Study these carefully — not just the words but WHY they worked.",
+        "",
+        "IMPORTANT: This channel has NO face on screen and NO prior brand ",
+        "trust — unlike the creator below who has 5M+ views of audience ",
+        "trust built up. Do NOT mirror his vague or cryptic phrasing — ",
+        "that vagueness only works because of his on-screen personality ",
+        "and trust, which this channel does not have yet.",
+        "",
+        "Extract ONLY the CONTRAST STRUCTURE from each reference — what ",
+        "baseline expectation versus what suggested outcome creates the ",
+        "question. Apply that same contrast structure but write it with ",
+        "MORE explicit clarity than the reference uses, since the words ",
+        "must do all the work here with no face or trust to lean on.",
         ""
     ]
 

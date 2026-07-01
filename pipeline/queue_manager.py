@@ -104,6 +104,8 @@ def mark_processed(queue: dict, video: dict, short_id: str) -> None:
             "video_id": video.get("video_id"),
             "short_id": short_id,
             "source_type": video.get("source_type"),
+            "hook_structure_tag": video.get("hook_structure_tag", ""),
+            "hook_mode": video.get("hook_mode", ""),
             "uploaded_at": datetime.utcnow().isoformat() + "Z"
         }
         queue["processed"].append(entry)

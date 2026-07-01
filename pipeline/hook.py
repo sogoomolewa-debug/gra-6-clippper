@@ -2,9 +2,10 @@
 import os
 import random
 import re
+import json
 from typing import List, Dict, Optional
 
-import groq
+from google import genai
 import config
 from pipeline import rag
 
@@ -70,63 +71,92 @@ Reference tone examples:
 - bro picked the wrong... ramp today
 """
 
-FALLBACK_HOOKS = [
-    "bro really just sent it off the overpass",
-    "this car had zero business surviving that",
-    "ngl the physics gave up on this one",
-    "tell me why this actually worked tho",
-    "sometimes the npc fights back fr",
-    "nobody was ready for that landing",
-    "the bike said nah i'm out",
-]
-
-# System prompt for dramatic hook generation (used when prompt_family == "dramatic")
 SYSTEM_PROMPT = """You write viral YouTube Shorts hooks for a GTA gaming channel.
+Your hooks are spoken aloud as a voiceover over a flash-forward + blurred backdrop.
 
-Rules:
-1. Maximum 10 words. Aim for 6-8.
-2. Lowercase preferred. Only CAPITALIZE if one word truly needs shock emphasis.
-3. NO exclamation marks. Ever.
-4. Sound like a real person mid-reaction, not a copywriter.
-5. Be SPECIFIC to the visual action — reference the vehicle, the stunt, the NPC, the physics.
-6. Never reveal the outcome. Tease the setup so the viewer must watch.
-7. No emojis, no hashtags, no quotes.
+CRITICAL RULE — THE HOOK MUST NEVER DESCRIBE THE VISUAL:
+The visual already shows what is happening. If your hook just names or
+describes the scene, it adds ZERO value and viewers swipe away.
 
-Blacklisted phrases (never use these):
-- "you won't believe"
-- "wait for it"
-- "gone wrong"
-- "what happens next"
-- "nobody expected"
-- "this is insane"
-- "absolutely insane"
+BAD (description — these get REJECTED):
+- "off the dirt ramp" (just names the location)
+- "Spider-Man just went off the edge" (describes what's already visible)
+- "car launches into the air" (describes what's already visible)
+- "crazy stunt right here" (vague label, no question)
+- "watch this moment" (filler, no contrast)
 
-Emotional triggers to lean into:
-- Disbelief: "bro really just...", "tell me why..."
-- Specificity: name the vehicle, the ramp, the building
-- Understatement: "the car simply... left", "physics said no"
-- Casualness: "ngl", "fr", "tho", "lowkey"
+GOOD (contrast/question — this is what you must write):
+- "he is actually gonna make it" (implies expected failure, questions outcome)
+- "there's no way he survives this" (implies expected death, creates suspense)
+- "nobody thought this would work" (implies expected failure, questions reality)
+- "this shouldn't even be possible" (implies expected impossibility, questions physics)
 
-Examples by clip type:
+THE FORMULA — CONTRAST:
+Every hook must imply [baseline expectation] vs [suggested alternative outcome].
+This creates a question in the viewer's mind they MUST stay to resolve.
 
-STUNT: "the bike hit the ramp and just... kept going"
-STUNT: "bro cleared the entire highway on a bmx"
-CRASH: "this truck had no business flipping like that"
-CRASH: "the car folded in half and kept driving"
-RAGDOLL: "physics really said nah for this one"
-RAGDOLL: "he bounced off three buildings and survived"
-EXPLOSION: "one grenade and the intersection was gone"
-EXPLOSION: "the gas station chain reaction was WILD"
-NPC: "the npc pulled up and chose violence"
-NPC: "tell me why the cop did a backflip"
-CHASE: "five stars and a bicycle... somehow it worked"
-CHASE: "bro outran a helicopter on foot"
-GLITCH: "the car went underground and came back different"
-GLITCH: "physics engine had a full breakdown here"
-WATER: "the boat launched into the sky and just... stayed"
+Two types, both valid:
+1. STATED — you say both sides explicitly: "most cars would crash here but this one doesn't"
+2. IMPLIED — you only state the alternative, baseline is assumed known: "he actually lands this"
 
-Output ONLY the hook text. Nothing else."""
+Before finalizing, ask: "Does this pose a QUESTION about an uncertain
+outcome, or does it just describe what's on screen?" If it describes
+the scene — REWRITE IT.
 
+RULES:
+- 5 to 10 words maximum
+- Write for SPOKEN delivery — lowercase preferred
+- NEVER end with a period — em dash or nothing
+- The hook must feel INCOMPLETE — listener hasn't heard the full thought
+- No emojis, no hashtags, no exclamation marks
+- Active verbs, present tense, direct and simple language (6th grade level)
+- Use 'he', 'this', 'it' — NOT vague filler like 'guys' or 'so'
+
+IMPORTANT — THIS CHANNEL HAS NO BRAND TRUST YET:
+Unlike established creators, this channel has no face on screen and no
+prior audience trust. Vague or cryptic hooks that rely on creator
+personality to work will NOT work here. Your hook words must carry ALL
+the curiosity on their own — be MORE explicit about the contrast than a
+trusted creator would need to be. Clarity over cleverness.
+
+EXAMPLE HOOKS BY MOMENT TYPE (study the CONTRAST PATTERN, not the words):
+
+Stunts/landings:
+- "he is actually gonna make it"
+- "there's no way this works"
+- "watch him stick this landing"
+- "nobody expected him to survive this"
+
+Physics/glitches:
+- "this shouldn't even be possible"
+- "the game just broke right here"
+- "physics says this can't happen"
+- "nobody can explain what just happened"
+
+Ragdoll/impacts:
+- "he actually survives this somehow"
+- "this should have killed him"
+- "watch what happens to his body"
+- "there's no way he gets up from this"
+
+OUTPUT FORMAT — RESPOND WITH ONLY VALID JSON, NOTHING ELSE:
+{"hook_text": "...", "emphasis_word": "...", "contrast_type": "implied|stated"}
+
+Where emphasis_word is the single word from hook_text that carries the
+stakes/outcome meaning — the word that will get distinct visual
+emphasis on screen beyond the standard word-by-word caption highlight.
+Pick it yourself based on which word is doing the contrast work in the
+hook you just wrote. Do not include any text outside the JSON object."""
+
+FALLBACK_HOOKS = [
+    {"hook_text": "he is actually gonna make it", "emphasis_word": "actually"},
+    {"hook_text": "there's no way this works", "emphasis_word": "no way"},
+    {"hook_text": "this shouldn't even be possible", "emphasis_word": "shouldn't"},
+    {"hook_text": "nobody expected him to survive this", "emphasis_word": "survive"},
+    {"hook_text": "watch him stick this landing", "emphasis_word": "stick"},
+    {"hook_text": "the game just broke right here", "emphasis_word": "broke"},
+    {"hook_text": "there's no way he gets up from this", "emphasis_word": "no way"},
+]
 
 # Casual slang patterns for "pure gameplay" mode (matches reference video style)
 CASUAL_SLANG_PATTERNS = [
@@ -201,75 +231,165 @@ def build_context(
         return f"Video title: {video_title}"
 
 
-def _call_groq(system_prompt: str, user_prompt: str, max_tokens: int = 60) -> Optional[str]:
-    """Make a single Groq API call."""
+def _call_gemini(system_prompt: str, user_prompt: str, is_json: bool = False) -> Optional[str]:
+    """Make a single Gemini Flash API call."""
     try:
-        api_key = os.environ.get("GROQ_API_KEY", "")
+        api_key = os.environ.get("GEMINI_API_KEY", "")
         if not api_key:
-            print("[hook] error: GROQ_API_KEY not set")
+            print("[hook] error: GEMINI_API_KEY not set")
             return None
 
-        client = groq.Groq(api_key=api_key)
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            max_tokens=max_tokens,
+        client = genai.Client(api_key=api_key)
+        
+        # Configure model
+        generation_config = genai.types.GenerateContentConfig(
             temperature=0.9,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ]
+            system_instruction=system_prompt,
+            response_mime_type="application/json" if is_json else "text/plain"
         )
-        result = response.choices[0].message.content.strip()
-        # Clean up any wrapping quotes the model might add
-        result = result.strip('"').strip("'")
-        return result
+        
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=user_prompt,
+            config=generation_config
+        )
+        return response.text.strip()
     except Exception as e:
-        print(f"[hook] Groq API error: {e}")
+        print(f"[hook] Gemini API error: {e}")
         return None
 
 
-def generate_raw_hook(context_str: str, style: dict) -> Optional[str]:
-    """Stage 1: Generate a raw conversational hook."""
+def generate_raw_hook(context_str: str, style: dict) -> dict:
+    """Stage 1: Generate a raw conversational hook using contrast structure."""
     try:
-        profile = config.get_content_profile()
-        hook_cfg = profile.get("hook", {})
-        max_words = int(hook_cfg.get("max_words", 12))
-        prompt_family = hook_cfg.get("prompt_family", "dramatic")
-        if prompt_family in {"casual", "reference_casual"}:
-            system = CASUAL_RAW_HOOK_PROMPT.format(max_words=max_words)
-        else:
-            system = RAW_HOOK_PROMPT.format(
-                max_words=max_words,
-                style_instruction=style["instruction"],
-                style_example=style["example"]
-            )
-        raw = _call_groq(system, context_str + "\n\nWrite the hook.")
+        hook_mode = config.HOOK_MODE
+        if hook_mode == "legacy":
+            # Use the old logic but call Gemini
+            profile = config.get_content_profile()
+            hook_cfg = profile.get("hook", {})
+            max_words = int(hook_cfg.get("max_words", 12))
+            prompt_family = hook_cfg.get("prompt_family", "dramatic")
+            if prompt_family in {"casual", "reference_casual"}:
+                system = CASUAL_RAW_HOOK_PROMPT.format(max_words=max_words)
+            else:
+                system = RAW_HOOK_PROMPT.format(
+                    max_words=max_words,
+                    style_instruction=style["instruction"],
+                    style_example=style["example"]
+                )
+            raw = _call_gemini(system, context_str + "\n\nWrite the hook.", is_json=False)
+            if raw:
+                # Clean up any wrapping quotes
+                raw = raw.strip('"').strip("'")
+                print(f"[hook] stage 1 legacy raw ({style['name']}): {raw}")
+                return {"hook_text": raw, "emphasis_word": "", "contrast_type": "legacy"}
+            return {}
+
+        # Contrast mode (JSON output)
+        raw = _call_gemini(SYSTEM_PROMPT, context_str + "\n\nWrite the hook.", is_json=True)
         if raw:
-            print(f"[hook] stage 1 raw ({style['name']}): {raw}")
-        return raw
+            try:
+                # Strip backticks if Gemini added markdown formatting
+                if raw.startswith("```json"):
+                    raw = raw[7:-3].strip()
+                elif raw.startswith("```"):
+                    raw = raw[3:-3].strip()
+                data = json.loads(raw)
+                print(f"[hook] stage 1 contrast structured: {data}")
+                return data
+            except json.JSONDecodeError:
+                print(f"[hook] JSON parse error on output: {raw}")
+                # Fallback to treating it as raw text
+                return {"hook_text": raw.strip('"').strip("'"), "emphasis_word": "", "contrast_type": "parse_fail"}
+        return {}
     except Exception as e:
         print(f"[hook] raw generation error: {e}")
-        return None
+        return {}
 
 
 def validate_hook(hook: str) -> bool:
-    """Validate if the hook meets length rules."""
+    """
+    Validate if the hook meets length and structural rules.
+    Note: This is a backstop, not the primary guarantee of quality — the 
+    real check is the few-shot prompt plus the scoring loop.
+    """
     try:
         if not hook:
             return False
         clean = hook.strip()
         words = clean.split()
         word_count = len(words)
+        
+        # Word count check
         if word_count < 3 or word_count > 12:
             print(f"[hook] validation failed: word count is {word_count}")
             return False
+            
+        # Punctuation check
         if hook.strip().endswith("?"):
             print("[hook] validation failed: ends with a question mark")
             return False
+            
+        # Description-only regex patterns
+        DESCRIPTION_ONLY_PATTERNS = [
+            r'^(off|on|at|in|from|near) (the|a) ',
+            r'^(this is|that was) (a |an )?(crazy|cool|wild|insane)',
+            r'^(watch this|check this|look at this)$',
+            r'^[A-Za-z-]+ (just )?(went|goes|jumps|launches|drives|flies|falls) ',
+        ]
+        
+        for pattern in DESCRIPTION_ONLY_PATTERNS:
+            if re.search(pattern, clean, re.IGNORECASE):
+                print(f"[hook] validation failed: matched description-only pattern '{pattern}'")
+                return False
+                
+        # Contrast / Uncertainty marker audit
+        contrast_markers = {"actually", "shouldn't", "no way", "somehow", "barely", 
+                            "survives", "broke", "never", "still", "wouldn't", "nobody"}
+        has_contrast = any(marker in clean.lower() for marker in contrast_markers)
+        if not has_contrast:
+            # Log as likely-descriptive, but don't hard-reject
+            print(f"[hook] WARNING: likely-descriptive (no explicit contrast markers found in '{clean}')")
+            
         return True
     except Exception as e:
         print(f"[hook] validation error: {e}")
         return False
+
+
+def score_hook_quality(hook_text: str, context: str) -> float:
+    """
+    Sends the generated hook + context to Gemini 2.5 Flash with a scoring rubric.
+    Returns a float score 0-10.
+    """
+    rubric = """Score this YouTube Shorts hook from 0.0 to 10.0 based on these criteria:
+1. Does it pose a contrast/question rather than describe the visual? (Description-only gets <4)
+2. Is it clear at a 6th-grade reading level?
+3. Is it free of vague filler phrases?
+4. Is it concise (5-10 words)?
+5. Does it carry the curiosity on its own without relying on established creator trust?
+
+Output valid JSON only: {"score": float, "reasoning": "string"}
+"""
+    user_msg = f"Context:\n{context}\n\nHook to score:\n{hook_text}"
+    
+    try:
+        raw = _call_gemini(rubric, user_msg, is_json=True)
+        if not raw:
+            return 0.0
+            
+        if raw.startswith("```json"):
+            raw = raw[7:-3].strip()
+        elif raw.startswith("```"):
+            raw = raw[3:-3].strip()
+            
+        data = json.loads(raw)
+        score = float(data.get("score", 0.0))
+        print(f"[hook] quality score: {score} ({data.get('reasoning', '')})")
+        return score
+    except Exception as e:
+        print(f"[hook] scoring error: {e}")
+        return 0.0
 
 
 def get_hook_with_fallback(
@@ -277,44 +397,72 @@ def get_hook_with_fallback(
     visual_description: str = "",
     transcript_context: str = "",
     timestamp_comments: List[Dict] = []
-) -> tuple[str, str]:
-    """Generate a hook. Falls back to pre-written hooks on failure."""
+) -> dict:
+    """Generate a hook with a scoring loop, falling back to pre-written hooks on total failure."""
     context_str = build_context(video_title, visual_description, transcript_context, timestamp_comments)
-    max_attempts = 3
+    max_attempts = 5
+    quality_threshold = 8.0
     
-    for attempt in range(max_attempts):
+    best_attempt = None
+    best_score = -1.0
+    
+    for attempt in range(1, max_attempts + 1):
         try:
-            print(f"[hook] attempt {attempt + 1}/{max_attempts}")
+            print(f"[hook] generation attempt {attempt}/{max_attempts}")
             style = _get_style()
             
-            # Stage 1: Generate Raw Hook
-            hook = generate_raw_hook(context_str, style)
-            if not hook:
+            # Stage 1: Generate Hook Data
+            hook_data = generate_raw_hook(context_str, style)
+            if not hook_data or "hook_text" not in hook_data:
                 continue
 
-            # Validation
-            if validate_hook(hook):
-                words = hook.split()
-                if len(words) > 8:
-                    print(f"[hook] hook too long ({len(words)} words) — truncating to 8")
-                    hook = " ".join(words[:8])
-                print(f"[hook] final: '{hook}' ({len(words)} words)")
-                return hook, style['name']
+            hook_text = hook_data["hook_text"]
             
-            print(f"[hook] invalid hook, retrying... ({attempt+1}/{max_attempts})")
-
+            # Validation
+            if not validate_hook(hook_text):
+                print(f"[hook] attempt {attempt} failed structural validation")
+                continue
+                
+            # Score Quality
+            score = score_hook_quality(hook_text, context_str)
+            
+            # Keep track of best
+            if score > best_score:
+                best_score = score
+                best_attempt = {
+                    "hook_text": hook_text,
+                    "emphasis_word": hook_data.get("emphasis_word", ""),
+                    "contrast_type": hook_data.get("contrast_type", "unknown"),
+                    "hook_mode": config.HOOK_MODE,
+                    "quality_score": score,
+                    "score_attempts": attempt
+                }
+            
+            # Early exit if good enough
+            if score >= quality_threshold:
+                print(f"[hook] attempt {attempt} cleared threshold ({score} >= {quality_threshold})")
+                return best_attempt
+                
         except Exception as e:
-            print(f"[hook] generation attempt {attempt+1} failed: {e}")
+            print(f"[hook] attempt {attempt} failed: {e}")
 
-    # Fallback if all attempts fail
-    fallback_hook = random.choice(FALLBACK_HOOKS)
-    print(f"[hook] all generation attempts failed, using fallback: '{fallback_hook}'")
-    words = fallback_hook.split()
-    if len(words) > 8:
-        print(f"[hook] fallback hook too long ({len(words)} words) — truncating to 8")
-        fallback_hook = " ".join(words[:8])
-    print(f"[hook] final fallback: '{fallback_hook}' ({len(words)} words)")
-    return fallback_hook, "fallback"
+    # If we got at least one valid hook but didn't clear the threshold, use the best one
+    if best_attempt is not None:
+        print(f"[hook] max attempts reached, using best scoring attempt ({best_score}/10): '{best_attempt['hook_text']}'")
+        best_attempt["score_attempts"] = max_attempts
+        return best_attempt
+
+    # Total failure (API errors, etc)
+    fallback = random.choice(FALLBACK_HOOKS)
+    print(f"[hook] all attempts failed, using fallback: '{fallback['hook_text']}'")
+    return {
+        "hook_text": fallback["hook_text"],
+        "emphasis_word": fallback["emphasis_word"],
+        "contrast_type": "fallback",
+        "hook_mode": config.HOOK_MODE,
+        "quality_score": 0.0,
+        "score_attempts": max_attempts
+    }
 
 
 def generate_casual_caption(visual_description: str) -> str:
@@ -352,14 +500,14 @@ def generate_casual_caption(visual_description: str) -> str:
 
 
 def generate_viral_title(video_title: str, visual_description: str, hook_text: str) -> str:
-    """Generate a viral, high-CTR title using Groq."""
+    """Generate a viral, high-CTR title using Gemini."""
     try:
         context_str = f"Source Video Title: {video_title}\nVisual Description: {visual_description}\nTTS Hook: {hook_text}"
-        title = _call_groq(VIRAL_TITLE_PROMPT.format(visual_description=visual_description, hook_text=hook_text), context_str)
+        title = _call_gemini(VIRAL_TITLE_PROMPT, context_str, is_json=False)
         if title:
-            # Clean up the output to make sure there are no quotes or trailing dots
+            # Clean up the output
             title = title.strip().strip('"').strip("'").strip(".")
-            # Strip competitor name/channel reference from title as a precaution
+            # Strip competitor name/channel reference from title
             blacklist_names = ["prestige clips", "prestige", "red arcade", "hazardous", "whatever57010", "darkviperau", "darkviper", "call me kevin", "kevin"]
             title_lower = title.lower()
             for name in blacklist_names:
@@ -385,4 +533,4 @@ if __name__ == "__main__":
         visual_description=sample["visual_description"],
         timestamp_comments=sample["timestamp_comments"]
     )
-    print(f"\nFinal hook: {result}")
+    print(f"\nFinal hook payload: {json.dumps(result, indent=2)}")

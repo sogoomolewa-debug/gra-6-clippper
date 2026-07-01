@@ -1,5 +1,5 @@
 # config.py — single source of truth for all pipeline constants
-
+import os
 CONTENT_TIERS = [
     {
         "name": "gta6",
@@ -38,6 +38,8 @@ QUEUE = {
     "max_pending": 20
 }
 
+HOOK_MODE = os.environ.get("HOOK_MODE", "contrast")
+
 CLIP = {
     "max_duration_seconds": 15,  # Raised from 10 — room for setup + climax + mid-chaos cut
     "min_duration_seconds": 10,  # Raised from 8 — floor matches old ceiling
@@ -58,11 +60,14 @@ CLIP = {
     "safe_zone_margin_bottom": 220,
     "min_viral_score": 8,          # raised from 7 — only exceptional clips get published
     "max_peaks_to_try": 3,         # max heatmap peaks to evaluate per video
+    "caption_karaoke_color": "yellow",
+    "caption_emphasis_color": "#FF6B35",
+    "enable_loop_seam": False,
+    "loop_seam_crossfade_duration": 0.2
 }
-
 TTS = {
     "voice_sample_path": "assets/voice_sample.wav",
-    "modal_timeout_seconds": 90,
+    "modal_timeout_seconds": 150,
     "breath_pad_ms": 200,           # silence before speech starts
     "chunk_gap_ms": 280,            # silence between chunks
     "speed_suspense": 0.85,         # slower for build-up chunks

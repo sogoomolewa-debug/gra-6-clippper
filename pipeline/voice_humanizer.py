@@ -96,21 +96,24 @@ def stage_pitch_jitter(audio: np.ndarray, sr: int) -> np.ndarray:
         return audio
 
 
-def stage_dynamics(audio: np.ndarray, sr: int) -> np.ndarray:
+def stage_dynamics(audio: np.ndarray, sr: int, word_timings: list[dict] = None) -> np.ndarray:
     """Stage 3: Word-level volume variation + gentle compression."""
     try:
         import librosa
 
-        # Detect onsets (approximate word boundaries)
-        onsets = librosa.onset.onset_detect(y=audio, sr=sr, hop_length=512, units='samples')
+        # Use actual word boundaries if available, else fallback to librosa onsets
+        if word_timings:
+            onsets = [int(w["start"] * sr) for w in word_timings] + [len(audio)]
+        else:
+            onsets = librosa.onset.onset_detect(y=audio, sr=sr, hop_length=512, units='samples')
 
         if len(onsets) < 2:
             print("[humanizer] dynamics: too few onsets, skipping word-level variation")
         else:
             # Apply subtle random gain per segment
-            for i in range(len(onsets)):
+            for i in range(len(onsets) - 1):
                 start = onsets[i]
-                end = onsets[i + 1] if i + 1 < len(onsets) else len(audio)
+                end = onsets[i + 1]
                 gain_db = np.random.uniform(-1.5, 1.5)
                 gain_linear = 10 ** (gain_db / 20.0)
                 audio[start:end] *= gain_linear
@@ -132,7 +135,7 @@ def stage_dynamics(audio: np.ndarray, sr: int) -> np.ndarray:
                 gain = 10 ** (-reduction_db / 20.0)
                 audio[i:i + frame_len] *= gain
 
-        print(f"[humanizer] dynamics: {len(onsets)} onsets, compression at {threshold_db}dB/{ratio}:1")
+        print(f"[humanizer] dynamics: {len(onsets)} segments, compression at {threshold_db}dB/{ratio}:1")
         return audio
     except Exception as e:
         print(f"[humanizer] dynamics error: {e}")
@@ -183,7 +186,7 @@ def _generate_breath(sr: int, duration_ms: int = 200) -> np.ndarray:
         return np.zeros(int(sr * 0.2), dtype=np.float32)
 
 
-def stage_room_tone_and_breath(audio: np.ndarray, sr: int) -> np.ndarray:
+def stage_room_tone_and_breath(audio: np.ndarray, sr: int, word_timings: list[dict] = None) -> np.ndarray:
     """Stage 4: Add room tone underneath + inject breath sounds in silent gaps."""
     try:
         import librosa
@@ -215,8 +218,19 @@ def stage_room_tone_and_breath(audio: np.ndarray, sr: int) -> np.ndarray:
         in_gap = False
         gap_start = 0
 
+        # Build an exclusion mask based on exact word_timings to avoid breathing inside a word
+        exclusion_mask = np.zeros_like(rms, dtype=bool)
+        if word_timings:
+            for w in word_timings:
+                s_frame = int(w["start"] * sr / 512)
+                e_frame = int(w["end"] * sr / 512)
+                exclusion_mask[s_frame:e_frame] = True
+
         for i in range(len(rms)):
-            if rms[i] <= threshold:
+            # Force threshold check to fail if we are inside a word
+            is_silent = (rms[i] <= threshold) and not exclusion_mask[i]
+            
+            if is_silent:
                 if not in_gap:
                     gap_start = i
                     in_gap = True
@@ -291,12 +305,44 @@ def stage_reverb_and_warmth(audio: np.ndarray, sr: int) -> np.ndarray:
         return audio
 
 
-def humanize(wav_bytes: bytes, speed: float = 1.0) -> bytes:
-    """
-    Full humanization pipeline. Takes raw WAV bytes, returns processed WAV bytes.
+def rescale_word_timings(word_timings: list[dict], speed: float) -> list[dict]:
+    """Rescale timings when audio is time-stretched."""
+    if not word_timings or abs(speed - 1.0) < 0.02:
+        return word_timings
+    
+    # When speed is e.g. 1.25, the audio is 25% faster and durations are shorter.
+    # New timestamp = old timestamp / speed
+    rescaled = []
+    for w in word_timings:
+        rescaled.append({
+            "word": w["word"],
+            "start": w["start"] / speed,
+            "end": w["end"] / speed
+        })
+    return rescaled
 
+
+def diagnose_word_gaps(word_timings: list[dict]) -> None:
+    """Log the distribution of gaps between words."""
+    if not word_timings or len(word_timings) < 2:
+        return
+        
+    gaps = []
+    for i in range(1, len(word_timings)):
+        gap = word_timings[i]["start"] - word_timings[i-1]["end"]
+        if gap > 0:
+            gaps.append(gap)
+            
+    if gaps:
+        print(f"[humanizer] timing gaps: min={min(gaps):.3f}s, max={max(gaps):.3f}s, avg={sum(gaps)/len(gaps):.3f}s ({len(gaps)} total)")
+
+
+def humanize(wav_bytes: bytes, speed: float = 1.0, word_timings: list[dict] = None) -> tuple[bytes, list[dict]]:
+    """
+    Run full humanization post-processing pipeline on an audio buffer.
+    
     Stages:
-    1. Time-stretch (proper, pitch-preserving)
+    1. Time stretch (preserves pitch)
     2. Micro pitch jitter
     3. Dynamic range humanization
     4. Room tone + breath injection
@@ -308,25 +354,30 @@ def humanize(wav_bytes: bytes, speed: float = 1.0) -> bytes:
 
         # Stage 1: Time stretch
         audio = stage_time_stretch(audio, sr, speed)
+        
+        # Rescale word timings after stretch
+        if word_timings:
+            word_timings = rescale_word_timings(word_timings, speed)
+            diagnose_word_gaps(word_timings)
 
         # Stage 2: Pitch jitter
         audio = stage_pitch_jitter(audio, sr)
 
         # Stage 3: Dynamics
-        audio = stage_dynamics(audio, sr)
+        audio = stage_dynamics(audio, sr, word_timings)
 
         # Stage 4: Room tone + breaths
-        audio = stage_room_tone_and_breath(audio, sr)
+        audio = stage_room_tone_and_breath(audio, sr, word_timings)
 
         # Stage 5: Reverb + warmth
         audio = stage_reverb_and_warmth(audio, sr)
 
         result = _array_to_wav(audio, sr)
         print(f"[humanizer] output: {len(result)} bytes WAV")
-        return result
+        return result, word_timings or []
     except Exception as e:
         print(f"[humanizer] error: {e}")
-        return wav_bytes  # fail-open: return unprocessed
+        return wav_bytes, word_timings or []
 
 
 def humanize_file(input_path: str, output_path: str, speed: float = 1.0) -> bool:
@@ -335,10 +386,10 @@ def humanize_file(input_path: str, output_path: str, speed: float = 1.0) -> bool
         with open(input_path, "rb") as f:
             wav_bytes = f.read()
 
-        result = humanize(wav_bytes, speed)
+        result_bytes, _ = humanize(wav_bytes, speed)
 
         with open(output_path, "wb") as f:
-            f.write(result)
+            f.write(result_bytes)
 
         print(f"[humanizer] saved: {output_path}")
         return True
