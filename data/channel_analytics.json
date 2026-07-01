@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-29T19:32:20.046013Z",
+  "last_updated": "2026-07-01T19:30:12.495981Z",
   "candidates": {
     "UCIPPMRA040LQr5QPyJEbmXA": {
       "channel_title": "MrBeast Gaming",
@@ -342,10 +342,10 @@
     "Red Arcade": {
       "channel_title": "Red Arcade",
       "production": {
-        "total_sourced": 9,
+        "total_sourced": 10,
         "total_uploaded": 4,
-        "total_rejected": 5,
-        "rejection_rate": 0.56
+        "total_rejected": 6,
+        "rejection_rate": 0.6
       },
       "review_scores": {
         "avg_technical": 0.0,
@@ -381,7 +381,7 @@
       "priority_score": 5.0,
       "confidence": "low",
       "first_sourced": "2026-06-16T00:30:33.447899Z",
-      "last_sourced": "2026-06-23T23:50:57.039977Z"
+      "last_sourced": "2026-06-30T00:57:47.605533Z"
     },
     "Call Me Kevin": {
       "channel_title": "Call Me Kevin",
@@ -518,9 +518,9 @@
     "TGG": {
       "channel_title": "TGG",
       "production": {
-        "total_sourced": 2,
+        "total_sourced": 3,
         "total_uploaded": 0,
-        "total_rejected": 2,
+        "total_rejected": 3,
         "rejection_rate": 1.0
       },
       "review_scores": {
@@ -557,7 +557,7 @@
       "priority_score": 5.0,
       "confidence": "low",
       "first_sourced": "2026-06-19T22:32:01.857621Z",
-      "last_sourced": "2026-06-20T19:42:32.509008Z"
+      "last_sourced": "2026-06-30T01:18:50.290894Z"
     },
     "MrBossFTW": {
       "channel_title": "MrBossFTW",
@@ -1002,10 +1002,10 @@
     "Test Channel": {
       "channel_title": "Test Channel",
       "production": {
-        "total_sourced": 2,
+        "total_sourced": 3,
         "total_uploaded": 1,
-        "total_rejected": 1,
-        "rejection_rate": 0.5
+        "total_rejected": 2,
+        "rejection_rate": 0.67
       },
       "review_scores": {
         "avg_technical": 0.0,
@@ -1041,7 +1041,271 @@
       "priority_score": 5.0,
       "confidence": "low",
       "first_sourced": "2026-06-29T01:38:00.203139Z",
-      "last_sourced": "2026-06-29T01:44:08.057542Z"
+      "last_sourced": "2026-06-29T20:53:54.970007Z"
+    },
+    "Gigaton Games": {
+      "channel_title": "Gigaton Games",
+      "production": {
+        "total_sourced": 1,
+        "total_uploaded": 0,
+        "total_rejected": 1,
+        "rejection_rate": 1.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-30T01:18:54.617093Z",
+      "last_sourced": "2026-06-30T01:18:54.617093Z"
+    },
+    "Ahmed ElSory": {
+      "channel_title": "Ahmed ElSory",
+      "production": {
+        "total_sourced": 1,
+        "total_uploaded": 0,
+        "total_rejected": 1,
+        "rejection_rate": 1.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-30T01:18:58.458198Z",
+      "last_sourced": "2026-06-30T01:18:58.458198Z"
+    },
+    "Jeux Vid\u00e9o Magazine": {
+      "channel_title": "Jeux Vid\u00e9o Magazine",
+      "production": {
+        "total_sourced": 1,
+        "total_uploaded": 0,
+        "total_rejected": 1,
+        "rejection_rate": 1.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-30T01:19:02.270357Z",
+      "last_sourced": "2026-06-30T01:19:02.270357Z"
+    },
+    "GTA Rajesh": {
+      "channel_title": "GTA Rajesh",
+      "production": {
+        "total_sourced": 1,
+        "total_uploaded": 0,
+        "total_rejected": 1,
+        "rejection_rate": 1.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-30T01:27:40.445112Z",
+      "last_sourced": "2026-06-30T01:27:40.445112Z"
+    },
+    "VeryNuclear Gaming": {
+      "channel_title": "VeryNuclear Gaming",
+      "production": {
+        "total_sourced": 1,
+        "total_uploaded": 0,
+        "total_rejected": 1,
+        "rejection_rate": 1.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-30T01:27:44.494293Z",
+      "last_sourced": "2026-06-30T01:27:44.494293Z"
+    },
+    "Hazardous": {
+      "channel_title": "Hazardous",
+      "production": {
+        "total_sourced": 1,
+        "total_uploaded": 1,
+        "total_rejected": 0,
+        "rejection_rate": 0.0
+      },
+      "review_scores": {
+        "avg_technical": 0.0,
+        "avg_virality": 0.0,
+        "avg_wow_factor": 0.0,
+        "avg_immediate_hook": 0.0,
+        "avg_payoff_clarity": 0.0,
+        "avg_rewatch_value": 0.0,
+        "avg_emotional_response": 0.0,
+        "avg_shareability": 0.0,
+        "avg_uniqueness": 0.0,
+        "avg_trend_relevance": 0.0
+      },
+      "performance": {
+        "avg_views_24h": 0,
+        "avg_views_7d": 0,
+        "avg_views_30d": 0,
+        "total_views": 0,
+        "shorts_with_data": 0,
+        "best_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        },
+        "worst_short": {
+          "short_id": "",
+          "views_7d": 0,
+          "hook_text": "",
+          "uploaded_at": ""
+        }
+      },
+      "priority_score": 5.0,
+      "confidence": "low",
+      "first_sourced": "2026-06-30T02:20:14.331402Z",
+      "last_sourced": "2026-06-30T02:20:14.331402Z"
     }
   },
   "candidate_channels": {}
