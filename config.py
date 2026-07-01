@@ -62,6 +62,10 @@ CLIP = {
     "max_peaks_to_try": 3,         # max heatmap peaks to evaluate per video
     "caption_karaoke_color": "yellow",
     "caption_emphasis_color": "#FF6B35",
+    "caption_karaoke_cycle_enabled": False,
+    "caption_karaoke_cycle_colors": ["#00FFFF", "#FFFF00", "#FF8C00"],
+    "caption_font_style": "current",
+    "caption_font_path_gta_style": "",
     "enable_loop_seam": True,
     "loop_seam_crossfade_duration": 0.2
 }

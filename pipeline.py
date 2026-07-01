@@ -11,6 +11,7 @@ dotenv.load_dotenv()
 
 from pipeline import search, heatmap, transcript, hook, voice, editor, uploader, queue_manager, clip_analyzer, channel_discovery
 from pipeline import rag
+from pipeline.editor import _last_build_metadata
 from pipeline import clip_validator
 from pipeline.channel_tracker import load_analytics, save_analytics
 import config
@@ -437,7 +438,8 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
         
         # Determine hook_structure_tag for A/B analytics
         contrast_markers = {"actually", "shouldn't", "no way", "somehow", "barely", 
-                            "survives", "broke", "never", "still", "wouldn't", "nobody"}
+                            "survives", "broke", "never", "still", "wouldn't", "nobody",
+                            "would've", "should've", "does", "doesn't"}
         has_contrast = any(marker in hook_text.lower() for marker in contrast_markers)
         hook_structure_tag = "contrast" if has_contrast or hook_data.get("contrast_type") in ["implied", "stated"] else "description"
         
@@ -591,6 +593,8 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
             "hook_quality_score": hook_data.get("quality_score", 0.0),
             "hook_score_attempts": hook_data.get("score_attempts", 1),
             "cta_caption_used": cta_caption_used,
+            "caption_cycle_used": _last_build_metadata["caption_cycle_used"],
+            "caption_font_style_used": _last_build_metadata["caption_font_style_used"],
             "loop_edit_technique": loop_edit_technique,
             "peak_start": global_start,
             "peak_position_pct": peak_pct,

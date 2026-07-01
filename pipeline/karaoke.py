@@ -12,7 +12,9 @@ def create_karaoke_concat(
     font_path: str,
     fontsize: int,
     tmp_dir: str,
-    video_duration: float
+    video_duration: float,
+    cycle_enabled: bool = False,
+    cycle_colors: list[str] = None
 ) -> str:
     """Generate karaoke caption frames and return path to ffmpeg concat file.
 
@@ -95,7 +97,12 @@ def create_karaoke_concat(
             fnt = emphasis_font if (is_emp and is_active) else font
             color = base_color
             if is_active:
-                color = emp_color if is_emp else karaoke_color
+                if is_emp:
+                    color = emp_color
+                elif cycle_enabled and cycle_colors:
+                    color = cycle_colors[idx % len(cycle_colors)]
+                else:
+                    color = karaoke_color
 
             pos = positions[idx]
             # Re-centre if using the larger emphasis font

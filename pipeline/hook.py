@@ -72,7 +72,7 @@ Reference tone examples:
 """
 
 SYSTEM_PROMPT = """You write viral YouTube Shorts hooks for a GTA gaming channel.
-Your hooks are spoken aloud as a voiceover over a flash-forward + blurred backdrop.
+Your hooks are spoken aloud as a voiceover over a flash-forward + blurred backdrop (duration 3-5 seconds, 6-14 words).
 
 CRITICAL RULE — THE HOOK MUST NEVER DESCRIBE THE VISUAL:
 The visual already shows what is happening. If your hook just names or
@@ -92,19 +92,19 @@ GOOD (contrast/question — this is what you must write):
 - "this shouldn't even be possible" (implies expected impossibility, questions physics)
 
 THE FORMULA — CONTRAST:
-Every hook must imply [baseline expectation] vs [suggested alternative outcome].
+Every hook must imply [baseline expectation] vs [suggested alternative outcome] (duration 3-5 seconds, 6-14 words).
 This creates a question in the viewer's mind they MUST stay to resolve.
 
 Two types, both valid:
-1. STATED — you say both sides explicitly: "most cars would crash here but this one doesn't"
-2. IMPLIED — you only state the alternative, baseline is assumed known: "he actually lands this"
+1. STATED — you say both sides explicitly, setting up the baseline expectation and the contrasting outcome: "most drivers would've crashed here but he somehow doesn't"
+2. IMPLIED — you only state the alternative, where the baseline expectation is assumed known: "he actually survives this even though his car is completely crushed"
 
 Before finalizing, ask: "Does this pose a QUESTION about an uncertain
 outcome, or does it just describe what's on screen?" If it describes
 the scene — REWRITE IT.
 
 RULES:
-- 5 to 10 words maximum
+- 6 to 14 words maximum (to fill the 3-5 seconds hook duration)
 - Write for SPOKEN delivery — lowercase preferred
 - NEVER end with a period — em dash or nothing
 - The hook must feel INCOMPLETE — listener hasn't heard the full thought
@@ -122,22 +122,22 @@ trusted creator would need to be. Clarity over cleverness.
 EXAMPLE HOOKS BY MOMENT TYPE (study the CONTRAST PATTERN, not the words):
 
 Stunts/landings:
-- "he is actually gonna make it"
-- "there's no way this works"
-- "watch him stick this landing"
-- "nobody expected him to survive this"
+- "most drivers would've crashed here but he somehow doesn't" (stated)
+- "he is actually gonna make it even with that flat tire" (implied)
+- "any other car would've exploded but he sticks the landing" (stated)
+- "nobody expected him to survive this vertical fall down the mountain" (implied)
 
 Physics/glitches:
-- "this shouldn't even be possible"
-- "the game just broke right here"
-- "physics says this can't happen"
-- "nobody can explain what just happened"
+- "the game should've crashed here but it actually does the impossible" (stated)
+- "gta physics says this shouldn't even be possible but it happens" (stated)
+- "nobody can explain how he didn't crash into that wall" (implied)
+- "this car doesn't follow normal physics and it makes no sense" (implied)
 
 Ragdoll/impacts:
-- "he actually survives this somehow"
-- "this should have killed him"
-- "watch what happens to his body"
-- "there's no way he gets up from this"
+- "this impact should've killed him but he gets right back up" (stated)
+- "he actually survives this crash even though his bike is destroyed" (implied)
+- "watch how he does the impossible and escapes the explosion" (implied)
+- "most players would've died here but he barely even takes damage" (stated)
 
 OUTPUT FORMAT — RESPOND WITH ONLY VALID JSON, NOTHING ELSE:
 {"hook_text": "...", "emphasis_word": "...", "contrast_type": "implied|stated"}
@@ -149,13 +149,13 @@ Pick it yourself based on which word is doing the contrast work in the
 hook you just wrote. Do not include any text outside the JSON object."""
 
 FALLBACK_HOOKS = [
-    {"hook_text": "he is actually gonna make it", "emphasis_word": "actually"},
-    {"hook_text": "there's no way this works", "emphasis_word": "no way"},
-    {"hook_text": "this shouldn't even be possible", "emphasis_word": "shouldn't"},
-    {"hook_text": "nobody expected him to survive this", "emphasis_word": "survive"},
-    {"hook_text": "watch him stick this landing", "emphasis_word": "stick"},
-    {"hook_text": "the game just broke right here", "emphasis_word": "broke"},
-    {"hook_text": "there's no way he gets up from this", "emphasis_word": "no way"},
+    {"hook_text": "most drivers would've crashed here but he somehow doesn't", "emphasis_word": "doesn't"},
+    {"hook_text": "any other car would've exploded but this one lands perfectly", "emphasis_word": "perfectly"},
+    {"hook_text": "this stunt should've failed instantly but he actually makes it", "emphasis_word": "actually"},
+    {"hook_text": "most players would've died here but he barely even scratches it", "emphasis_word": "scratches"},
+    {"hook_text": "the game should've crashed here but it does the impossible instead", "emphasis_word": "impossible"},
+    {"hook_text": "this impact should've killed him but he gets right back up", "emphasis_word": "gets"},
+    {"hook_text": "normally this car would spin out but it doesn't even slip", "emphasis_word": "doesn't"},
 ]
 
 # Casual slang patterns for "pure gameplay" mode (matches reference video style)
@@ -321,7 +321,7 @@ def validate_hook(hook: str) -> bool:
         word_count = len(words)
         
         # Word count check
-        if word_count < 3 or word_count > 12:
+        if word_count < 4 or word_count > 16:
             print(f"[hook] validation failed: word count is {word_count}")
             return False
             
@@ -345,7 +345,8 @@ def validate_hook(hook: str) -> bool:
                 
         # Contrast / Uncertainty marker audit
         contrast_markers = {"actually", "shouldn't", "no way", "somehow", "barely", 
-                            "survives", "broke", "never", "still", "wouldn't", "nobody"}
+                            "survives", "broke", "never", "still", "wouldn't", "nobody",
+                            "would've", "should've", "does", "doesn't"}
         has_contrast = any(marker in clean.lower() for marker in contrast_markers)
         if not has_contrast:
             # Log as likely-descriptive, but don't hard-reject
@@ -366,7 +367,7 @@ def score_hook_quality(hook_text: str, context: str) -> float:
 1. Does it pose a contrast/question rather than describe the visual? (Description-only gets <4)
 2. Is it clear at a 6th-grade reading level?
 3. Is it free of vague filler phrases?
-4. Is it concise (5-10 words)?
+4. Is it concise (6-14 words)?
 5. Does it carry the curiosity on its own without relying on established creator trust?
 
 Output valid JSON only: {"score": float, "reasoning": "string"}

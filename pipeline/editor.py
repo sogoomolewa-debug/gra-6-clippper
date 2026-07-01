@@ -15,6 +15,34 @@ import shutil
 import config
 from pipeline import ytdlp
 
+_last_build_metadata = {
+    "caption_cycle_used": False,
+    "caption_font_style_used": "current"
+}
+
+
+def _resolve_font_path() -> str:
+    """
+    Resolves the font path based on the config parameter 'caption_font_style'.
+    If the style is 'gta_style' but 'caption_font_path_gta_style' is empty or missing,
+    we log a warning and fallback to the default font path ('font_path').
+    
+    License Warning Constraint:
+    The GTA-style font may require a proprietary font license or custom asset setup.
+    To avoid build crashes or illegal distribution, we perform a safety check and 
+    fallback to the default Oswald font if no path is configured.
+    """
+    style = config.CLIP.get("caption_font_style", "current")
+    default_font = config.CLIP.get("font_path", "assets/Oswald-Bold.ttf")
+    if style == "gta_style":
+        gta_font = config.CLIP.get("caption_font_path_gta_style", "")
+        if gta_font and os.path.exists(gta_font):
+            return gta_font
+        else:
+            print("[editor] WARNING: caption_font_style is 'gta_style' but caption_font_path_gta_style is empty or does not exist. Falling back to default font.")
+            return default_font
+    return default_font
+
 
 def run_ffmpeg(cmd: list[str], step_name: str) -> bool:
     """Run an ffmpeg/ffprobe command, check returncode, print stderr on failure."""
@@ -126,7 +154,7 @@ def crop_to_vertical(input_path: str, output_path: str, original_channel: str = 
     filter_chain = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920"
     text_file = None
     if original_channel:
-        font_path = config.CLIP.get("font_path", "assets/Oswald-Bold.ttf")
+        font_path = _resolve_font_path()
         font_path_abs = str(pathlib.Path(font_path).absolute())
         
         watermark_text = f"CLIP: @{original_channel}" if not original_channel.startswith("@") else f"CLIP: {original_channel}"
@@ -241,7 +269,7 @@ def burn_caption(
 ) -> bool:
     """Burn caption text onto video."""
     try:
-        font_path = config.CLIP.get("font_path", "assets/Oswald-Bold.ttf")
+        font_path = _resolve_font_path()
         font_path_abs = str(pathlib.Path(font_path).absolute())
         
         fontsize = int(config.get_profile_value("font_size_hook", config.CLIP.get("font_size_hook", 90)))
@@ -300,12 +328,15 @@ def burn_karaoke_caption(
     try:
         from pipeline.karaoke import create_karaoke_concat
         
-        font_path = config.CLIP.get("font_path", "assets/Oswald-Bold.ttf")
+        font_path = _resolve_font_path()
         font_path_abs = str(pathlib.Path(font_path).absolute())
         fontsize = int(config.get_profile_value("font_size_hook", config.CLIP.get("font_size_hook", 90)))
         
         # Get video duration
         video_dur = get_audio_duration(input_path)
+        
+        cycle_enabled = bool(config.CLIP.get("caption_karaoke_cycle_enabled", False))
+        cycle_colors = config.CLIP.get("caption_karaoke_cycle_colors", ["#00FFFF", "#FFFF00", "#FF8C00"])
         
         tmp_dir = pathlib.Path(tempfile.mkdtemp())
         concat_txt = create_karaoke_concat(
@@ -314,7 +345,9 @@ def burn_karaoke_caption(
             font_path_abs,
             fontsize,
             str(tmp_dir),
-            video_dur
+            video_dur,
+            cycle_enabled=cycle_enabled,
+            cycle_colors=cycle_colors
         )
         
         # Overlay the concat video onto the background video
@@ -350,7 +383,7 @@ def burn_word_by_word_caption(
 
         duration = max(get_audio_duration(input_path), 0.1)
         slot = duration / len(words)
-        font_path = config.CLIP.get("font_path", "assets/Oswald-Bold.ttf")
+        font_path = _resolve_font_path()
         font_path_abs = str(pathlib.Path(font_path).absolute())
         fontsize = int(config.get_profile_value("font_size_hook", config.CLIP.get("font_size_hook", 90)))
         outline_w = config.CLIP.get("caption_outline_width", 6)
@@ -416,7 +449,7 @@ def burn_cta_caption(
 ) -> bool:
     """Burn a silent CTA caption at the bottom of the screen."""
     try:
-        font_path = config.CLIP.get("font_path", "assets/Oswald-Bold.ttf")
+        font_path = _resolve_font_path()
         font_path_abs = str(pathlib.Path(font_path).absolute())
         fontsize = 75
 
@@ -557,6 +590,10 @@ def build_short(
     BUG 5 FIX: crop_to_vertical uses force_original_aspect_ratio=increase
     """
     try:
+        global _last_build_metadata
+        _last_build_metadata["caption_cycle_used"] = bool(config.CLIP.get("caption_karaoke_cycle_enabled", False))
+        _last_build_metadata["caption_font_style_used"] = config.CLIP.get("caption_font_style", "current")
+
         tmp = pathlib.Path(tempfile.mkdtemp())
         hook_dur = get_audio_duration(hook_audio)
         print(f"[editor] hook duration: {hook_dur:.2f}s")
