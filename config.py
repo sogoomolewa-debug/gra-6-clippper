@@ -69,7 +69,7 @@ TTS = {
     "voice_sample_path": "assets/voice_sample.wav",
     "modal_timeout_seconds": 150,
     "breath_pad_ms": 200,           # silence before speech starts
-    "chunk_gap_ms": 280,            # silence between chunks
+    "chunk_gap_ms": 0,              # silence between chunks
     "speed_suspense": 0.85,         # slower for build-up chunks
     "speed_reveal": 1.08,           # faster for payoff chunks
     "speed_default": 0.95,          # neutral speed
