@@ -27,3 +27,6 @@ share/python-wheels/
 venv/
 ENV/
 env/
+
+# Local environment variables
+.env
