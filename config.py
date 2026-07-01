@@ -48,7 +48,7 @@ CLIP = {
     "blur_intro_enabled": True,  # NEW: Set to False for instant-action hooks
     "output_width": 1080,
     "output_height": 1920,
-    "font_path": "assets/Oswald-Bold.ttf",
+    "font_path": "assets/Montserrat-Black.ttf",
     "font_size_hook": 90,
     "font_size_reveal": 65,
     "caption_outline_width": 6,
@@ -64,7 +64,7 @@ CLIP = {
     "caption_emphasis_color": "#FF6B35",
     "caption_karaoke_cycle_enabled": True,
     "caption_karaoke_cycle_colors": ["#00FFFF", "#FFFF00", "#FF8C00"],
-    "caption_font_style": "gta_style",
+    "caption_font_style": "current",
     "caption_font_path_gta_style": "assets/Pricedown-Bl.otf",
     "enable_loop_seam": True,
     "loop_seam_crossfade_duration": 0.2
