@@ -13,6 +13,7 @@ import config
 from pipeline.hook import validate_hook
 from pipeline.editor import _resolve_font_path
 from pipeline.karaoke import create_karaoke_concat
+from pipeline.voice import _reconcile_word_timings
 
 
 class TestHookValidation(unittest.TestCase):
@@ -239,6 +240,59 @@ class TestCreateKaraokeConcat(unittest.TestCase):
         self.assertEqual(state_2[0], ("HELLO", "white"))
         self.assertEqual(state_2[1], ("BEAUTIFUL", "white"))
         self.assertEqual(state_2[2], ("WORLD", "#FF6B35"))
+
+
+class TestWordReconciliation(unittest.TestCase):
+    """
+    Test cases for _reconcile_word_timings() alignment behavior.
+    """
+
+    def test_reconciliation_exact_match(self):
+        timings = [
+            {"word": "you", "start": 0.0, "end": 0.5},
+            {"word": "won't", "start": 0.5, "end": 1.0},
+            {"word": "believe", "start": 1.0, "end": 1.5}
+        ]
+        source_text = "you won't believe"
+        res = _reconcile_word_timings(timings, source_text)
+        self.assertEqual(len(res), 3)
+        self.assertEqual(res[0]["word"], "you")
+        self.assertEqual(res[1]["word"], "won't")
+        self.assertEqual(res[2]["word"], "believe")
+
+    def test_reconciliation_misheard_word(self):
+        timings = [
+            {"word": "you", "start": 0.0, "end": 0.5},
+            {"word": "won't", "start": 0.5, "end": 1.0},
+            {"word": "monic", "start": 1.0, "end": 1.5}
+        ]
+        source_text = "you won't money"
+        res = _reconcile_word_timings(timings, source_text)
+        self.assertEqual(len(res), 3)
+        self.assertEqual(res[2]["word"], "money")
+        self.assertEqual(res[2]["start"], 1.0)
+        self.assertEqual(res[2]["end"], 1.5)
+
+    def test_reconciliation_contraction_split(self):
+        timings = [
+            {"word": "there", "start": 0.0, "end": 0.3},
+            {"word": "is", "start": 0.3, "end": 0.5},
+            {"word": "no", "start": 0.5, "end": 0.8},
+            {"word": "way", "start": 0.8, "end": 1.1}
+        ]
+        source_text = "there's no way"
+        res = _reconcile_word_timings(timings, source_text)
+        # "there's" should take the combined duration of "there" and "is"
+        self.assertEqual(len(res), 3)
+        self.assertEqual(res[0]["word"], "there's")
+        self.assertEqual(res[0]["start"], 0.0)
+        self.assertEqual(res[0]["end"], 0.5)
+        self.assertEqual(res[1]["word"], "no")
+        self.assertEqual(res[1]["start"], 0.5)
+        self.assertEqual(res[1]["end"], 0.8)
+        self.assertEqual(res[2]["word"], "way")
+        self.assertEqual(res[2]["start"], 0.8)
+        self.assertEqual(res[2]["end"], 1.1)
 
 
 if __name__ == '__main__':

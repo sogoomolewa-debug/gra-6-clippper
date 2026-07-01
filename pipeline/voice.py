@@ -245,6 +245,71 @@ def _extract_word_timings(wav_bytes: bytes) -> list[dict]:
             os.remove(tmp_path)
 
 
+def _reconcile_word_timings(timings: list[dict], source_text: str) -> list[dict]:
+    """Override Whisper's guessed words with the known source text.
+
+    Uses sequence alignment to map Whisper word_timestamps (which are timing-accurate
+    but prone to transcription mishearings like 'money' -> 'monic') onto the
+    canonical words from the source hook text.
+    """
+    import difflib
+
+    clean = source_text.replace("...", " ").replace("—", "").replace("?", "").replace("!", "")
+    canonical = [w for w in clean.split() if w.strip()]
+
+    if not timings:
+        return []
+    if not canonical:
+        return timings
+
+    t_words = [w["word"].lower().strip(".,!?—") for w in timings]
+    c_words = [w.lower().strip(".,!?—") for w in canonical]
+
+    matcher = difflib.SequenceMatcher(None, t_words, c_words)
+    new_timings = []
+
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            for idx in range(i2 - i1):
+                new_timings.append({
+                    "word": canonical[j1 + idx],
+                    "start": timings[i1 + idx]["start"],
+                    "end": timings[i1 + idx]["end"]
+                })
+        elif tag == "replace":
+            if (i2 - i1) == (j2 - j1):
+                for idx in range(i2 - i1):
+                    new_timings.append({
+                        "word": canonical[j1 + idx],
+                        "start": timings[i1 + idx]["start"],
+                        "end": timings[i1 + idx]["end"]
+                    })
+            else:
+                total_duration = timings[i2 - 1]["end"] - timings[i1]["start"]
+                start_time = timings[i1]["start"]
+                num_c = j2 - j1
+                slot = total_duration / max(num_c, 1)
+                for idx in range(num_c):
+                    new_timings.append({
+                        "word": canonical[j1 + idx],
+                        "start": start_time + idx * slot,
+                        "end": start_time + (idx + 1) * slot
+                    })
+        elif tag == "insert":
+            insert_pos = timings[i1 - 1]["end"] if i1 > 0 else timings[0]["start"]
+            for idx in range(j2 - j1):
+                new_timings.append({
+                    "word": canonical[j1 + idx],
+                    "start": insert_pos,
+                    "end": insert_pos
+                })
+        elif tag == "delete":
+            pass
+
+    print(f"[voice] reconciled timings: source={len(canonical)} words, timings={len(new_timings)} words")
+    return new_timings
+
+
 def generate_voice(text: str, output_path: str) -> tuple[bool, list[dict]]:
     """Generate voice audio using chunk-based synthesis for natural delivery.
 
@@ -355,6 +420,7 @@ def generate_voice(text: str, output_path: str) -> tuple[bool, list[dict]]:
 
         # Extract timings using Whisper before humanization (so librosa doesn't break alignment)
         word_timings = _extract_word_timings(final_wav)
+        word_timings = _reconcile_word_timings(word_timings, text)
 
         # Humanize: pitch jitter, dynamics, room tone, breath, reverb
         try:
