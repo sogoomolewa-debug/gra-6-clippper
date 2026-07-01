@@ -367,7 +367,36 @@ def run_e2e_test() -> None:
         print("❌ build_short FAILED — check ffmpeg errors above")
         sys.exit(1)
 
-    print("\n[test] build_short completed — running verification\n")
+    print("\n[test] build_short completed — applying post-processing\n")
+
+    # 5a. Burn CTA caption in last 2 seconds (always, for verification)
+    print("[test] 5. Applying CTA caption...")
+    from pipeline.editor import burn_cta_caption, get_audio_duration, apply_loop_seam_crossfade
+    total_dur = get_audio_duration(OUTPUT_PATH)
+    cta_duration = 2.0
+    cta_start = total_dur - cta_duration
+    if cta_start > 0:
+        cta_tmp = OUTPUT_PATH.replace(".mp4", "_cta.mp4")
+        if burn_cta_caption(OUTPUT_PATH, "subscribe", cta_start, cta_duration, cta_tmp):
+            import shutil
+            shutil.move(cta_tmp, OUTPUT_PATH)
+            print("[test] ✓ CTA caption burned")
+        else:
+            print("[test] ⚠️ CTA caption failed")
+    else:
+        print("[test] ⚠️ Video too short for CTA")
+
+    # 5b. Apply loop seam crossfade (always, for verification — prod checks loop_worthy)
+    print("[test] 6. Applying loop seam crossfade...")
+    seam_tmp = OUTPUT_PATH.replace(".mp4", "_seam.mp4")
+    if apply_loop_seam_crossfade(OUTPUT_PATH, seam_tmp):
+        import shutil
+        shutil.move(seam_tmp, OUTPUT_PATH)
+        print("[test] ✓ Loop seam applied")
+    else:
+        print("[test] ⚠️ Loop seam failed")
+
+    print("\n[test] post-processing completed — running verification\n")
 
     # Verify output
     results = verify_output(OUTPUT_PATH)

@@ -44,7 +44,7 @@ CLIP = {
     "max_duration_seconds": 15,  # Raised from 10 — room for setup + climax + mid-chaos cut
     "min_duration_seconds": 10,  # Raised from 8 — floor matches old ceiling
     "hook_duration_seconds": 3,
-    "max_hook_audio_seconds": 3.0,   # hard ceiling — raised from 2.5 to match RAG data (avg 2.5s, 44% exceed 2.5)
+    "max_hook_audio_seconds": 6.0,   # hard ceiling — natural speech, capped at 1.2x speedup in editor
     "blur_intro_enabled": True,  # NEW: Set to False for instant-action hooks
     "output_width": 1080,
     "output_height": 1920,
@@ -62,7 +62,7 @@ CLIP = {
     "max_peaks_to_try": 3,         # max heatmap peaks to evaluate per video
     "caption_karaoke_color": "yellow",
     "caption_emphasis_color": "#FF6B35",
-    "enable_loop_seam": False,
+    "enable_loop_seam": True,
     "loop_seam_crossfade_duration": 0.2
 }
 TTS = {

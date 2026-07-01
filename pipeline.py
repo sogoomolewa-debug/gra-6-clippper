@@ -494,30 +494,39 @@ def _finalize_video(queue: dict, video: dict, analysis: dict, duration: float, a
             queue_manager.save_queue(queue)
             return False
 
-        # POST-PROCESSING: CTA & LOOP SEAM
+        # POST-PROCESSING: CTA & LOOP SEAM (mutually exclusive)
+        # Loop-worthy clips → seamless crossfade (maximizes loop rate / watch time)
+        # Non-loop clips → SUBSCRIBE CTA (since they won't loop anyway)
         cta_caption_used = False
         loop_edit_technique = "none"
 
-        # CTA Caption
-        # We put it in the last 2 seconds of the total short
-        cta_duration = 2.0
-        total_dur = editor.get_audio_duration(short_path)
-        cta_start = total_dur - cta_duration
-        if cta_start > 0:
-            cta_caption_used = True
-            cta_tmp = short_path.replace(".mp4", "_cta.mp4")
-            if editor.burn_cta_caption(short_path, "subscribe", cta_start, cta_duration, cta_tmp):
-                import shutil
-                shutil.move(cta_tmp, short_path)
-            
-        # Loop Seam
+        is_loop_worthy = analysis.get("loop_worthy", False)
         enable_loop_seam = config.CLIP.get("enable_loop_seam", False)
-        if enable_loop_seam:
+
+        if is_loop_worthy and enable_loop_seam:
+            # Loop seam — crossfade tail into head for seamless replay
             loop_edit_technique = "crossfade_seam"
             seam_tmp = short_path.replace(".mp4", "_seam.mp4")
             if editor.apply_loop_seam_crossfade(short_path, seam_tmp):
                 import shutil
                 shutil.move(seam_tmp, short_path)
+                print("[pipeline] ✓ loop seam applied (loop_worthy=True)")
+            else:
+                print("[pipeline] loop seam failed — falling back to CTA")
+                is_loop_worthy = False  # fall through to CTA
+
+        if not is_loop_worthy:
+            # CTA caption in the last 2 seconds
+            cta_duration = 2.0
+            total_dur = editor.get_audio_duration(short_path)
+            cta_start = total_dur - cta_duration
+            if cta_start > 0:
+                cta_caption_used = True
+                cta_tmp = short_path.replace(".mp4", "_cta.mp4")
+                if editor.burn_cta_caption(short_path, "subscribe", cta_start, cta_duration, cta_tmp):
+                    import shutil
+                    shutil.move(cta_tmp, short_path)
+                    print("[pipeline] ✓ CTA caption burned (loop_worthy=False)")
 
         # UPLOAD
         dry_run = getattr(config, "DRY_RUN", True)

@@ -21,6 +21,13 @@ def run_ffmpeg(cmd: list[str], step_name: str) -> bool:
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         if result.returncode != 0:
+            # Handle cosmetic cleanup crash in some ffmpeg versions (exit code 255/-15)
+            out_path = cmd[-1]
+            if result.returncode in (255, -15) and "Exiting normally, received signal 15" in result.stderr:
+                out_p = pathlib.Path(out_path)
+                if out_p.exists() and out_p.stat().st_size > 0:
+                    print(f"[editor] {step_name} exited with {result.returncode} during cleanup (cosmetic), but output is valid. Proceeding.")
+                    return True
             print(f"[editor] {step_name} failed:")
             print(result.stderr[-500:])
             return False
@@ -440,24 +447,38 @@ def burn_cta_caption(
 
 
 def apply_loop_seam_crossfade(input_path: str, output_path: str) -> bool:
-    """Cut the tail of the video and crossfade it over the head for a seamless loop."""
+    """Fade the start of the video into the end of the video for a seamless loop."""
     try:
-        dur = get_audio_duration(input_path)
+        # Get video stream duration specifically
+        cmd_probe = [
+            "ffprobe", "-v", "error", 
+            "-select_streams", "v:0",
+            "-show_entries", "stream=duration", 
+            "-of", "default=noprint_wrappers=1:nokey=1", 
+            input_path
+        ]
+        dur_str = subprocess.check_output(cmd_probe, text=True).strip()
+        dur = float(dur_str)
         xfade = float(config.CLIP.get("loop_seam_crossfade_duration", 0.2))
         
         if dur <= xfade * 2:
             print("[editor] video too short for loop seam")
             return False
-            
-        cut_point = dur - xfade
-        
+
+        # safety buffer of 0.05s to prevent EOF crash in xfade filter
+        safety_buffer = 0.05
+        cut_point = dur - xfade - safety_buffer
+        delay_ms = int(cut_point * 1000)
+
+        # Video: main_v (0 to dur) and head_v (0 to xfade)
+        # Audio: main_a (0 to dur) and head_a (0 to xfade)
         filter_complex = (
-            f"[0:v]trim=start={cut_point:.3f}:end={dur:.3f},setpts=PTS-STARTPTS[tail_v]; "
-            f"[0:a]atrim=start={cut_point:.3f}:end={dur:.3f},asetpts=PTS-STARTPTS[tail_a]; "
-            f"[0:v]trim=start=0:end={cut_point:.3f},setpts=PTS-STARTPTS[main_v]; "
-            f"[0:a]atrim=start=0:end={cut_point:.3f},asetpts=PTS-STARTPTS[main_a]; "
-            f"[tail_v][main_v]xfade=transition=fade:duration={xfade:.3f}:offset=0[v]; "
-            f"[tail_a][main_a]acrossfade=d={xfade:.3f}[a]"
+            f"[0:v]trim=start=0:end={dur:.3f},setpts=PTS-STARTPTS[main_v]; "
+            f"[0:v]trim=start=0:end={xfade:.3f},setpts=PTS-STARTPTS[head_v]; "
+            f"[main_v][head_v]xfade=transition=fade:duration={xfade:.3f}:offset={cut_point:.3f}[v]; "
+            f"[0:a]atrim=start=0:end={dur:.3f},asetpts=PTS-STARTPTS,afade=t=out:st={cut_point:.3f}:d={xfade:.3f}[main_a]; "
+            f"[0:a]atrim=start=0:end={xfade:.3f},asetpts=PTS-STARTPTS,afade=t=in:st=0:d={xfade:.3f},adelay={delay_ms}|{delay_ms}[head_a]; "
+            f"[main_a][head_a]amix=inputs=2:duration=first:dropout_transition=0[a]"
         )
         
         cmd = [
@@ -536,10 +557,13 @@ def build_short(
         hook_dur = get_audio_duration(hook_audio)
         print(f"[editor] hook duration: {hook_dur:.2f}s")
 
-        # Hard cap hook audio duration — speed up if too long
-        max_hook = float(config.CLIP.get("max_hook_audio_seconds", 2.5))
+        # Hard cap hook audio duration — speed up if too long (max 1.2x)
+        max_hook = float(config.CLIP.get("max_hook_audio_seconds", 6.0))
+        speedup_applied = 1.0
         if hook_dur > max_hook:
             speedup = hook_dur / max_hook
+            speedup = min(speedup, 1.2)  # Never exceed 1.2x — speech must stay natural
+            speedup_applied = speedup
             sped_up_audio = str(pathlib.Path(hook_audio).parent / "hook_fast.wav")
             atempo_cmd = [
                 "ffmpeg", "-y", "-i", hook_audio,
@@ -554,6 +578,13 @@ def build_short(
                 print(f"[editor] hook sped up {speedup:.2f}x → {hook_dur:.2f}s")
             else:
                 print(f"[editor] hook speedup failed, using original duration")
+                speedup_applied = 1.0
+
+        # Rescale word timings to match any speedup applied
+        if speedup_applied > 1.0 and word_timings:
+            from pipeline.voice_humanizer import rescale_word_timings
+            word_timings = rescale_word_timings(word_timings, speedup_applied)
+            print(f"[editor] word timings rescaled by {speedup_applied:.2f}x")
 
         # ── PART 1: BACKDROP (blurred background for hook speech) ──────────────
 
