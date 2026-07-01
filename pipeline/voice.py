@@ -34,19 +34,8 @@ def split_into_chunks(text: str) -> List[dict]:
             return [{"text": text.strip(), "role": "reveal"}]
 
         if len(parts) == 1:
-            # No markers found — auto-split for speed variation.
-            # Treat last 2 words as "reveal" chunk (faster pace),
-            # everything before as "suspense" (slower pace).
-            words = parts[0].split()
-            if len(words) >= 4:
-                suspense_text = " ".join(words[:-2])
-                reveal_text = " ".join(words[-2:])
-                print(f"[voice] auto-split (no markers): suspense='{suspense_text}' | reveal='{reveal_text}'")
-                return [
-                    {"text": suspense_text, "role": "suspense"},
-                    {"text": reveal_text, "role": "reveal"}
-                ]
-            return [{"text": parts[0], "role": "reveal"}]
+            # No markers found — do NOT split to prevent artificial pauses
+            return [{"text": parts[0], "role": "default"}]
 
         chunks = []
         for i, part in enumerate(parts):
@@ -237,7 +226,7 @@ def _extract_word_timings(wav_bytes: bytes) -> list[dict]:
         tmp_path = tf.name
 
     try:
-        result = _whisper_model.transcribe(tmp_path, word_timestamps=True)
+        result = _whisper_model.transcribe(tmp_path, word_timestamps=True, language="en")
         timings = []
         for segment in result.get("segments", []):
             for word in segment.get("words", []):
