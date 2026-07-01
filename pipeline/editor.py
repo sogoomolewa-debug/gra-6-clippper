@@ -27,6 +27,8 @@ def run_ffmpeg(cmd: list[str], step_name: str) -> bool:
                 out_p = pathlib.Path(out_path)
                 if out_p.exists() and out_p.stat().st_size > 0:
                     print(f"[editor] {step_name} exited with {result.returncode} during cleanup (cosmetic), but output is valid. Proceeding.")
+                    print(f"[editor] {step_name} stderr was:")
+                    print(result.stderr[-1000:])
                     return True
             print(f"[editor] {step_name} failed:")
             print(result.stderr[-500:])
@@ -473,11 +475,13 @@ def apply_loop_seam_crossfade(input_path: str, output_path: str) -> bool:
         # Video: main_v (0 to dur) and head_v (0 to xfade)
         # Audio: main_a (0 to dur) and head_a (0 to xfade)
         filter_complex = (
-            f"[0:v]trim=start=0:end={dur:.3f},setpts=PTS-STARTPTS[main_v]; "
-            f"[0:v]trim=start=0:end={xfade:.3f},setpts=PTS-STARTPTS[head_v]; "
+            f"[0:v]split=2[v1][v2]; "
+            f"[v1]trim=start=0:end={dur:.3f},setpts=PTS-STARTPTS[main_v]; "
+            f"[v2]trim=start=0:end={xfade:.3f},setpts=PTS-STARTPTS[head_v]; "
             f"[main_v][head_v]xfade=transition=fade:duration={xfade:.3f}:offset={cut_point:.3f}[v]; "
-            f"[0:a]atrim=start=0:end={dur:.3f},asetpts=PTS-STARTPTS,afade=t=out:st={cut_point:.3f}:d={xfade:.3f}[main_a]; "
-            f"[0:a]atrim=start=0:end={xfade:.3f},asetpts=PTS-STARTPTS,afade=t=in:st=0:d={xfade:.3f},adelay={delay_ms}|{delay_ms}[head_a]; "
+            f"[0:a]asplit=2[a1][a2]; "
+            f"[a1]atrim=start=0:end={dur:.3f},asetpts=PTS-STARTPTS,afade=t=out:st={cut_point:.3f}:d={xfade:.3f}[main_a]; "
+            f"[a2]atrim=start=0:end={xfade:.3f},asetpts=PTS-STARTPTS,afade=t=in:st=0:d={xfade:.3f},adelay={delay_ms}|{delay_ms}[head_a]; "
             f"[main_a][head_a]amix=inputs=2:duration=first:dropout_transition=0[a]"
         )
         
