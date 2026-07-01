@@ -68,11 +68,16 @@ def fetch_video_stats(youtube, video_id: str) -> dict | None:
 def needs_snapshot(entry: dict, label: str, hours: int) -> bool:
     """Check if a snapshot needs to be fetched for the given interval."""
     try:
+        short_id = entry.get("short_id", "")
+        # Do not fetch mock, dryrun, or skipped entries
+        if not short_id or short_id.startswith("mock") or short_id.startswith("dryrun") or short_id.startswith("skipped"):
+            return False
+
         snapshots = entry.get("snapshots", {})
         if label not in snapshots:
             return True
-        if snapshots[label].get("views", 0) != 0:
-            return False  # Already fetched
+        if snapshots[label].get("views", 0) != 0 or snapshots[label].get("failed", False):
+            return False  # Already fetched or failed
 
         uploaded_at = entry.get("uploaded_at", "")
         # Handle ISO format with 'Z'
@@ -121,13 +126,40 @@ def run() -> None:
         updates = 0
 
         for entry in log.get("shorts", []):
+            short_id = entry.get("short_id", "")
+            if not short_id or short_id.startswith("mock") or short_id.startswith("dryrun") or short_id.startswith("skipped"):
+                continue
+
+            snapshot_checked = False
             for hours, label in config.LOGS["snapshot_intervals"]:
                 if needs_snapshot(entry, label, hours):
-                    stats = fetch_video_stats(youtube, entry["short_id"])
+                    snapshot_checked = True
+                    stats = fetch_video_stats(youtube, short_id)
                     if stats:
                         entry["snapshots"][label] = stats
                         updates += 1
-                        print(f"[stats] {entry['short_id']} @ {label}: {stats}")
+                        print(f"[stats] {short_id} @ {label}: {stats}")
+                    else:
+                        # Video might be deleted, private, or invalid. Mark as failed so we don't query it again.
+                        entry["snapshots"][label] = {"views": 0, "likes": 0, "comments": 0, "failed": True}
+                        print(f"[stats] {short_id} @ {label}: no data found (marking as failed to avoid retrying)")
+
+            # If it's a real upload but too new for any snapshot, print a status message
+            if not snapshot_checked:
+                try:
+                    uploaded_at = entry.get("uploaded_at", "")
+                    if uploaded_at:
+                        uploaded_dt = datetime.fromisoformat(uploaded_at.replace("Z", "+00:00"))
+                        age_hours = (datetime.utcnow().replace(tzinfo=uploaded_dt.tzinfo) - uploaded_dt).total_seconds() / 3600
+                        # Check if it has any snapshots left to fetch
+                        missing_snapshots = [
+                            lbl for hrs, lbl in config.LOGS["snapshot_intervals"]
+                            if lbl not in entry.get("snapshots", {})
+                        ]
+                        if missing_snapshots and age_hours < 24:
+                            print(f"[stats] {short_id} tracked (uploaded {age_hours:.1f}h ago, next snapshot at 24h)")
+                except Exception:
+                    pass
 
         save_log(log)
         print("[stats] refreshing channel analytics...")
