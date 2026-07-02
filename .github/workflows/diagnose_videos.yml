@@ -8,6 +8,7 @@ on:
         required: true
         type: choice
         options:
+          - list_all
           - diagnose
           - fix
       video_ids:
@@ -35,6 +36,12 @@ jobs:
       - name: Install dependencies
         run: pip install google-api-python-client google-auth google-auth-oauthlib python-dotenv
 
+      - name: List all channel uploads
+        if: ${{ inputs.action == 'list_all' }}
+        env:
+          YOUTUBE_OAUTH_JSON: ${{ secrets.YOUTUBE_OAUTH_JSON }}
+        run: python scripts/list_channel_uploads.py
+
       - name: Run diagnose
         if: ${{ inputs.action == 'diagnose' }}
         env:
@@ -56,3 +63,4 @@ jobs:
             exit 1
           fi
           python scripts/fix_stuck_videos.py ${{ inputs.video_ids }}
+
