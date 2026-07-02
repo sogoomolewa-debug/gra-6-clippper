@@ -206,10 +206,27 @@ def upload_short(
             },
             "status": {
                 "privacyStatus": config.UPLOAD["privacy_status"],
-                "selfDeclaredMadeForKids": False
+                "selfDeclaredMadeForKids": False,  # COPPA: must always be explicit boolean
+                "madeForKids": False
             }
         }
 
+        # ── PRE-FLIGHT ASSERTION ──────────────────────────────────────
+        # Fail loudly (crash the GitHub Action) if COPPA field is wrong.
+        _status = body.get("status", {})
+        assert "selfDeclaredMadeForKids" in _status, (
+            "[upload] FATAL: selfDeclaredMadeForKids missing from upload payload"
+        )
+        assert isinstance(_status["selfDeclaredMadeForKids"], bool), (
+            f"[upload] FATAL: selfDeclaredMadeForKids must be bool, got {type(_status['selfDeclaredMadeForKids'])}"
+        )
+        assert _status["selfDeclaredMadeForKids"] is False, (
+            "[upload] FATAL: selfDeclaredMadeForKids must be False for gaming content"
+        )
+        assert body["snippet"].get("categoryId") == "20", (
+            f"[upload] FATAL: categoryId must be '20' (Gaming), got {body['snippet'].get('categoryId')}"
+        )
+        print(f"[upload] pre-flight OK: categoryId=20, selfDeclaredMadeForKids=False")
 
         media = googleapiclient.http.MediaFileUpload(
             file_path,
