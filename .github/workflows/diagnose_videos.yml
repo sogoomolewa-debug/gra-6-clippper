@@ -1,0 +1,58 @@
+name: Diagnose & Fix Video Metadata
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to run'
+        required: true
+        type: choice
+        options:
+          - diagnose
+          - fix
+      video_ids:
+        description: 'Space-separated video IDs (required for fix, optional for diagnose — leave blank to check all uploads)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install google-api-python-client google-auth google-auth-oauthlib python-dotenv
+
+      - name: Run diagnose
+        if: ${{ inputs.action == 'diagnose' }}
+        env:
+          YOUTUBE_OAUTH_JSON: ${{ secrets.YOUTUBE_OAUTH_JSON }}
+        run: |
+          if [ -n "${{ inputs.video_ids }}" ]; then
+            python scripts/diagnose_videos.py ${{ inputs.video_ids }}
+          else
+            python scripts/diagnose_videos.py
+          fi
+
+      - name: Run fix
+        if: ${{ inputs.action == 'fix' }}
+        env:
+          YOUTUBE_OAUTH_JSON: ${{ secrets.YOUTUBE_OAUTH_JSON }}
+        run: |
+          if [ -z "${{ inputs.video_ids }}" ]; then
+            echo "❌ ERROR: video_ids is required for the fix action"
+            exit 1
+          fi
+          python scripts/fix_stuck_videos.py ${{ inputs.video_ids }}
