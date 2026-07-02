@@ -56,17 +56,20 @@
         "24h": {
           "views": 0,
           "likes": 0,
-          "comments": 0
+          "comments": 0,
+          "failed": true
         },
         "72h": {
           "views": 0,
           "likes": 0,
-          "comments": 0
+          "comments": 0,
+          "failed": true
         },
         "7d": {
           "views": 0,
           "likes": 0,
-          "comments": 0
+          "comments": 0,
+          "failed": true
         }
       },
       "notes": "",
@@ -808,7 +811,7 @@
           "comments": 0
         },
         "7d": {
-          "views": 0,
+          "views": 6,
           "likes": 0,
           "comments": 0
         }
@@ -1023,8 +1026,8 @@
           "comments": 0
         },
         "72h": {
-          "views": 0,
-          "likes": 0,
+          "views": 281,
+          "likes": 6,
           "comments": 0
         },
         "7d": {
