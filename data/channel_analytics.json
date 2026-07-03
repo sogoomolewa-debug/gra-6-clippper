@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-02T19:08:08.209846Z",
+  "last_updated": "2026-07-03T01:47:29.255924Z",
   "candidates": {
     "UCIPPMRA040LQr5QPyJEbmXA": {
       "channel_title": "MrBeast Gaming",
@@ -712,25 +712,25 @@
         "avg_trend_relevance": 0.0
       },
       "performance": {
-        "avg_views_24h": 0,
-        "avg_views_7d": 0,
+        "avg_views_24h": 695,
+        "avg_views_7d": 694,
         "avg_views_30d": 0,
-        "total_views": 0,
-        "shorts_with_data": 0,
+        "total_views": 694,
+        "shorts_with_data": 1,
         "best_short": {
-          "short_id": "",
-          "views_7d": 0,
-          "hook_text": "",
-          "uploaded_at": ""
+          "short_id": "AMV5_mZwEL8",
+          "views_7d": 694,
+          "hook_text": "he's actually gonna make IT...",
+          "uploaded_at": "2026-06-25T22:33:47.297017Z"
         },
         "worst_short": {
-          "short_id": "",
-          "views_7d": 0,
-          "hook_text": "",
-          "uploaded_at": ""
+          "short_id": "AMV5_mZwEL8",
+          "views_7d": 694,
+          "hook_text": "he's actually gonna make IT...",
+          "uploaded_at": "2026-06-25T22:33:47.297017Z"
         }
       },
-      "priority_score": 5.0,
+      "priority_score": 1.5,
       "confidence": "low",
       "first_sourced": "2026-06-25T22:33:47.297017Z",
       "last_sourced": "2026-06-25T22:33:47.297017Z"
