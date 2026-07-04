@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-03T19:00:28.840495Z",
+  "last_updated": "2026-07-04T01:46:40.949967Z",
   "candidates": {
     "UCIPPMRA040LQr5QPyJEbmXA": {
       "channel_title": "MrBeast Gaming",
@@ -756,25 +756,25 @@
         "avg_trend_relevance": 0.0
       },
       "performance": {
-        "avg_views_24h": 0,
-        "avg_views_7d": 0,
+        "avg_views_24h": 2471,
+        "avg_views_7d": 2588,
         "avg_views_30d": 0,
-        "total_views": 0,
-        "shorts_with_data": 0,
+        "total_views": 2588,
+        "shorts_with_data": 1,
         "best_short": {
-          "short_id": "",
-          "views_7d": 0,
-          "hook_text": "",
-          "uploaded_at": ""
+          "short_id": "XbN7IakmE0w",
+          "views_7d": 2588,
+          "hook_text": "SPIDERMAN just went... off the EDGE",
+          "uploaded_at": "2026-06-26T20:29:02.695487Z"
         },
         "worst_short": {
-          "short_id": "",
-          "views_7d": 0,
-          "hook_text": "",
-          "uploaded_at": ""
+          "short_id": "XbN7IakmE0w",
+          "views_7d": 2588,
+          "hook_text": "SPIDERMAN just went... off the EDGE",
+          "uploaded_at": "2026-06-26T20:29:02.695487Z"
         }
       },
-      "priority_score": 5.0,
+      "priority_score": 3.5,
       "confidence": "low",
       "first_sourced": "2026-06-26T20:29:02.695487Z",
       "last_sourced": "2026-06-26T20:29:02.695487Z"
