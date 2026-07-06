@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-05T19:00:04.622580Z",
+  "last_updated": "2026-07-06T01:59:14.559439Z",
   "candidates": {
     "UCIPPMRA040LQr5QPyJEbmXA": {
       "channel_title": "MrBeast Gaming",
@@ -624,25 +624,25 @@
         "avg_trend_relevance": 0.0
       },
       "performance": {
-        "avg_views_24h": 0,
-        "avg_views_7d": 0,
+        "avg_views_24h": 281,
+        "avg_views_7d": 281,
         "avg_views_30d": 0,
-        "total_views": 0,
-        "shorts_with_data": 0,
+        "total_views": 281,
+        "shorts_with_data": 1,
         "best_short": {
-          "short_id": "",
-          "views_7d": 0,
-          "hook_text": "",
-          "uploaded_at": ""
+          "short_id": "kGAKg6kGuUs",
+          "views_7d": 281,
+          "hook_text": "What just launched off that LAUNCH ramp...",
+          "uploaded_at": "2026-06-28T20:10:15.206455Z"
         },
         "worst_short": {
-          "short_id": "",
-          "views_7d": 0,
-          "hook_text": "",
-          "uploaded_at": ""
+          "short_id": "kGAKg6kGuUs",
+          "views_7d": 281,
+          "hook_text": "What just launched off that LAUNCH ramp...",
+          "uploaded_at": "2026-06-28T20:10:15.206455Z"
         }
       },
-      "priority_score": 5.0,
+      "priority_score": 1.5,
       "confidence": "low",
       "first_sourced": "2026-06-24T00:21:13.846887Z",
       "last_sourced": "2026-06-28T20:10:15.206455Z"
