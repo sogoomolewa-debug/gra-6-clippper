@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-07T01:53:44.882102Z",
+  "last_updated": "2026-07-07T09:21:21.393130Z",
   "candidates": {
     "UCIPPMRA040LQr5QPyJEbmXA": {
       "channel_title": "MrBeast Gaming",
@@ -1284,25 +1284,25 @@
         "avg_trend_relevance": 0.0
       },
       "performance": {
-        "avg_views_24h": 0,
-        "avg_views_7d": 0,
+        "avg_views_24h": 647,
+        "avg_views_7d": 642,
         "avg_views_30d": 0,
-        "total_views": 0,
-        "shorts_with_data": 0,
+        "total_views": 642,
+        "shorts_with_data": 1,
         "best_short": {
-          "short_id": "",
-          "views_7d": 0,
-          "hook_text": "",
-          "uploaded_at": ""
+          "short_id": "DxZwaYX6qKQ",
+          "views_7d": 642,
+          "hook_text": "off the dirt... ramp",
+          "uploaded_at": "2026-06-30T02:20:14.331402Z"
         },
         "worst_short": {
-          "short_id": "",
-          "views_7d": 0,
-          "hook_text": "",
-          "uploaded_at": ""
+          "short_id": "DxZwaYX6qKQ",
+          "views_7d": 642,
+          "hook_text": "off the dirt... ramp",
+          "uploaded_at": "2026-06-30T02:20:14.331402Z"
         }
       },
-      "priority_score": 5.0,
+      "priority_score": 1.5,
       "confidence": "low",
       "first_sourced": "2026-06-30T02:20:14.331402Z",
       "last_sourced": "2026-06-30T02:20:14.331402Z"
